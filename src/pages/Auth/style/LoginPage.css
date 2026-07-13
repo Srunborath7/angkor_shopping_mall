@@ -37,30 +37,11 @@ body {
     background: linear-gradient(-45deg,
             #1c7e48,
             #2d9954,
-            #81ef59,
+            #185800,
             #1c7e48);
 
     background-size: 400% 400%;
-
-    animation: bgAnimation 15s ease infinite;
-
     padding: 20px;
-
-}
-
-@keyframes bgAnimation {
-
-    0% {
-        background-position: 0% 50%;
-    }
-
-    50% {
-        background-position: 100% 50%;
-    }
-
-    100% {
-        background-position: 0% 50%;
-    }
 
 }
 
@@ -317,8 +298,6 @@ form {
     justify-content: space-between;
 
     align-items: center;
-
-
 
 }
 

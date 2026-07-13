@@ -17,41 +17,16 @@
 
     overflow:hidden;
 
-    background:linear-gradient(
-        -45deg,
-        #1c7e48,
-        #2d9954,
-        #81ef59,
-        #1c7e48
-    );
+    background: linear-gradient(-45deg,
+            #1c7e48,
+            #2d9954,
+            #185800,
+            #1c7e48);
 
     background-size:400% 400%;
-
-    animation:bgAnimation 15s ease infinite;
-
     padding:20px;
 
 }
-
-
-
-@keyframes bgAnimation{
-
-    0%{
-        background-position:0% 50%;
-    }
-
-    50%{
-        background-position:100% 50%;
-    }
-
-    100%{
-        background-position:0% 50%;
-    }
-
-}
-
-
 
 /* Floating Circle */
 
@@ -293,11 +268,9 @@
     font-size:17px;
     font-weight:600;
     cursor:pointer;
-    background:linear-gradient(
-        90deg,
-        #1c7e48,
-        #81ef59
-    );
+     background: linear-gradient(90deg,
+            #1c7e48,
+            #81ef59);
 
 
     transition:.35s;
@@ -307,12 +280,20 @@
 
 
 .register-btn:hover{
+ background-position: right center;
 
-    transform:translateY(-3px);
-
+    transform: translateY(-3px);
 
     box-shadow:
-    0 15px 35px rgba(28,126,72,.45);
+        0 15px 35px rgba(28, 126, 72, .45);
+
+
+}
+.register-btn:disabled {
+
+    opacity: .75;
+
+    cursor: not-allowed;
 
 }
 .footerLinks span{
