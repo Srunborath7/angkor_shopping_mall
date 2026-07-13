@@ -3,6 +3,7 @@ import LoginAdmin from "./pages/Auth/LoginPage";
 import ForgotPassword from "./pages/Auth/ForgotPasswordPage";
 import Dashboard from "./pages/Admin/Dashboard";
 import HomePage from "./pages/website/HomePage";
+import RegisterPage from "./pages/Auth/RegisterPage";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
 
         {/* Auth */}
         <Route path="/auth/login" element={<LoginAdmin />} />
+        <Route path="/auth/register" element={<RegisterPage />} />
         <Route 
           path="/auth/forgot-password" 
           element={<ForgotPassword />} 

@@ -3,66 +3,64 @@
 =================================*/
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
 
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:"Poppins",sans-serif;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Poppins", sans-serif;
 }
 
-body{
-    background:#f4f6f9;
+body {
+    background: #f4f6f9;
 }
 
 /* ===============================
    Background
 =================================*/
 
-.login-container{
+.login-container {
 
-    position:relative;
+    position: relative;
 
-    width:100%;
+    width: 100%;
 
-    min-height:100vh;
+    min-height: 100vh;
 
-    display:flex;
+    display: flex;
 
-    justify-content:center;
+    justify-content: center;
 
-    align-items:center;
+    align-items: center;
 
-    overflow:hidden;
+    overflow: hidden;
 
-    background:linear-gradient(
-        -45deg,
-        #1c7e48,
-        #2d9954,
-        #81ef59,
-        #1c7e48
-    );
+    background: linear-gradient(-45deg,
+            #1c7e48,
+            #2d9954,
+            #81ef59,
+            #1c7e48);
 
-    background-size:400% 400%;
+    background-size: 400% 400%;
 
-    animation:bgAnimation 15s ease infinite;
+    animation: bgAnimation 15s ease infinite;
 
-    padding:20px;
+    padding: 20px;
 
 }
 
-@keyframes bgAnimation{
+@keyframes bgAnimation {
 
-0%{
-background-position:0% 50%;
-}
+    0% {
+        background-position: 0% 50%;
+    }
 
-50%{
-background-position:100% 50%;
-}
+    50% {
+        background-position: 100% 50%;
+    }
 
-100%{
-background-position:0% 50%;
-}
+    100% {
+        background-position: 0% 50%;
+    }
 
 }
 
@@ -70,65 +68,65 @@ background-position:0% 50%;
    Floating Circles
 =================================*/
 
-.circle{
+.circle {
 
-    position:absolute;
+    position: absolute;
 
-    border-radius:50%;
+    border-radius: 50%;
 
-    background:rgba(255,255,255,.12);
+    background: rgba(255, 255, 255, .12);
 
-    animation:float 8s ease-in-out infinite;
-
-}
-
-.circle1{
-
-    width:280px;
-    height:280px;
-
-    left:-100px;
-    top:-100px;
+    animation: float 8s ease-in-out infinite;
 
 }
 
-.circle2{
+.circle1 {
 
-    width:220px;
-    height:220px;
+    width: 280px;
+    height: 280px;
 
-    right:-70px;
-    bottom:40px;
-
-    animation-duration:12s;
+    left: -100px;
+    top: -100px;
 
 }
 
-.circle3{
+.circle2 {
 
-    width:160px;
-    height:160px;
+    width: 220px;
+    height: 220px;
 
-    top:80%;
-    left:25%;
+    right: -70px;
+    bottom: 40px;
 
-    animation-duration:10s;
+    animation-duration: 12s;
 
 }
 
-@keyframes float{
+.circle3 {
 
-0%{
-transform:translateY(0px);
+    width: 160px;
+    height: 160px;
+
+    top: 80%;
+    left: 25%;
+
+    animation-duration: 10s;
+
 }
 
-50%{
-transform:translateY(-35px);
-}
+@keyframes float {
 
-100%{
-transform:translateY(0px);
-}
+    0% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-35px);
+    }
+
+    100% {
+        transform: translateY(0px);
+    }
 
 }
 
@@ -136,30 +134,30 @@ transform:translateY(0px);
    Card
 =================================*/
 
-.login-card{
+.login-card {
 
-    position:relative;
+    position: relative;
 
-    width:430px;
+    width: 430px;
 
-    max-width:100%;
+    max-width: 100%;
 
-    padding:45px;
+    padding: 45px;
 
-    border-radius:28px;
+    border-radius: 28px;
 
-    background:rgba(255,255,255,.18);
+    background: rgba(255, 255, 255, .18);
 
-    backdrop-filter:blur(18px);
+    backdrop-filter: blur(18px);
 
-    border:1px solid rgba(255,255,255,.25);
+    border: 1px solid rgba(255, 255, 255, .25);
 
     box-shadow:
-        0 20px 50px rgba(0,0,0,.25);
+        0 20px 50px rgba(0, 0, 0, .25);
 
-    text-align:center;
+    text-align: center;
 
-    z-index:10;
+    z-index: 10;
 
 }
 
@@ -167,21 +165,21 @@ transform:translateY(0px);
    Logo
 =================================*/
 
-.logo{
+.logo {
 
-    width:110px;
+    width: 110px;
 
-    height:110px;
+    height: 110px;
 
-    object-fit:cover;
+    object-fit: cover;
 
-    border-radius:50%;
+    border-radius: 50%;
 
-    border:5px solid white;
+    border: 5px solid white;
 
-    box-shadow:0 12px 30px rgba(0,0,0,.25);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .25);
 
-    margin-bottom:20px;
+    margin-bottom: 20px;
 
 }
 
@@ -189,27 +187,27 @@ transform:translateY(0px);
    Heading
 =================================*/
 
-.login-card h2{
+.login-card h2 {
 
-    color:white;
+    color: white;
 
-    font-size:32px;
+    font-size: 32px;
 
-    font-weight:700;
+    font-weight: 700;
 
 }
 
-.subtitle{
+.subtitle {
 
-    color:white;
+    color: white;
 
-    opacity:.9;
+    opacity: .9;
 
-    font-size:14px;
+    font-size: 14px;
 
-    margin-top:10px;
+    margin-top: 10px;
 
-    margin-bottom:35px;
+    margin-bottom: 35px;
 
 }
 
@@ -217,11 +215,11 @@ transform:translateY(0px);
    Form
 =================================*/
 
-form{
+form {
 
-    display:flex;
+    display: flex;
 
-    flex-direction:column;
+    flex-direction: column;
 
 }
 
@@ -229,60 +227,60 @@ form{
    Input
 =================================*/
 
-.input-group{
+.input-group {
 
-    display:flex;
+    display: flex;
 
-    align-items:center;
+    align-items: center;
 
-    background:white;
+    background: white;
 
-    border-radius:14px;
+    border-radius: 14px;
 
-    padding:0 18px;
+    padding: 0 18px;
 
-    margin-bottom:20px;
+    margin-bottom: 20px;
 
-    transition:.3s;
-
-}
-
-.input-group:hover{
-
-    transform:translateY(-2px);
-
-    box-shadow:0 12px 30px rgba(0,0,0,.15);
+    transition: .3s;
 
 }
 
-.input-group:focus-within{
+.input-group:hover {
+
+    transform: translateY(-2px);
+
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .15);
+
+}
+
+.input-group:focus-within {
 
     box-shadow:
-    0 0 0 4px rgba(129,239,89,.35);
+        0 0 0 4px rgba(129, 239, 89, .35);
 
 }
 
-.input-icon{
+.input-icon {
 
-    color:#1c7e48;
+    color: #1c7e48;
 
-    font-size:18px;
+    font-size: 18px;
 
 }
 
-.input-group input{
+.input-group input {
 
-    flex:1;
+    flex: 1;
 
-    border:none;
+    border: none;
 
-    outline:none;
+    outline: none;
 
-    padding:16px;
+    padding: 16px;
 
-    font-size:15px;
+    font-size: 15px;
 
-    background:none;
+    background: none;
 
 }
 
@@ -290,21 +288,21 @@ form{
    Password Toggle
 =================================*/
 
-.password-toggle{
+.password-toggle {
 
-    color:#1c7e48;
+    color: #1c7e48;
 
-    cursor:pointer;
+    cursor: pointer;
 
-    font-size:18px;
+    font-size: 18px;
 
-    transition:.3s;
+    transition: .3s;
 
 }
 
-.password-toggle:hover{
+.password-toggle:hover {
 
-    transform:scale(1.2);
+    transform: scale(1.2);
 
 }
 
@@ -312,53 +310,53 @@ form{
  Remember
 =================================*/
 
-.remember-row{
+.remember-row {
 
-    display:flex;
+    display: flex;
 
-    justify-content:space-between;
+    justify-content: space-between;
 
-    align-items:center;
+    align-items: center;
 
-    margin-bottom:25px;
 
-}
-
-.remember-label{
-
-    display:flex;
-
-    align-items:center;
-
-    gap:8px;
-
-    color:white;
-
-    font-size:14px;
 
 }
 
-.remember-label input{
+.remember-label {
 
-    width:16px;
+    display: flex;
 
-    height:16px;
+    align-items: center;
 
-}
+    gap: 8px;
 
-.forgot-link{
+    color: white;
 
-    color:white;
-
-    text-decoration:none;
-
-    font-size:14px;
+    font-size: 14px;
 
 }
 
-.forgot-link:hover{
+.remember-label input {
 
-    text-decoration:underline;
+    width: 16px;
+
+    height: 16px;
+
+}
+
+.forgot-link {
+
+    color: white;
+
+    text-decoration: none;
+
+    font-size: 14px;
+
+}
+
+.forgot-link:hover {
+
+    text-decoration: underline;
 
 }
 
@@ -366,60 +364,58 @@ form{
  Button
 =================================*/
 
-.login-btn{
+.login-btn {
 
-    border:none;
+    border: none;
 
-    outline:none;
+    outline: none;
 
-    cursor:pointer;
+    cursor: pointer;
 
-    height:55px;
+    height: 55px;
 
-    border-radius:14px;
+    border-radius: 14px;
 
-    color:white;
+    color: white;
 
-    font-size:17px;
+    font-size: 17px;
 
-    font-weight:600;
+    font-weight: 600;
 
-    display:flex;
+    display: flex;
 
-    justify-content:center;
+    justify-content: center;
 
-    align-items:center;
+    align-items: center;
 
-    gap:10px;
+    gap: 10px;
 
-    background:linear-gradient(
-        90deg,
-        #1c7e48,
-        #81ef59
-    );
+    background: linear-gradient(90deg,
+            #1c7e48,
+            #81ef59);
 
-    background-size:200%;
+    background-size: 200%;
 
-    transition:.35s;
+    transition: .35s;
 
 }
 
-.login-btn:hover{
+.login-btn:hover {
 
-    background-position:right center;
+    background-position: right center;
 
-    transform:translateY(-3px);
+    transform: translateY(-3px);
 
     box-shadow:
-    0 15px 35px rgba(28,126,72,.45);
+        0 15px 35px rgba(28, 126, 72, .45);
 
 }
 
-.login-btn:disabled{
+.login-btn:disabled {
 
-    opacity:.75;
+    opacity: .75;
 
-    cursor:not-allowed;
+    cursor: not-allowed;
 
 }
 
@@ -427,122 +423,118 @@ form{
  Spinner
 =================================*/
 
-.spinner{
+.spinner {
 
-    width:20px;
+    width: 20px;
 
-    height:20px;
+    height: 20px;
 
-    border:3px solid rgba(255,255,255,.35);
+    border: 3px solid rgba(255, 255, 255, .35);
 
-    border-top:3px solid white;
+    border-top: 3px solid white;
 
-    border-radius:50%;
+    border-radius: 50%;
 
-    animation:spin .8s linear infinite;
-
-}
-
-@keyframes spin{
-
-100%{
-
-transform:rotate(360deg);
+    animation: spin .8s linear infinite;
 
 }
+
+@keyframes spin {
+
+    100% {
+
+        transform: rotate(360deg);
+
+    }
 
 }
 
 /* ===============================
  Footer
 =================================*/
-
-.login-footer{
-
-    margin-top:30px;
-
-    color:white;
-
-    opacity:.9;
-
-    font-size:13px;
-
+.footerLinks span{
+    color:rgba(255, 255, 255, 0.8);
+}
+.login-footer {
+    color: white;
+    opacity: .9;
+    font-size: 13px;
 }
 
 /* ===============================
  Responsive
 =================================*/
 
-@media(max-width:768px){
+@media(max-width:768px) {
 
-.login-card{
+    .login-card {
 
-padding:35px;
+        padding: 35px;
 
-}
+    }
 
-.logo{
+    .logo {
 
-width:90px;
+        width: 90px;
 
-height:90px;
+        height: 90px;
 
-}
+    }
 
-.login-card h2{
+    .login-card h2 {
 
-font-size:28px;
+        font-size: 28px;
 
-}
-
-}
-
-@media(max-width:480px){
-
-.login-card{
-
-padding:25px;
-
-border-radius:20px;
+    }
 
 }
 
-.logo{
+@media(max-width:480px) {
 
-width:80px;
+    .login-card {
 
-height:80px;
+        padding: 25px;
 
-}
+        border-radius: 20px;
 
-.login-card h2{
+    }
 
-font-size:24px;
+    .logo {
 
-}
+        width: 80px;
 
-.subtitle{
+        height: 80px;
 
-font-size:13px;
+    }
 
-}
+    .login-card h2 {
 
-.remember-row{
+        font-size: 24px;
 
-flex-direction:column;
+    }
 
-align-items:flex-start;
+    .subtitle {
 
-gap:10px;
+        font-size: 13px;
 
-}
+    }
 
-.login-btn{
+    .remember-row {
 
-height:50px;
+        flex-direction: column;
 
-font-size:16px;
+        align-items: flex-start;
 
-}
+        gap: 10px;
+
+    }
+
+    .login-btn {
+
+        height: 50px;
+
+        font-size: 16px;
+
+    }
 
 }

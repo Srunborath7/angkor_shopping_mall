@@ -1,0 +1,369 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+
+
+.register-container{
+
+    position:relative;
+
+    width:100%;
+
+    min-height:100vh;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    overflow:hidden;
+
+    background:linear-gradient(
+        -45deg,
+        #1c7e48,
+        #2d9954,
+        #81ef59,
+        #1c7e48
+    );
+
+    background-size:400% 400%;
+
+    animation:bgAnimation 15s ease infinite;
+
+    padding:20px;
+
+}
+
+
+
+@keyframes bgAnimation{
+
+    0%{
+        background-position:0% 50%;
+    }
+
+    50%{
+        background-position:100% 50%;
+    }
+
+    100%{
+        background-position:0% 50%;
+    }
+
+}
+
+
+
+/* Floating Circle */
+
+.circle{
+
+    position:absolute;
+
+    border-radius:50%;
+
+    background:rgba(255,255,255,.12);
+
+    animation:float 8s ease-in-out infinite;
+
+}
+
+
+
+.circle1{
+
+    width:280px;
+    height:280px;
+
+    left:-100px;
+    top:-100px;
+
+}
+
+
+.circle2{
+
+    width:220px;
+    height:220px;
+
+    right:-70px;
+    bottom:40px;
+
+}
+
+
+.circle3{
+
+    width:160px;
+    height:160px;
+
+    left:25%;
+    top:80%;
+
+}
+
+
+
+@keyframes float{
+
+    0%{
+        transform:translateY(0);
+    }
+
+    50%{
+        transform:translateY(-35px);
+    }
+
+    100%{
+        transform:translateY(0);
+    }
+
+}
+
+
+
+/* Card */
+
+.register-card{
+
+    position:relative;
+
+    width:450px;
+
+    max-width:100%;
+
+    padding:45px;
+
+    border-radius:28px;
+
+
+    background:rgba(255,255,255,.18);
+
+
+    backdrop-filter:blur(18px);
+
+
+    border:1px solid rgba(255,255,255,.25);
+
+
+    box-shadow:
+    0 20px 50px rgba(0,0,0,.25);
+
+
+    text-align:center;
+
+    z-index:10;
+
+}
+
+
+
+
+
+/* Logo */
+
+.register-card .logo{
+
+    width:110px;
+
+    height:110px;
+
+    object-fit:cover;
+
+    border-radius:50%;
+
+
+    border:5px solid white;
+
+
+    box-shadow:
+    0 12px 30px rgba(0,0,0,.25);
+
+
+    margin-bottom:20px;
+
+}
+
+
+
+
+
+/* Title */
+
+.register-card h2{
+
+    color:white;
+
+    font-size:32px;
+
+    font-weight:700;
+
+}
+
+
+
+.register-subtitle{
+
+    color:white;
+
+    opacity:.9;
+
+    font-size:14px;
+
+    margin-top:10px;
+
+    margin-bottom:35px;
+
+}
+
+
+
+
+
+/* Input */
+
+.register-card .input-group{
+
+    display:flex;
+
+    align-items:center;
+
+    background:white;
+
+    border-radius:14px;
+
+    padding:0 18px;
+
+    margin-bottom:20px;
+
+    transition:.3s;
+
+}
+
+
+
+.register-card .input-group:hover{
+
+    transform:translateY(-2px);
+
+    box-shadow:
+    0 12px 30px rgba(0,0,0,.15);
+
+}
+
+
+
+.register-card .input-icon{
+
+    color:#1c7e48;
+
+    font-size:18px;
+
+}
+
+
+
+
+.register-card input,
+.register-card select{
+
+    flex:1;
+
+    border:none;
+
+    outline:none;
+
+    padding:16px;
+
+    font-size:15px;
+
+    background:none;
+
+}
+
+
+
+/* Button */
+
+.register-btn{
+    width:100%;
+    height:55px;
+    border:none;
+    border-radius:14px;
+    color:white;
+    font-size:17px;
+    font-weight:600;
+    cursor:pointer;
+    background:linear-gradient(
+        90deg,
+        #1c7e48,
+        #81ef59
+    );
+
+
+    transition:.35s;
+
+}
+
+
+
+.register-btn:hover{
+
+    transform:translateY(-3px);
+
+
+    box-shadow:
+    0 15px 35px rgba(28,126,72,.45);
+
+}
+.footerLinks span{
+    color:rgba(255, 255, 255, 0.8);
+}
+/* ===============================
+   Footer Links
+=================================*/
+
+/* Mobile */
+
+@media(max-width:768px){
+
+    .register-card{
+
+        padding:35px;
+
+    }
+
+
+    .register-card h2{
+
+        font-size:28px;
+
+    }
+
+}
+
+
+
+@media(max-width:480px){
+
+    .register-card{
+
+        padding:25px;
+
+        border-radius:20px;
+
+    }
+
+
+    .register-card .logo{
+
+        width:80px;
+
+        height:80px;
+
+    }
+    .register-card h2{
+
+        font-size:24px;
+    }
+
+}

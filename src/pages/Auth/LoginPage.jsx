@@ -39,57 +39,57 @@ function LoginAdmin() {
   };
 
   const handleLogin = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    const res = await api("/api/auth/login", "post", {
-      email: form.email,
-      password: form.password,
-    });
+      const res = await api("/api/auth/login", "post", {
+        email: form.email,
+        password: form.password,
+      });
 
-    const user = res.data.user;
-    const accessToken = res.data.accessToken;
+      const user = res.data.user;
+      const accessToken = res.data.accessToken;
 
-    const role = user.roles?.[0]?.name || "customer";
+      const role = user.roles?.[0]?.name || "customer";
 
-    dispatch(
-      setAuth({
-        token: accessToken,
-        role,
-        user,
-        remember: form.remember,
-      })
-    );
+      dispatch(
+        setAuth({
+          token: accessToken,
+          role,
+          user,
+          remember: form.remember,
+        })
+      );
 
-    Swal.fire({
-      icon: "success",
-      title: "Login Successful",
-      text: `Welcome ${user.name}`,
-      timer: 1800,
-      showConfirmButton: false,
-    });
+      Swal.fire({
+        icon: "success",
+        title: "Login Successful",
+        text: `Welcome ${user.name}`,
+        timer: 1800,
+        showConfirmButton: false,
+      });
 
-    // Redirect by role
-    if (role === "admin" || role === "sale") {
-      navigate("/admin/dashboard");
-    } else if (role === "customer") {
-      navigate("/");
-    } else {
-      navigate("/");
+      // Redirect by role
+      if (role === "admin" || role === "sale") {
+        navigate("/admin/dashboard");
+      } else if (role === "customer") {
+        navigate("/");
+      } else {
+        navigate("/");
+      }
+
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Login Failed",
+        text: error?.message || "Invalid email or password",
+      });
+    } finally {
+      setLoading(false);
     }
-
-  } catch (error) {
-    Swal.fire({
-      icon: "error",
-      title: "Login Failed",
-      text: error?.message || "Invalid email or password",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="login-container">
@@ -227,7 +227,19 @@ function LoginAdmin() {
             )}
           </motion.button>
         </form>
-
+        <div className="footerLinks">
+          <div>
+          <span>
+            Don't have an account?
+          </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/auth/register")}
+          >
+            Sign Up
+          </button>
+        </div>
         {/* Footer */}
 
         <div className="login-footer">

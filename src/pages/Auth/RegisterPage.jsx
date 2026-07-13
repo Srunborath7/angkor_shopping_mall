@@ -1,133 +1,210 @@
-import React from 'react';
+import React, { useEffect, useState } from "react";
+import {
+  FaUser,
+  FaEnvelope,
+  FaPhone,
+  FaLock,
+  FaUserTag
+} from "react-icons/fa";
+import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
+import {
+  registerApi,
+  getRolesApi
+} from "../../services/authService";
+import "./style/RegisterPage.css";
+import logo from "../../assets/logo.jpg";
 
-export default function RegisterPage({
-  name,
-  setName,
-  email,
-  setEmail,
-  phone,
-  setPhone,
-  password,
-  setPassword,
-  roleId,
-  setRoleId,
-  roles,
-  onSubmit,
-  loading,
-  onNavigate
-}) {
+function RegisterPage({ onNavigate }) {
+  const token = localStorage.getItem("token");
+  const hasToken = !!token;
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [roleId, setRoleId] = useState("");
+  const [roles, setRoles] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (hasToken) {
+      loadRoles();
+    }
+  }, []);
+  const loadRoles = async () => {
+    try {
+      const res = await getRolesApi();
+      setRoles(
+        res.data || []
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const payload = {
+        name,
+        email,
+        password,
+        phone
+      };
+      // Admin create user
+      if (hasToken) {
+        payload.role_id = roleId;
+      }
+      const res = await registerApi(payload);
+      Swal.fire({
+        icon: "success",
+        title: "Register Success",
+        text:
+          res.message ||
+          "Account created successfully",
+        timer: 1800,
+        showConfirmButton: false
+      });
+      setName("");
+      setEmail("");
+      setPhone("");
+      setPassword("");
+      setRoleId("");
+      navigate("/auth/login");
+    }
+    catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Register Failed",
+        text:
+          error.message ||
+          "Register failed"
+      });
+    }
+    finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <form onSubmit={onSubmit} style={styles.form}>
-      <h3 style={styles.modeTitle}>Create New Account</h3>
-
-      <div className="input-group">
-        <label>Full Name</label>
-        <input
-          type="text"
-          className="input-control"
-          placeholder="Dara Srun"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
+    <div className="register-container">
+      {/* Background */}
+      <div className="circle circle1"></div>
+      <div className="circle circle2"></div>
+      <div className="circle circle3"></div>
+      <div className="register-card">
+        <img
+          src={logo}
+          alt="logo"
+          className="logo"
         />
-      </div>
+        <h2>
+          Create Account
+        </h2>
+        <p className="register-subtitle">
+          Join Angkor Shopping Mall today
+        </p>
+        <form onSubmit={handleRegister}>
+          <div className="input-group">
+            <FaUser className="input-icon" />
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+          <div className="input-group">
+            <FaEnvelope className="input-icon" />
+            <input
+              type="email"
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <div className="input-group">
+            <FaPhone className="input-icon" />
+            <input
+              type="tel"
+              placeholder="Phone Number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              required
+            />
+          </div>
+          <div className="input-group">
+            <FaLock className="input-icon" />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          {
+            hasToken && (
+              <div className="input-group">
+                <FaUserTag className="input-icon" />
+                <select
+                  className="input-control"
+                  value={roleId}
+                  onChange={(e) => setRoleId(e.target.value)}
+                  required
+                >
+                  <option value="">
+                    Select Role
+                  </option>
+                  {
+                    roles.map((role) => (
+                      <option
+                        key={role.id}
+                        value={role.id}
+                      >
+                        {role.name}
+                      </option>
+                    ))
+                  }
+                </select>
 
-      <div className="input-group">
-        <label>Email Address</label>
-        <input
-          type="email"
-          className="input-control"
-          placeholder="dara@gmail.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
+              </div>
+            )
+          }
+          <button
+            className="register-btn"
+            disabled={loading}
+          >
+            {
+              loading ?
+                <div className="spinner"></div>
+                :
+                "Register Account"
+            }
+          </button>
+        </form>
+        <div className="footerLinks">
+          <div>
+            <span>
+              Don't have an account?
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/auth/login")}
+          >
+            Sign In
+          </button>
+        </div>
+         <div className="login-footer">
+          <small>© 2026 Admin Dashboard. All rights reserved.</small>
+        </div>
       </div>
-
-      <div className="input-group">
-        <label>Phone Number</label>
-        <input
-          type="tel"
-          className="input-control"
-          placeholder="0974242291"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          required
-        />
-      </div>
-
-      <div className="input-group">
-        <label>Password</label>
-        <input
-          type="password"
-          className="input-control"
-          placeholder="Minimum 5 characters"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-      </div>
-
-      <div className="input-group">
-        <label>Select User Role</label>
-        <select
-          className="input-control"
-          value={roleId}
-          onChange={(e) => setRoleId(e.target.value)}
-        >
-          {roles.map((r) => (
-            <option key={r.id || r._id} value={r.id || r._id}>
-              {r.name} ({r.description})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <button type="submit" className="btn btn-primary" style={styles.submitBtn} disabled={loading}>
-        {loading ? <div className="spinner"></div> : 'Register Account'}
-      </button>
-
-      <div style={styles.footerLinks}>
-        <span>Already have an account?</span>
-        <button type="button" style={styles.footerLinkBtn} onClick={() => onNavigate('login')}>
-          Sign In
-        </button>
-      </div>
-    </form>
+      
+    </div>
   );
 }
-
-const styles = {
-  form: {
-    textAlign: 'left',
-  },
-  modeTitle: {
-    fontSize: '1.1rem',
-    fontWeight: '700',
-    marginBottom: '20px',
-    textAlign: 'center',
-    color: 'var(--text-primary)',
-  },
-  submitBtn: {
-    width: '100%',
-    padding: '12px',
-    borderRadius: '10px',
-    fontSize: '1rem',
-    marginTop: '10px',
-  },
-  footerLinks: {
-    marginTop: '20px',
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '8px',
-    fontSize: '0.85rem',
-    color: 'var(--text-secondary)',
-  },
-  footerLinkBtn: {
-    background: 'none',
-    border: 'none',
-    fontWeight: '600',
-    color: 'hsl(var(--primary))',
-    cursor: 'pointer',
-  },
-};
+export default RegisterPage;
