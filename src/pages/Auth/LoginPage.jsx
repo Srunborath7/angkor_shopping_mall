@@ -10,10 +10,8 @@ import {
   FaSignInAlt,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
-
 import { api } from "../../api/api";
 import { setAuth } from "../../store/authSlice";
-
 import "./style/LoginPage.css";
 import logo from "../../assets/logo.jpg";
 
@@ -41,43 +39,57 @@ function LoginAdmin() {
   };
 
   const handleLogin = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      setLoading(true);
+  try {
+    setLoading(true);
 
-      const res = await api("/api/auth/login", "post", {
-        email: form.email,
-        password: form.password,
-      });
+    const res = await api("/api/auth/login", "post", {
+      email: form.email,
+      password: form.password,
+    });
 
-      dispatch(
-        setAuth({
-          token: res.token,
-          role: res.user?.role || "admin",
-          remember: form.remember,
-        })
-      );
+    const user = res.data.user;
+    const accessToken = res.data.accessToken;
 
-      Swal.fire({
-        icon: "success",
-        title: "Login Successful",
-        text: `Welcome ${res.user?.name || "Administrator"}`,
-        timer: 1800,
-        showConfirmButton: false,
-      });
+    const role = user.roles?.[0]?.name || "customer";
 
-      navigate("/dashboard");
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Login Failed",
-        text: error?.message || "Invalid email or password",
-      });
-    } finally {
-      setLoading(false);
+    dispatch(
+      setAuth({
+        token: accessToken,
+        role,
+        user,
+        remember: form.remember,
+      })
+    );
+
+    Swal.fire({
+      icon: "success",
+      title: "Login Successful",
+      text: `Welcome ${user.name}`,
+      timer: 1800,
+      showConfirmButton: false,
+    });
+
+    // Redirect by role
+    if (role === "admin" || role === "sale") {
+      navigate("/admin/dashboard");
+    } else if (role === "customer") {
+      navigate("/");
+    } else {
+      navigate("/");
     }
-  };
+
+  } catch (error) {
+    Swal.fire({
+      icon: "error",
+      title: "Login Failed",
+      text: error?.message || "Invalid email or password",
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="login-container">
@@ -183,7 +195,7 @@ function LoginAdmin() {
               <span>Remember me</span>
             </label>
 
-            <a href="#" className="forgot-link">
+            <a href="/auth/forgot-password" className="forgot-link">
               Forgot Password?
             </a>
           </div>
