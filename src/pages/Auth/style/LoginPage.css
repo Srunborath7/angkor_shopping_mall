@@ -1,39 +1,21 @@
-/* ===============================
-   Google Font
-=================================*/
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
-
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: "Poppins", sans-serif;
 }
-
 body {
     background: #f4f6f9;
 }
-
-/* ===============================
-   Background
-=================================*/
-
 .login-container {
-
     position: relative;
-
     width: 100%;
-
     min-height: 100vh;
-
     display: flex;
-
     justify-content: center;
-
     align-items: center;
-
     overflow: hidden;
-
     background: linear-gradient(-45deg,
             #1c7e48,
             #2d9954,
@@ -44,393 +26,186 @@ body {
     padding: 20px;
 
 }
-
-/* ===============================
-   Floating Circles
-=================================*/
-
 .circle {
-
     position: absolute;
-
     border-radius: 50%;
-
     background: rgba(255, 255, 255, .12);
-
     animation: float 8s ease-in-out infinite;
-
 }
-
 .circle1 {
-
     width: 280px;
     height: 280px;
-
     left: -100px;
     top: -100px;
-
 }
-
 .circle2 {
-
     width: 220px;
     height: 220px;
-
     right: -70px;
     bottom: 40px;
-
     animation-duration: 12s;
 
 }
-
 .circle3 {
-
     width: 160px;
     height: 160px;
-
     top: 80%;
     left: 25%;
-
     animation-duration: 10s;
 
 }
-
 @keyframes float {
 
     0% {
         transform: translateY(0px);
     }
-
     50% {
         transform: translateY(-35px);
     }
-
     100% {
         transform: translateY(0px);
     }
-
 }
-
-/* ===============================
-   Card
-=================================*/
-
 .login-card {
-
     position: relative;
-
     width: 430px;
-
     max-width: 100%;
-
     padding: 45px;
-
     border-radius: 28px;
-
     background: rgba(255, 255, 255, .18);
-
     backdrop-filter: blur(18px);
-
     border: 1px solid rgba(255, 255, 255, .25);
-
-    box-shadow:
-        0 20px 50px rgba(0, 0, 0, .25);
-
+    box-shadow: 0 20px 50px rgba(0, 0, 0, .25);
     text-align: center;
-
     z-index: 10;
-
 }
-
-/* ===============================
-   Logo
-=================================*/
-
 .logo {
-
     width: 110px;
-
     height: 110px;
-
     object-fit: cover;
-
     border-radius: 50%;
-
     border: 5px solid white;
-
     box-shadow: 0 12px 30px rgba(0, 0, 0, .25);
-
     margin-bottom: 20px;
-
 }
-
-/* ===============================
-   Heading
-=================================*/
-
 .login-card h2 {
-
     color: white;
-
     font-size: 32px;
-
     font-weight: 700;
-
 }
-
 .subtitle {
-
     color: white;
-
     opacity: .9;
-
     font-size: 14px;
-
     margin-top: 10px;
-
     margin-bottom: 35px;
-
 }
-
-/* ===============================
-   Form
-=================================*/
-
 form {
-
     display: flex;
-
     flex-direction: column;
-
 }
-
-/* ===============================
-   Input
-=================================*/
-
 .input-group {
-
     display: flex;
-
     align-items: center;
-
     background: white;
-
     border-radius: 14px;
-
     padding: 0 18px;
-
     margin-bottom: 20px;
-
     transition: .3s;
-
 }
-
 .input-group:hover {
-
     transform: translateY(-2px);
-
     box-shadow: 0 12px 30px rgba(0, 0, 0, .15);
-
 }
-
 .input-group:focus-within {
-
-    box-shadow:
-        0 0 0 4px rgba(129, 239, 89, .35);
-
+    box-shadow:0 0 0 4px rgba(129, 239, 89, .35);
 }
-
 .input-icon {
-
+    margin-top: 15px;
     color: #1c7e48;
-
     font-size: 18px;
-
 }
-
 .input-group input {
-
     flex: 1;
-
     border: none;
-
     outline: none;
-
     padding: 16px;
-
     font-size: 15px;
-
     background: none;
-
 }
-
-/* ===============================
-   Password Toggle
-=================================*/
-
 .password-toggle {
-
+    margin-top: 15px;
     color: #1c7e48;
-
     cursor: pointer;
-
     font-size: 18px;
-
     transition: .3s;
-
 }
-
 .password-toggle:hover {
-
     transform: scale(1.2);
-
 }
-
-/* ===============================
- Remember
-=================================*/
-
 .remember-row {
-
     display: flex;
-
     justify-content: space-between;
-
     align-items: center;
-
 }
-
 .remember-label {
-
     display: flex;
-
     align-items: center;
-
     gap: 8px;
-
     color: white;
-
     font-size: 14px;
-
 }
-
 .remember-label input {
-
     width: 16px;
-
     height: 16px;
-
 }
-
 .forgot-link {
-
     color: white;
-
     text-decoration: none;
-
     font-size: 14px;
-
 }
-
 .forgot-link:hover {
-
     text-decoration: underline;
-
 }
-
-/* ===============================
- Button
-=================================*/
-
 .login-btn {
-
     border: none;
-
     outline: none;
-
     cursor: pointer;
-
     height: 55px;
-
     border-radius: 14px;
-
     color: white;
-
     font-size: 17px;
-
     font-weight: 600;
-
     display: flex;
-
     justify-content: center;
-
     align-items: center;
-
     gap: 10px;
-
-    background: linear-gradient(90deg,
-            #1c7e48,
-            #81ef59);
-
+    background: linear-gradient(90deg,#1c7e48,#81ef59);
     background-size: 200%;
-
     transition: .35s;
-
 }
-
 .login-btn:hover {
-
     background-position: right center;
-
     transform: translateY(-3px);
-
-    box-shadow:
-        0 15px 35px rgba(28, 126, 72, .45);
-
+    box-shadow:0 15px 35px rgba(28, 126, 72, .45);
 }
-
 .login-btn:disabled {
-
     opacity: .75;
-
     cursor: not-allowed;
-
 }
-
-/* ===============================
- Spinner
-=================================*/
-
 .spinner {
-
     width: 20px;
-
     height: 20px;
-
     border: 3px solid rgba(255, 255, 255, .35);
-
     border-top: 3px solid white;
-
     border-radius: 50%;
-
     animation: spin .8s linear infinite;
-
 }
-
 @keyframes spin {
-
     100% {
-
         transform: rotate(360deg);
-
     }
-
 }
-
-/* ===============================
- Footer
-=================================*/
 .footerLinks span{
     color:rgba(255, 255, 255, 0.8);
 }
@@ -439,81 +214,44 @@ form {
     opacity: .9;
     font-size: 13px;
 }
-
-/* ===============================
- Responsive
-=================================*/
-
+.footerLinks button{
+    border-radius: 10px;
+}
 @media(max-width:768px) {
-
     .login-card {
-
         padding: 35px;
-
     }
-
     .logo {
-
         width: 90px;
-
         height: 90px;
-
     }
-
     .login-card h2 {
-
         font-size: 28px;
-
     }
 
 }
-
 @media(max-width:480px) {
-
     .login-card {
-
         padding: 25px;
-
         border-radius: 20px;
-
     }
-
     .logo {
-
         width: 80px;
-
         height: 80px;
-
     }
-
     .login-card h2 {
-
         font-size: 24px;
-
     }
-
     .subtitle {
-
         font-size: 13px;
-
     }
-
     .remember-row {
-
         flex-direction: column;
-
         align-items: flex-start;
-
         gap: 10px;
-
     }
-
     .login-btn {
-
         height: 50px;
-
         font-size: 16px;
-
     }
-
 }

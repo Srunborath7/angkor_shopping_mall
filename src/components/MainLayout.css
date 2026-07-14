@@ -1,0 +1,45 @@
+.layout{
+
+    display:flex;
+
+    min-height:100vh;
+
+    background:#f5f7fb;
+
+}
+
+
+
+/* Right Side */
+
+.main-content{
+
+    flex:1;
+
+    margin-left:260px;
+
+}
+
+
+
+/* Page */
+
+.page-content{
+
+    padding:25px;
+
+}
+
+
+
+/* Responsive */
+
+@media(max-width:900px){
+
+    .main-content{
+
+        margin-left:0;
+
+    }
+
+}

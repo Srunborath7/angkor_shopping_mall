@@ -215,8 +215,6 @@ function LoginAdmin() {
             {loading ? (
               <>
                 <span className="spinner"></span>
-
-                Logging in...
               </>
             ) : (
               <>

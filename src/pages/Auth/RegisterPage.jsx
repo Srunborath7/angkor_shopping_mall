@@ -4,7 +4,9 @@ import {
   FaEnvelope,
   FaPhone,
   FaLock,
-  FaUserTag
+  FaUserTag,
+  FaEye,
+  FaEyeSlash,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +28,7 @@ function RegisterPage({ onNavigate }) {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
+  const [showPassword, setShowPassword] = useState(false);
   useEffect(() => {
     if (hasToken) {
       loadRoles();
@@ -138,13 +140,23 @@ function RegisterPage({ onNavigate }) {
           </div>
           <div className="input-group">
             <FaLock className="input-icon" />
+
             <input
-              type="password"
-              placeholder="Password"
+              type={showPassword ? "text" : "password"}
+              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              autoComplete="current-password"
               required
             />
+
+            <span
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </span>
           </div>
           {
             hasToken && (
@@ -199,11 +211,11 @@ function RegisterPage({ onNavigate }) {
             Sign In
           </button>
         </div>
-         <div className="login-footer">
+        <div className="login-footer">
           <small>© 2026 Admin Dashboard. All rights reserved.</small>
         </div>
       </div>
-      
+
     </div>
   );
 }

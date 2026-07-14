@@ -1,204 +1,276 @@
-import React from "react";
+import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import {
+    FaDollarSign,
+    FaShoppingCart,
+    FaUsers,
+    FaBox,
+    FaChartLine,
+    FaArrowUp,
+    FaCheckCircle,
+    FaClock
+} from "react-icons/fa";
 import { clearAuth } from "../../store/authSlice";
-
 import "./style/Dashboard.css";
 
 function Dashboard() {
-  const auth = useSelector((state) => state.auth);
+    const auth = useSelector(state => state.auth);
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const logout = () => {
+        dispatch(clearAuth());
+        navigate("/auth/login");
+    };
+    const cards = [
 
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+        {
+            title: "Total Revenue",
+            value: "$125,850",
+            percent: "+12%",
+            icon: <FaDollarSign />
+        },
 
-  const logout = () => {
-    dispatch(clearAuth());
-    navigate("/");
-  };
 
-  return (
-    <div className="dashboard">
+        {
+            title: "Total Orders",
+            value: "2,450",
+            percent: "+8%",
+            icon: <FaShoppingCart />
+        },
 
-      {/* Sidebar */}
 
-      <aside className="sidebar">
+        {
+            title: "Customers",
+            value: "8,540",
+            percent: "+15%",
+            icon: <FaUsers />
+        },
 
-        <div className="brand">
-          <div className="brand-logo">A</div>
-          <div>
-            <h3>Admin Panel</h3>
-            <span>Management System</span>
-          </div>
+
+        {
+            title: "Products",
+            value: "560",
+            percent: "+20%",
+            icon: <FaBox />
+        }
+
+    ];
+    const orders = [
+
+        {
+            id: 1,
+            customer: "Dara Srun",
+            product: "iPhone 15 Pro",
+            price: "$1200",
+            status: "Completed"
+        },
+
+
+        {
+            id: 2,
+            customer: "Sokha",
+            product: "ASUS Laptop",
+            price: "$850",
+            status: "Pending"
+        },
+
+
+        {
+            id: 3,
+            customer: "John",
+            product: "AirPods",
+            price: "$250",
+            status: "Completed"
+        }
+
+
+    ];
+    return (
+        <div className="dashboard-layout">
+            <main className="dashboard-main">
+                <section className="dashboard-header">
+                    <h1>
+                        Dashboard
+                    </h1>
+
+                    <p>
+                        Welcome back 👋 Manage your store here
+                    </p>
+
+                </section>
+                <div className="stats-grid">
+                    {
+                        cards.map((item, index) => (
+                            <div
+                                className="stat-card"
+                                key={index}
+                            >
+                                <div className="stat-icon">
+                                    {item.icon}
+                                </div>
+                                <div>
+                                    <h4>
+                                        {item.title}
+                                    </h4>
+                                    <h2>
+                                        {item.value}
+                                    </h2>
+                                    <span>
+                                        <FaArrowUp />
+                                        {item.percent}
+
+                                    </span>
+                                </div>
+                            </div>
+                        ))
+                    }
+                </div>
+                <div className="dashboard-grid">
+                    <div className="panel">
+                        <div className="panel-header">
+                            <h3>
+                                Sales Overview
+                            </h3>
+                            <FaChartLine />
+                        </div>
+                        <div className="chart">
+                            <div className="bar bar1"></div>
+                            <div className="bar bar2"></div>
+                            <div className="bar bar3"></div>
+                            <div className="bar bar4"></div>
+                            <div className="bar bar5"></div>
+                            <div className="bar bar6"></div>
+                        </div>
+                    </div>
+                    <div className="panel">
+                        <h3>
+                            Top Products
+                        </h3>
+                        <div className="product-item">
+                            <div className="product-image">
+                                📱
+                            </div>
+                            <div>
+                                <strong>
+                                    iPhone 15 Pro
+                                </strong>
+                                <p>
+                                    120 sales
+                                </p>
+                            </div>
+                        </div>
+                        <div className="product-item">
+                            <div className="product-image">
+                                💻
+                            </div>
+                            <div>
+
+                                <strong>
+                                    ASUS Laptop
+                                </strong>
+
+                                <p>
+                                    95 sales
+                                </p>
+                            </div>
+                        </div>
+                        <div className="product-item">
+                            <div className="product-image">
+                                🎧
+                            </div>
+                            <div>
+
+                                <strong>
+                                    AirPods
+                                </strong>
+
+                                <p>
+                                    80 sales
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+
+                </div>
+                <div className="panel order-panel">
+                    <h3>
+                        Recent Orders
+                    </h3>
+
+
+
+                    <table>
+
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Customer
+                                </th>
+
+
+                                <th>
+                                    Product
+                                </th>
+
+
+                                <th>
+                                    Price
+                                </th>
+
+
+                                <th>
+                                    Status
+                                </th>
+
+
+                            </tr>
+
+                        </thead>
+                        <tbody>
+                            {
+                                orders.map(order => (
+                                    <tr key={order.id}>
+                                        <td>
+                                            {order.customer}
+                                        </td>
+                                        <td>
+                                            {order.product}
+                                        </td>
+                                        <td>
+                                            {order.price}
+                                        </td>
+                                        <td>
+                                            {
+                                                order.status === "Completed"
+                                                    ?
+                                                    <span className="completed">
+                                                        <FaCheckCircle />
+                                                        Completed
+                                                    </span>
+
+                                                    :
+                                                    <span className="pending">
+                                                        <FaClock />
+                                                        Pending
+                                                    </span>
+                                            }
+                                        </td>
+                                    </tr>
+                                ))
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </main>
         </div>
-
-        <ul className="menu">
-
-          <li className="active">
-            <i className="bi bi-speedometer2"></i>
-            Dashboard
-          </li>
-
-          <li>
-            <i className="bi bi-box"></i>
-            Products
-          </li>
-
-          <li>
-            <i className="bi bi-grid"></i>
-            Categories
-          </li>
-
-          <li>
-            <i className="bi bi-people"></i>
-            Customers
-          </li>
-
-          <li>
-            <i className="bi bi-cart"></i>
-            Orders
-          </li>
-
-          <li>
-            <i className="bi bi-bar-chart"></i>
-            Reports
-          </li>
-
-          <li>
-            <i className="bi bi-gear"></i>
-            Settings
-          </li>
-
-        </ul>
-
-      </aside>
-
-      {/* Main */}
-
-      <div className="main">
-
-        {/* Header */}
-
-        <header className="header">
-
-          <div>
-            <h2>Dashboard</h2>
-            <p>Welcome back 👋</p>
-          </div>
-
-          <div className="user-box">
-
-            <div className="avatar">
-              {auth.role?.charAt(0).toUpperCase()}
-            </div>
-
-            <div>
-              <strong>{auth.role}</strong>
-              <p>Administrator</p>
-            </div>
-
-            <button
-              className="logout-btn"
-              onClick={logout}
-            >
-              Logout
-            </button>
-
-          </div>
-
-        </header>
-
-        {/* Cards */}
-
-        <div className="cards">
-
-          <div className="card">
-            <h4>Total Products</h4>
-            <h1>248</h1>
-            <span>+12%</span>
-          </div>
-
-          <div className="card">
-            <h4>Total Orders</h4>
-            <h1>1,540</h1>
-            <span>+8%</span>
-          </div>
-
-          <div className="card">
-            <h4>Total Customers</h4>
-            <h1>962</h1>
-            <span>+15%</span>
-          </div>
-
-          <div className="card">
-            <h4>Revenue</h4>
-            <h1>$18,250</h1>
-            <span>+20%</span>
-          </div>
-
-        </div>
-
-        {/* Content */}
-
-        <div className="content">
-
-          <div className="table-box">
-
-            <h3>Recent Orders</h3>
-
-            <table>
-
-              <thead>
-
-                <tr>
-                  <th>#</th>
-                  <th>Customer</th>
-                  <th>Status</th>
-                  <th>Total</th>
-                </tr>
-
-              </thead>
-
-              <tbody>
-
-                <tr>
-                  <td>1</td>
-                  <td>John Doe</td>
-                  <td>
-                    <span className="success">Completed</span>
-                  </td>
-                  <td>$250</td>
-                </tr>
-
-                <tr>
-                  <td>2</td>
-                  <td>David</td>
-                  <td>
-                    <span className="pending">Pending</span>
-                  </td>
-                  <td>$140</td>
-                </tr>
-
-                <tr>
-                  <td>3</td>
-                  <td>Smith</td>
-                  <td>
-                    <span className="cancel">Cancelled</span>
-                  </td>
-                  <td>$99</td>
-                </tr>
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-  );
+    );
 }
+
 
 export default Dashboard;
