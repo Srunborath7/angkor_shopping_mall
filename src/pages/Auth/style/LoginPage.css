@@ -141,10 +141,11 @@ form {
 .password-toggle:hover {
     transform: scale(1.2);
 }
-.remember-row {
+.remember-row-login{
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 10px;
 }
 .remember-label {
     display: flex;

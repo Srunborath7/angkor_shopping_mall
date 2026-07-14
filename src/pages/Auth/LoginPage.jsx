@@ -183,7 +183,7 @@ function LoginAdmin() {
 
           {/* Remember */}
 
-          <div className="remember-row">
+          <div className="remember-row-login">
             <label className="remember-label">
               <input
                 type="checkbox"
