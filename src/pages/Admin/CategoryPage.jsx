@@ -66,12 +66,6 @@ function CategoryPage(){
 
     },[]);
 
-
-
-
-
-
-
     const deleteCategory=(id)=>{
 
 
@@ -106,10 +100,6 @@ function CategoryPage(){
 
 
     };
-
-
-
-
 
     const filtered = categories.filter(item=>
 

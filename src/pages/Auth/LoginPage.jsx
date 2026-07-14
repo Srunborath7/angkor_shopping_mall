@@ -62,7 +62,6 @@ function LoginAdmin() {
           remember: form.remember,
         })
       );
-
       Swal.fire({
         icon: "success",
         title: "Login Successful",

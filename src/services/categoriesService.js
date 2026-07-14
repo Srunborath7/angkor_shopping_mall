@@ -7,3 +7,8 @@ export const categoriesApi = (data) => {
         data
     );
 };
+// export const UpdateCategoriesAPI = (data) => {
+//     return api(
+//         `/api/categories/{:id}`
+//     )
+// }

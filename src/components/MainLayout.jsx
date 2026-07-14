@@ -1,32 +1,68 @@
-import React, {useState} from "react";
-import { Outlet } from "react-router-dom";
+import React, { useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+
 import Sidebar from "../layout/Sidebar";
 import Navbar from "../layout/Navbar";
+
+import { clearAuth } from "../store/authSlice";
+
 import "./MainLayout.css";
 
-function MainLayout(){
-    const [open,setOpen] = useState(false);
-    const logout = ()=>{
-        console.log("logout");
+function MainLayout() {
+
+    const [open, setOpen] = useState(false);
+
+    const dispatch = useDispatch();
+
+    const navigate = useNavigate();
+
+    const auth = useSelector(
+        (state) => state.auth
+    );
+
+    const logout = () => {
+
+        dispatch(clearAuth());
+
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        navigate("/auth/login", {
+            replace: true,
+        });
 
     };
+
     return (
+
         <div className="layout">
+
             <Sidebar
                 open={open}
                 setOpen={setOpen}
             />
+
             <div className="main-content">
+
                 <Navbar
                     setOpen={setOpen}
+                    user={auth.user}
                     logout={logout}
                 />
-                <main className="page-content">
-                    <Outlet/>
+
+                <main className="page-content container-fluid">
+
+                    <Outlet />
+
                 </main>
+
             </div>
+
         </div>
+
     );
+
 }
 
 export default MainLayout;
