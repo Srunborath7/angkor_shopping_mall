@@ -104,7 +104,7 @@ form {
     display: flex;
     flex-direction: column;
 }
-.input-group {
+.input-group-login {
     display: flex;
     align-items: center;
     background: white;
@@ -113,19 +113,18 @@ form {
     margin-bottom: 20px;
     transition: .3s;
 }
-.input-group:hover {
+.input-group-login:hover {
     transform: translateY(-2px);
     box-shadow: 0 12px 30px rgba(0, 0, 0, .15);
 }
-.input-group:focus-within {
+.input-group-login:focus-within {
     box-shadow:0 0 0 4px rgba(129, 239, 89, .35);
 }
-.input-icon {
-    margin-top: 15px;
+.input-group-login .input-icon {
     color: #1c7e48;
     font-size: 18px;
 }
-.input-group input {
+.input-group-login input {
     flex: 1;
     border: none;
     outline: none;
@@ -134,7 +133,6 @@ form {
     background: none;
 }
 .password-toggle {
-    margin-top: 15px;
     color: #1c7e48;
     cursor: pointer;
     font-size: 18px;
@@ -253,5 +251,17 @@ form {
     .login-btn {
         height: 50px;
         font-size: 16px;
+    }
+    .input-icon,
+    .password-toggle {
+        font-size: 16px;
+        margin-top: 0;
+        flex-shrink: 0;
+    }
+    .input-group-login input {
+        width: 100%;
+        min-width: 0;
+        padding: 14px 10px;
+        font-size: 14px;
     }
 }

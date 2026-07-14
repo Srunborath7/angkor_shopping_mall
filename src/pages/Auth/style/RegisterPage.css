@@ -169,4 +169,16 @@
     .register-card h2{
         font-size:24px;
     }
+    .input-icon,
+    .password-toggle {
+        font-size: 16px;
+        margin-top: 0;
+        flex-shrink: 0;
+    }
+    .input-group input {
+        width: 100%;
+        min-width: 0;
+        padding: 14px 10px;
+        font-size: 14px;
+    }
 }

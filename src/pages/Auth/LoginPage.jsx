@@ -144,7 +144,7 @@ function LoginAdmin() {
         <form onSubmit={handleLogin}>
           {/* Email */}
 
-          <div className="input-group">
+          <div className="input-group-login">
             <FaEnvelope className="input-icon" />
 
             <input
@@ -160,7 +160,7 @@ function LoginAdmin() {
 
           {/* Password */}
 
-          <div className="input-group">
+          <div className="input-group-login">
             <FaLock className="input-icon" />
 
             <input
