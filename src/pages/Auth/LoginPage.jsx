@@ -8,12 +8,13 @@ import {
   FaEye,
   FaEyeSlash,
   FaSignInAlt,
+  FaGoogle,
+  FaFacebookF,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { api } from "../../api/api";
 import { setAuth } from "../../store/authSlice";
 import "./style/LoginPage.css";
-import logo from "../../assets/logo.jpg";
 
 function LoginAdmin() {
   const dispatch = useDispatch();
@@ -91,158 +92,165 @@ function LoginAdmin() {
   };
 
   return (
-    <div className="login-container">
-      {/* Floating Background */}
-      <div className="circle circle1"></div>
-      <div className="circle circle2"></div>
-      <div className="circle circle3"></div>
+    <div className="auth-page-container">
+      {/* Left Split Panel */}
+      <div className="auth-split-left">
+        <div className="auth-left-content">
+          <div className="auth-logo-brand" onClick={() => navigate("/")}>
+            <span className="auth-logo-icon">🌿</span>
+            <span className="auth-logo-text">AngkorMall</span>
+          </div>
+          
+          <h1 className="auth-left-heading">Cambodia's #1 Shopping Experience</h1>
+          <p className="auth-left-desc">
+            Discover thousands of products with AI-powered recommendations, fast delivery, and secure payments — all in one beautiful place.
+          </p>
 
-      <motion.div
-        className="login-card"
-        initial={{
-          opacity: 0,
-          y: 60,
-          scale: 0.9,
-        }}
-        animate={{
-          opacity: 1,
-          y: 0,
-          scale: 1,
-        }}
-        transition={{
-          duration: 0.8,
-        }}
-      >
-        {/* Logo */}
+          <div className="auth-stats-grid">
+            <div className="auth-stat-item">
+              <span className="auth-stat-number">50K+</span>
+              <span className="auth-stat-label">Products</span>
+            </div>
+            <div className="auth-stat-item">
+              <span className="auth-stat-number">120K+</span>
+              <span className="auth-stat-label">Happy Users</span>
+            </div>
+            <div className="auth-stat-item">
+              <span className="auth-stat-number">99%</span>
+              <span className="auth-stat-label">Satisfaction</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <motion.img
-          src={logo}
-          alt="Logo"
-          className="logo"
-          animate={{
-            y: [0, -8, 0],
-          }}
-          transition={{
-            duration: 3,
-            repeat: Infinity,
-          }}
-        />
-
-        <motion.h2
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
+      {/* Right Split Panel */}
+      <div className="auth-split-right">
+        <motion.div
+          className="auth-form-card"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
-          Welcome Back
-        </motion.h2>
-
-        <p className="subtitle">
-          Sign in to continue to your Admin Dashboard
-        </p>
-
-        <form onSubmit={handleLogin}>
-          {/* Email */}
-
-          <div className="input-group-login">
-            <FaEnvelope className="input-icon" />
-
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="Email Address"
-              autoComplete="email"
-              required
-            />
+          <div className="auth-header">
+            <h2>Welcome Back</h2>
+            <p>Sign in to your account</p>
           </div>
 
-          {/* Password */}
+          <form onSubmit={handleLogin} className="auth-form">
+            {/* Email Field */}
+            <div className="auth-input-wrapper">
+              <label className="auth-input-label">Email Address</label>
+              <div className="auth-input-group">
+                <FaEnvelope className="auth-field-icon" />
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="Email address"
+                  autoComplete="email"
+                  required
+                />
+              </div>
+            </div>
 
-          <div className="input-group-login">
-            <FaLock className="input-icon" />
+            {/* Password Field */}
+            <div className="auth-input-wrapper">
+              <label className="auth-input-label">Password</label>
+              <div className="auth-input-group">
+                <FaLock className="auth-field-icon" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  placeholder="Password"
+                  autoComplete="current-password"
+                  required
+                />
+                <span
+                  className="auth-password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
+            </div>
 
-            <input
-              type={showPassword ? "text" : "password"}
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              placeholder="Password"
-              autoComplete="current-password"
-              required
-            />
+            {/* Remember Me & Forgot Password */}
+            <div className="auth-options-row">
+              <label className="auth-remember-checkbox">
+                <input
+                  type="checkbox"
+                  name="remember"
+                  checked={form.remember}
+                  onChange={handleChange}
+                />
+                <span>Remember me</span>
+              </label>
 
-            <span
-              className="password-toggle"
-              onClick={() => setShowPassword(!showPassword)}
+              <span
+                onClick={() => navigate("/auth/forgot-password")}
+                className="auth-forgot-link"
+              >
+                Forgot Password?
+              </span>
+            </div>
+
+            {/* Sign In Button */}
+            <button
+              type="submit"
+              className="auth-primary-btn"
+              disabled={loading}
             >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
+              {loading ? (
+                <span className="auth-spinner"></span>
+              ) : (
+                <>
+                  <FaSignInAlt />
+                  Sign In
+                </>
+              )}
+            </button>
+
+            {/* Divider */}
+            <div className="auth-divider">
+              <span>or continue with</span>
+            </div>
+
+            {/* Social Logins */}
+            <div className="auth-social-row">
+              <button
+                type="button"
+                className="auth-social-btn"
+                onClick={() => Swal.fire("Social Sign In", "Google integration coming soon", "info")}
+              >
+                <FaGoogle className="google-icon" />
+                <span>Google</span>
+              </button>
+              <button
+                type="button"
+                className="auth-social-btn"
+                onClick={() => Swal.fire("Social Sign In", "Facebook integration coming soon", "info")}
+              >
+                <FaFacebookF className="facebook-icon" />
+                <span>Facebook</span>
+              </button>
+            </div>
+          </form>
+
+          {/* Footer Link */}
+          <div className="auth-footer-link">
+            <span>Don't have an account? </span>
+            <span
+              className="auth-nav-link"
+              onClick={() => navigate("/auth/register")}
+            >
+              Register
             </span>
           </div>
-
-          {/* Remember */}
-
-          <div className="remember-row-login">
-            <label className="remember-label">
-              <input
-                type="checkbox"
-                name="remember"
-                checked={form.remember}
-                onChange={handleChange}
-              />
-
-              <span>Remember me</span>
-            </label>
-
-            <a href="/auth/forgot-password" className="forgot-link">
-              Forgot Password?
-            </a>
-          </div>
-
-          {/* Login Button */}
-
-          <motion.button
-            whileHover={{
-              scale: 1.03,
-            }}
-            whileTap={{
-              scale: 0.96,
-            }}
-            className="login-btn"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span className="spinner"></span>
-              </>
-            ) : (
-              <>
-                <FaSignInAlt />
-
-                Login
-              </>
-            )}
-          </motion.button>
-        </form>
-        <div className="footerLinks">
-          <div>
-          <span>
-            Don't have an account?
-          </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => navigate("/auth/register")}
-          >
-            Sign Up
-          </button>
-        </div>
-        {/* Footer */}
-
-        <div className="login-footer">
-          <small>© 2026 Admin Dashboard. All rights reserved.</small>
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }

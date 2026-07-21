@@ -1,4 +1,6 @@
 .navbar {
+    left:0;
+    top:0;
     height: 75px;
     background: white;
     border-radius: 20px;

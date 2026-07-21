@@ -44,12 +44,14 @@ function MainLayout() {
             />
 
             <div className="main-content">
+                <div className="main-header container">
+                    <Navbar
+                        setOpen={setOpen}
+                        user={auth.user}
+                        logout={logout}
+                    />
 
-                <Navbar
-                    setOpen={setOpen}
-                    user={auth.user}
-                    logout={logout}
-                />
+                </div>
 
                 <main className="page-content container-fluid">
 

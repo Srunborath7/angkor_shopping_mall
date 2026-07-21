@@ -7,16 +7,20 @@
     background:#f5f7fb;
 
 }
-
-
-/* Main content */
-
+.main-header{
+    position:fixed !important;
+    top:0;
+    display: flex;
+    justify-content: center;
+    z-index: 900;
+    width: 100%;
+}
 .main-content{
+    margin-top: 70px;
     flex:1;
     margin-left:280px;
     width:calc(100% - 280px);
     transition:.3s;
-
 }
 
 
