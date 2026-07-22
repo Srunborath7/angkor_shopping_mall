@@ -36,7 +36,11 @@ function Sidebar({ open, setOpen }) {
       path: "/admin/categories"
     },
 
-
+    {
+      name: "Brands",
+      icon: <FaTh />,
+      path: "/admin/brands"
+    },
     {
       name: "Customers",
       icon: <FaUsers />,
@@ -94,8 +98,9 @@ function Sidebar({ open, setOpen }) {
         <button
           className="close-sidebar"
           onClick={() => setOpen(false)}
+          aria-label="Close Sidebar"
         >
-          X
+          <X size={20} />
         </button>
       </div>
       <ul className="sidebar-menu">

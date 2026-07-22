@@ -13,11 +13,9 @@
 
     width:100%;
 
-    padding:25px;
+    padding:0;
 
-    background:#f5f7f6;
-
-    min-height:100vh;
+    background:transparent;
 
 }
 
@@ -547,6 +545,18 @@ td{
 
 
     border-radius:10px;
+
+    background:#e0e0e0;
+
+
+}
+
+
+
+.order-panel::-webkit-scrollbar-track{
+
+
+    background:transparent;
 
 
 }

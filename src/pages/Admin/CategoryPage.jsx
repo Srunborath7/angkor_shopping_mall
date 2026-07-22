@@ -9,37 +9,31 @@ import {
 
 import Swal from "sweetalert2";
 
-import { categoriesApi } from "../../services/categoriesService";
+import { 
+    categoriesApi,
+    createCategoryApi,
+    updateCategoryApi,
+    deleteCategoryApi
+} from "../../services/categoriesService";
 import { useNavigate } from "react-router-dom";
 import "./style/CategoryPage.css";
 
 
 function CategoryPage(){
-
-
     const [categories,setCategories] = useState([]);
-
     const [search,setSearch] = useState("");
-
     const [loading,setLoading] = useState(false);
-
-
-
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState(null);
+    const [name, setName] = useState("");
+    const [note, setNote] = useState("");
     const fetchCategories = async()=>{
-
         try{
-
             setLoading(true);
-
-
             const res = await categoriesApi();
-
-
             setCategories(
                 res.data || []
             );
-
-
         }catch(error){
 
             Swal.fire(
@@ -66,6 +60,42 @@ function CategoryPage(){
 
     },[]);
 
+    const openCreateModal = () => {
+        setSelectedCategory(null);
+        setName("");
+        setNote("");
+        setIsModalOpen(true);
+    };
+
+    const openEditModal = (item) => {
+        setSelectedCategory(item);
+        setName(item.name || "");
+        setNote(item.note || item.description || "");
+        setIsModalOpen(true);
+    };
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+        try {
+            setLoading(true);
+            if (selectedCategory) {
+                // Edit mode
+                await updateCategoryApi(selectedCategory.id, { name, note });
+                Swal.fire("Success", "Category updated successfully", "success");
+            } else {
+                // Add mode
+                await createCategoryApi({ name, note });
+                Swal.fire("Success", "Category created successfully", "success");
+            }
+            setIsModalOpen(false);
+            fetchCategories();
+        } catch (error) {
+            Swal.fire("Error", error.message || "Failed to save category", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const deleteCategory=(id)=>{
 
 
@@ -78,19 +108,29 @@ function CategoryPage(){
             icon:"warning",
 
             showCancelButton:true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
+            confirmButtonText: "Yes, delete it!"
 
 
-        }).then((result)=>{
+        }).then(async (result)=>{
 
 
             if(result.isConfirmed){
-
-
-                Swal.fire(
-                    "Deleted!",
-                    "Category removed",
-                    "success"
-                );
+                try {
+                    setLoading(true);
+                    await deleteCategoryApi(id);
+                    Swal.fire(
+                        "Deleted!",
+                        "Category removed",
+                        "success"
+                    );
+                    fetchCategories();
+                } catch (error) {
+                    Swal.fire("Error", error.message || "Failed to delete category", "error");
+                } finally {
+                    setLoading(false);
+                }
 
 
             }
@@ -142,7 +182,7 @@ return (
 
 
 
-        <button className="add-btn">
+        <button className="add-btn" onClick={openCreateModal}>
 
             <FaPlus/>
 
@@ -322,7 +362,7 @@ return (
                         <td>
 
 
-                            <button className="edit-btn">
+                            <button className="edit-btn" onClick={() => openEditModal(item)}>
 
                                 <FaEdit/>
 
@@ -371,7 +411,45 @@ return (
 
     </div>
 
-
+    {isModalOpen && (
+        <div className="modal-overlay">
+            <div className="modal-container-card">
+                <div className="modal-header">
+                    <h3>{selectedCategory ? "Edit Category" : "Add Category"}</h3>
+                    <button className="close-modal-btn" onClick={() => setIsModalOpen(false)}>&times;</button>
+                </div>
+                <form onSubmit={handleSave}>
+                    <div className="form-group">
+                        <label>Category Name</label>
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            required
+                            placeholder="Enter category name"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Note / Description</label>
+                        <textarea
+                            value={note}
+                            onChange={e => setNote(e.target.value)}
+                            placeholder="Enter description"
+                            rows="4"
+                        />
+                    </div>
+                    <div className="modal-footer">
+                        <button type="button" className="cancel-btn" onClick={() => setIsModalOpen(false)}>
+                            Cancel
+                        </button>
+                        <button type="submit" className="save-btn" disabled={loading}>
+                            {loading ? "Saving..." : "Save"}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    )}
 
 </div>
 

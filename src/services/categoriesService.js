@@ -7,8 +7,26 @@ export const categoriesApi = (data) => {
         data
     );
 };
-// export const UpdateCategoriesAPI = (data) => {
-//     return api(
-//         `/api/categories/{:id}`
-//     )
-// }
+
+export const createCategoryApi = (data) => {
+    return api(
+        "/api/categories",
+        "post",
+        data
+    );
+};
+
+export const updateCategoryApi = (id, data) => {
+    return api(
+        `/api/categories/${id}`,
+        "put",
+        data
+    );
+};
+
+export const deleteCategoryApi = (id) => {
+    return api(
+        `/api/categories/${id}`,
+        "delete"
+    );
+};

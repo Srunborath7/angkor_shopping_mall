@@ -19,13 +19,18 @@ export const api = async (
     }
 
     try {
-        const response = await axios({
+        const axiosConfig = {
             baseURL: config.base_url,
             url,
             method,
-            data,
             headers,
-        });
+        };
+
+        if (data !== null && data !== undefined) {
+            axiosConfig.data = data;
+        }
+
+        const response = await axios(axiosConfig);
 
         return response.data;
     } catch (err) {

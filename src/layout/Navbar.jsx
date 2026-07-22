@@ -3,7 +3,8 @@ import {
     FaBell,
     FaSearch,
     FaBars,
-    FaUserCircle
+    FaUserCircle,
+    FaSignOutAlt
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import "./style/Navbar.css";
@@ -80,8 +81,10 @@ function Navbar({
                 <button
                     className="logout"
                     onClick={handleLogout}
+                    title="Logout"
                 >
-                    Logout
+                    <FaSignOutAlt className="logout-icon" />
+                    <span className="logout-text">Logout</span>
                 </button>
 
             </div>
