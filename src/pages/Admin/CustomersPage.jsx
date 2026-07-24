@@ -47,9 +47,7 @@ function CustomersPage() {
 
     };
     useEffect(() => {
-
         fetchCustomers();
-
     }, []);
 
     const openCreateModal = () => {
@@ -166,8 +164,82 @@ function CustomersPage() {
             )
 
     );
+    const totalCount = customers.length;
+    const activeCount = customers.filter(c => c.is_active).length;
+    const inactiveCount = customers.filter(c => !c.is_active).length;
     return (
         <div className="customer-page">
+            <div className="row g-4 mb-4">
+                {/* Total */}
+                <div className="col-xl-4 col-md-6">
+                    <div className="kpi-card total">
+
+                        <div className="kpi-content">
+
+                            <div>
+                                <p>Total Customers</p>
+                                <h1>{totalCount}</h1>
+                            </div>
+
+                            <div className="icon-box">
+                                <i className="bi bi-people-fill"></i>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+
+
+
+                {/* Active */}
+                <div className="col-xl-4 col-md-6">
+
+                    <div className="kpi-card active-status">
+
+                        <div className="kpi-content">
+
+                            <div>
+                                <p>Active Customers</p>
+                                <h1>{activeCount}</h1>
+                            </div>
+
+                            <div className="icon-box">
+                                <i className="bi bi-person-check-fill"></i>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+
+                {/* Inactive */}
+                <div className="col-xl-4 col-md-6">
+
+                    <div className="kpi-card inactive-status">
+
+                        <div className="kpi-content">
+
+                            <div>
+                                <p>Inactive Customers</p>
+                                <h1>{inactiveCount}</h1>
+                            </div>
+
+                            <div className="icon-box">
+                                <i className="bi bi-person-x-fill"></i>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+            </div>
             <div className="page-header">
                 <div>
                     <h1>Customers</h1>
@@ -185,14 +257,14 @@ function CustomersPage() {
                 <div className="toolbar">
                     <div className="search">
                         <FaSearch />
-                        <input placeholder="Search customer..." value={search} onChange={ e => setSearch(e.target.value)}/>
+                        <input placeholder="Search customer..." value={search} onChange={e => setSearch(e.target.value)} />
                     </div>
                 </div>
                 {
                     loading ?
                         <div className="loading">
                             Loading...
-                        </div>:
+                        </div> :
                         <table>
                             <thead>
                                 <tr>
@@ -228,15 +300,14 @@ function CustomersPage() {
                                                     {item.phone}
                                                 </td>
                                                 <td>
-                                                    <span className={item.is_active
-                                                        ? "active"
-                                                        : "inactive"}>
-
-                                                        {item.is_active
-                                                            ?
-                                                            "Active"
-                                                            :
-                                                            "Inactive"}
+                                                    <span
+                                                        className={
+                                                            item.is_active
+                                                                ? "status-badge active"
+                                                                : "status-badge inactive"
+                                                        }
+                                                    >
+                                                        {item.is_active ? "Active" : "Inactive"}
                                                     </span>
                                                 </td>
                                                 <td>
@@ -261,30 +332,30 @@ function CustomersPage() {
                     <div className="modal-container-card">
                         <div className="modal-header">
                             <h3>
-                                {selectedCustomer?"Edit Customer":"Add Customer"}
+                                {selectedCustomer ? "Edit Customer" : "Add Customer"}
                             </h3>
                             <button className="close-modal-btn" onClick={() => setIsModalOpen(false)}>&times;</button>
                         </div>
                         <form onSubmit={handleSave}>
                             <div className="form-group">
                                 <label>Name</label>
-                                <input name="name" value={form.name} onChange={handleChange}required />
+                                <input name="name" value={form.name} onChange={handleChange} required />
                             </div>
                             <div className="form-group">
                                 <label>
                                     Email
                                 </label>
-                                <input type="email" name="email" value={form.email}onChange={handleChange}required />
+                                <input type="email" name="email" value={form.email} onChange={handleChange} required />
                             </div>
                             <div className="form-group">
                                 <label>Phone</label>
-                                <input name="phone" value={form.phone}onChange={handleChange}/>
+                                <input name="phone" value={form.phone} onChange={handleChange} />
                             </div>
                             {
                                 !selectedCustomer &&
                                 <div className="form-group">
                                     <label>Password</label>
-                                    <input type="password" name="password" value={form.password} onChange={handleChange}  required/>
+                                    <input type="password" name="password" value={form.password} onChange={handleChange} required />
                                 </div>
                             }
                             <div className="modal-footer">
@@ -292,7 +363,7 @@ function CustomersPage() {
                                     Cancel
                                 </button>
                                 <button type="submit" className="save-btn" disabled={loading}>
-                                    {loading?"Saving...":"Save"}
+                                    {loading ? "Saving..." : "Save"}
                                 </button>
                             </div>
                         </form>

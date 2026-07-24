@@ -1,27 +1,192 @@
 .customer-page{
+    padding:25px;
+}
+.page-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+}
 
-    padding:0;
+/* KPI CARD */
+
+.kpi-card{
+
+    height:160px;
+    border-radius:20px;
+    padding:25px;
+    color:white;
+    box-shadow:0 10px 25px rgba(0,0,0,.12);
+    transition:.3s;
+
+}
+
+
+.kpi-card:hover{
+
+    transform:translateY(-7px);
+
+}
+
+
+/* Colors */
+
+.total{
+
+    background:#3B82F6;
+
+}
+
+
+.active-status{
+
+    background:#10B981;
+
+}
+
+
+.inactive-status{
+
+    background:#EF4444;
 
 }
 
 
 
-.page-header{
+.kpi-content{
 
-
+    height:100%;
     display:flex;
-
     justify-content:space-between;
-
     align-items:center;
 
-    margin-bottom:25px;
+}
 
+
+
+.kpi-content p{
+
+    margin:0;
+    font-size:16px;
+    opacity:.9;
 
 }
 
 
 
+.kpi-content h1{
+
+    margin-top:10px;
+    font-size:45px;
+    font-weight:700;
+
+}
+
+
+
+/* ICON */
+
+.icon-box{
+
+    width:75px;
+    height:75px;
+
+    border-radius:50%;
+
+    background:rgba(255,255,255,.25);
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+}
+
+
+.icon-box i{
+
+    font-size:35px;
+
+}
+
+
+
+
+/* STATUS BADGE */
+
+.active-badge{
+
+    background:#10B981;
+    padding:8px 15px;
+    border-radius:20px;
+
+}
+
+
+.inactive-badge{
+
+    background:#EF4444;
+    padding:8px 15px;
+    border-radius:20px;
+
+}
+
+
+
+/* Mobile */
+
+@media(max-width:768px){
+
+    .kpi-content h1{
+
+        font-size:35px;
+
+    }
+
+
+    .icon-box{
+
+        width:60px;
+        height:60px;
+
+    }
+
+
+    .icon-box i{
+
+        font-size:25px;
+
+    }
+
+}
+.status-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    display: inline-block;
+    text-align: center;
+}
+
+
+/* Active */
+.status-badge.active {
+    background: #10B981;
+    color: white;
+}
+
+
+/* Inactive */
+.status-badge.inactive {
+    background: #EF4444;
+    color: white;
+}
+
+
+/* Hover */
+.status-badge:hover {
+    opacity: .85;
+    cursor: pointer;
+}
 .page-header h1{
 
     color:#1c7e48;

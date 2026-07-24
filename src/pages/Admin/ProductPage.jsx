@@ -106,7 +106,7 @@ function ProductPage() {
 
     const handleSave = async (e) => {
         e.preventDefault();
-        
+
         const formData = new FormData();
         formData.append("name", name);
         formData.append("description", description);
@@ -167,9 +167,74 @@ function ProductPage() {
         item.category?.name?.toLowerCase().includes(search.toLowerCase()) ||
         item.brand?.name?.toLowerCase().includes(search.toLowerCase())
     );
-
+    const totalProductCount = products.length;
+    const activeProductCount = products.filter(product => product.is_active).length;
+    const inactiveProductCount = products.filter(product => !product.is_active).length;
     return (
         <div className="product-page">
+            <div>
+                <div className="row g-4 mb-4">
+
+                    {/* Total Products */}
+                    <div className="col-xl-4 col-md-6">
+                        <div className="kpi-card total">
+
+                            <div className="kpi-content">
+
+                                <div>
+                                    <p>Total Products</p>
+                                    <h1>{totalProductCount}</h1>
+                                </div>
+
+                                <div className="icon-box">
+                                    <i className="bi bi-box-seam-fill"></i>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+                    {/* Active Products */}
+                    <div className="col-xl-4 col-md-6">
+
+                        <div className="kpi-card active-status">
+
+                            <div className="kpi-content">
+
+                                <div>
+                                    <p>Active Products</p>
+                                    <h1>{activeProductCount}</h1>
+                                </div>
+
+                                <div className="icon-box">
+                                    <i className="bi bi-check-circle-fill"></i>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                    {/* Inactive Products */}
+                    <div className="col-xl-4 col-md-6">
+
+                        <div className="kpi-card inactive-status">
+
+                            <div className="kpi-content">
+
+                                <div>
+                                    <p>Inactive Products</p>
+                                    <h1>{inactiveProductCount}</h1>
+                                </div>
+
+                                <div className="icon-box">
+                                    <i className="bi bi-x-circle-fill"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div className="page-header">
                 <div>
                     <h1>Products</h1>
@@ -213,7 +278,7 @@ function ProductPage() {
                             <tbody>
                                 {filteredProducts.map((item, index) => (
                                     <tr key={item.id}>
-                                         <td>{index + 1}</td>
+                                        <td>{index + 1}</td>
                                         <td>
                                             <div className="product-table-image">
                                                 {item.image_url ? (
