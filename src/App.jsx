@@ -12,7 +12,7 @@ import MainLayout from "./components/MainLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import BrandPage from "./pages/Admin/BrandPage";
 import NotFound from "./components/NotFound";
-import CustomersPage from "./pages/Admin/customersPage";
+import CustomersPage from "./pages/Admin/CustomersPage";
 
 function App() {
   return (
