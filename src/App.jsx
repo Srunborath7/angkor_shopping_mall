@@ -11,6 +11,7 @@ import ProductPage from "./pages/Admin/ProductPage";
 import MainLayout from "./components/MainLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import BrandPage from "./pages/Admin/BrandPage";
+import NotFound from "./components/NotFound";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/auth/login" element={<LoginAdmin />} />
         <Route path="/auth/register" element={<RegisterPage />} />
         <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+        <Route path="*" element={<NotFound/>}/>
         <Route element={<ProtectedRoute />}>
           <Route path="/admin" element={<MainLayout />}>
             <Route path="dashboard" element={<Dashboard />} />

@@ -1,0 +1,324 @@
+.not-found-page {
+    min-height: 100vh;
+    width: 100%;
+    overflow: hidden;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    background:
+        linear-gradient(
+            135deg,
+            #4E7D4E 0%,
+            #2e522e 100%
+        );
+
+    position: relative;
+    font-family: "Poppins", sans-serif;
+}
+
+
+/* Floating Background */
+
+.background-shapes span {
+    position: absolute;
+    display: block;
+
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+
+    animation: float 12s infinite ease-in-out;
+}
+
+
+.background-shapes span:nth-child(1){
+    width:180px;
+    height:180px;
+    top:10%;
+    left:10%;
+}
+
+
+.background-shapes span:nth-child(2){
+    width:250px;
+    height:250px;
+    right:8%;
+    bottom:15%;
+    animation-delay:3s;
+}
+
+
+.background-shapes span:nth-child(3){
+    width:90px;
+    height:90px;
+    right:30%;
+    top:15%;
+    animation-delay:5s;
+}
+
+
+@keyframes float {
+
+    0%,100%{
+        transform:translateY(0);
+    }
+
+    50%{
+        transform:translateY(-40px);
+    }
+}
+
+
+
+
+/* Main */
+
+.not-found-content {
+
+    text-align:center;
+    color:white;
+
+    z-index:2;
+
+    animation:fadeUp 1s ease;
+}
+
+
+@keyframes fadeUp {
+
+    from{
+        opacity:0;
+        transform:translateY(50px);
+    }
+
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+
+}
+
+
+
+/* 404 Number */
+
+.error-number {
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    gap:20px;
+
+    font-size:160px;
+    font-weight:800;
+
+    line-height:1;
+
+    text-shadow:
+    0 20px 40px rgba(0,0,0,.25);
+
+}
+
+
+.error-number span {
+
+    animation:
+    bounce 3s infinite;
+
+}
+
+
+
+@keyframes bounce {
+
+    0%,100%{
+        transform:translateY(0);
+    }
+
+    50%{
+        transform:translateY(-15px);
+    }
+
+}
+
+
+
+
+/* Planet */
+
+.planet {
+
+    width:120px;
+    height:120px;
+
+    background:
+    radial-gradient(
+        circle at 30% 30%,
+        #ffffff,
+        #d5e8d5
+    );
+
+
+    border-radius:50%;
+
+    position:relative;
+
+    animation:
+    rotatePlanet 8s linear infinite;
+
+}
+
+
+
+.planet-ring {
+
+    position:absolute;
+
+    width:160px;
+    height:45px;
+
+    border:6px solid white;
+
+    border-radius:50%;
+
+    top:35px;
+    left:-20px;
+
+    transform:rotate(-20deg);
+
+}
+
+
+
+@keyframes rotatePlanet {
+
+    from{
+        transform:rotate(0deg);
+    }
+
+    to{
+        transform:rotate(360deg);
+    }
+
+}
+
+
+
+/* Text */
+
+.not-found-content h1 {
+
+    font-size:42px;
+
+    margin:25px 0 10px;
+
+}
+
+
+
+.not-found-content p {
+
+    max-width:450px;
+
+    margin:auto;
+
+    opacity:.85;
+
+    font-size:17px;
+
+}
+
+
+
+/* Button */
+
+.home-btn {
+
+    margin-top:35px;
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:10px;
+
+
+    padding:14px 35px;
+
+    border-radius:50px;
+
+    background:white;
+
+    color:#2e522e;
+
+    text-decoration:none;
+
+    font-weight:600;
+
+
+    transition:.4s;
+
+    box-shadow:
+    0 15px 35px rgba(0,0,0,.25);
+
+}
+
+
+
+.home-btn span {
+
+    transition:.3s;
+
+}
+
+
+
+.home-btn:hover {
+
+    transform:
+    translateY(-5px)
+    scale(1.05);
+
+}
+
+
+
+.home-btn:hover span {
+
+    transform:translateX(-5px);
+
+}
+
+
+
+
+/* Mobile */
+
+@media(max-width:600px){
+
+    .error-number{
+        font-size:90px;
+        gap:10px;
+    }
+
+
+    .planet{
+        width:70px;
+        height:70px;
+    }
+
+
+    .planet-ring{
+        width:100px;
+        height:30px;
+        top:20px;
+    }
+
+
+    .not-found-content h1{
+        font-size:30px;
+    }
+
+}
