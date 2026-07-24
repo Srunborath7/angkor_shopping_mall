@@ -768,6 +768,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   height: 44px;
+  line-clamp: 2;
 }
 
 .product-rating-row {
