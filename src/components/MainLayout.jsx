@@ -44,7 +44,7 @@ function MainLayout() {
             />
 
             <div className="main-content">
-                <div className="main-header container">
+                <div className="main-header">
                     <Navbar
                         setOpen={setOpen}
                         user={auth.user}
@@ -53,7 +53,7 @@ function MainLayout() {
 
                 </div>
 
-                <main className="page-content container-fluid">
+                <main className="page-content container">
 
                     <Outlet />
 

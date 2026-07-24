@@ -199,6 +199,7 @@ function ProductPage() {
                         <table>
                             <thead>
                                 <tr>
+                                    <th>#</th>
                                     <th>Image</th>
                                     <th>Product Name</th>
                                     <th>Category</th>
@@ -210,8 +211,9 @@ function ProductPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {filteredProducts.map((item) => (
+                                {filteredProducts.map((item, index) => (
                                     <tr key={item.id}>
+                                         <td>{index + 1}</td>
                                         <td>
                                             <div className="product-table-image">
                                                 {item.image_url ? (

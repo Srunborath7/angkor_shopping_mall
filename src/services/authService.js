@@ -11,8 +11,6 @@ export const registerApi = (data) => {
     );
 };
 
-
-
 // Get Roles (Admin only)
 export const getRolesApi = () => {
 

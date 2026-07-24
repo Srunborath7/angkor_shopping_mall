@@ -8,9 +8,10 @@ import {
   FaChartBar,
   FaCog,
   FaTimes,
-  FaStore
+  FaStore,
+  FaBookmark
 } from "react-icons/fa";
-
+import logo from "../assets/logo.jpg";
 import { NavLink } from "react-router-dom";
 import { X } from "lucide-react";
 import "./style/Sidebar.css";
@@ -38,7 +39,7 @@ function Sidebar({ open, setOpen }) {
 
     {
       name: "Brands",
-      icon: <FaTh />,
+      icon: <FaBookmark/>,
       path: "/admin/brands"
     },
     {
@@ -84,11 +85,11 @@ function Sidebar({ open, setOpen }) {
       <div className="sidebar-header">
         <div className="brand">
           <div className="brand-icon">
-            <FaStore />
+             <img src={logo} alt="AngkorMall Logo" />
           </div>
           <div>
             <h2>
-              Angkor Mall
+              Angkor Shopping Mall
             </h2>
             <span>
               Admin Panel

@@ -12,6 +12,7 @@ import MainLayout from "./components/MainLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import BrandPage from "./pages/Admin/BrandPage";
 import NotFound from "./components/NotFound";
+import CustomersPage from "./pages/Admin/customersPage";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
             <Route path="products" element={<ProductPage />} />
             <Route path="categories" element={<CategoryPage />} />
             <Route path="brands" element={<BrandPage />} />
+            <Route path="customers" element={<CustomersPage />} />
           </Route>
         </Route>
       </Routes>
