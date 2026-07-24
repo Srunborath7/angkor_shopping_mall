@@ -17,6 +17,7 @@ import Swal from "sweetalert2";
 import { clearAuth } from "../store/authSlice";
 import CartDrawer from "./CartDrawer";
 import "./Header.css";
+import logo from "../assets/logo.jpg";
 
 function Header() {
   const navigate = useNavigate();
@@ -94,9 +95,11 @@ function Header() {
     <header className="home-header">
       <div className="header-container">
         {/* Logo Section */}
-        <div className="logo-section" onClick={() => navigate("/")}>
-          <span className="logo-icon">🌿</span>
-          <span className="logo-text">Angkor Mall</span>
+        <div className="home-logo-brand" onClick={() => navigate("/")}>
+          <span className="home-logo-icon">
+            <img src={logo} alt="AngkorMall Logo" />
+          </span>
+          <span className="auth-logo-text">AngkorMall</span>
         </div>
 
         {/* Desktop Navigation */}

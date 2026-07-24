@@ -15,6 +15,7 @@ import Swal from "sweetalert2";
 import { api } from "../../api/api";
 import { setAuth } from "../../store/authSlice";
 import "./style/LoginPage.css";
+import  logo  from "../../assets/logo.jpg";
 
 function LoginAdmin() {
   const dispatch = useDispatch();
@@ -97,13 +98,15 @@ function LoginAdmin() {
       <div className="auth-split-left">
         <div className="auth-left-content">
           <div className="auth-logo-brand" onClick={() => navigate("/")}>
-            <span className="auth-logo-icon">🌿</span>
-            <span className="auth-logo-text">AngkorMall</span>
+            <span className="auth-logo-icon">
+              <img src={logo} alt="AngkorMall Logo" />
+            </span>
+            <span className="auth-logo-text">Angkor Shopping Mall</span>
           </div>
-          
+
           <h1 className="auth-left-heading">Cambodia's #1 Shopping Experience</h1>
           <p className="auth-left-desc">
-            Discover thousands of products with AI-powered recommendations, fast delivery, and secure payments — all in one beautiful place.
+            Discover thousands of products with AI-powered recommendations, fast delivery, and secure payments all in one beautiful place.
           </p>
 
           <div className="auth-stats-grid">

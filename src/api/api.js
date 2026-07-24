@@ -11,8 +11,11 @@ export const api = async (
 
     const headers = {
         Accept: "application/json",
-        "Content-Type": "application/json",
     };
+
+    if (!(data instanceof FormData)) {
+        headers["Content-Type"] = "application/json";
+    }
 
     if (token) {
         headers.Authorization = `Bearer ${token}`;

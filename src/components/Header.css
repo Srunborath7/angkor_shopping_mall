@@ -24,7 +24,19 @@
   gap: 8px;
   cursor: pointer;
 }
+.home-logo-icon img {
+  width: 50px;
+  height: 50px;
+  border-radius: 5px;
+  object-fit: contain;
+}
 
+.home-logo-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
 .logo-icon {
   font-size: 26px;
 }

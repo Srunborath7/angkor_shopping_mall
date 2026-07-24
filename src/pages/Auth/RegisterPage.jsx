@@ -16,6 +16,7 @@ import {
   getRolesApi
 } from "../../services/authService";
 import "./style/RegisterPage.css";
+import  logo  from "../../assets/logo.jpg";
 
 function RegisterPage() {
   const token = localStorage.getItem("token");
@@ -122,8 +123,10 @@ function RegisterPage() {
       <div className="auth-split-left">
         <div className="auth-left-content">
           <div className="auth-logo-brand" onClick={() => navigate("/")}>
-            <span className="auth-logo-icon">🌿</span>
-            <span className="auth-logo-text">AngkorMall</span>
+            <span className="auth-logo-icon">
+              <img src={logo} alt="AngkorMall Logo" />
+            </span>
+            <span className="auth-logo-text">Angkor Shopping Mall</span>
           </div>
 
           <h1 className="auth-left-heading">Cambodia's #1 Shopping Experience</h1>

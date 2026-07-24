@@ -35,6 +35,8 @@ function ProductPage() {
     const [brandId, setBrandId] = useState("");
     const [imageUrl, setImageUrl] = useState("");
     const [isActive, setIsActive] = useState(true);
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState("");
 
     const fetchData = async () => {
         try {
@@ -69,6 +71,8 @@ function ProductPage() {
         setBrandId(brands[0]?.id || "");
         setImageUrl("");
         setIsActive(true);
+        setImageFile(null);
+        setImagePreview("");
         setIsModalOpen(true);
     };
 
@@ -82,30 +86,46 @@ function ProductPage() {
         setBrandId(item.brand_id || "");
         setImageUrl(item.image_url || "");
         setIsActive(item.is_active !== undefined ? item.is_active : true);
+        setImageFile(null);
+        setImagePreview(item.image_url || "");
         setIsModalOpen(true);
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setImageFile(file);
+            setImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setImageFile(null);
+        setImagePreview("");
     };
 
     const handleSave = async (e) => {
         e.preventDefault();
         
-        const payload = {
-            name,
-            description,
-            price: Number(price),
-            stock_quantity: Number(stockQuantity),
-            category_id: categoryId,
-            brand_id: brandId,
-            image_url: imageUrl || "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400",
-            is_active: isActive
-        };
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("description", description);
+        formData.append("price", Number(price));
+        formData.append("stock_quantity", Number(stockQuantity));
+        formData.append("category_id", categoryId);
+        formData.append("brand_id", brandId);
+        formData.append("is_active", isActive);
+        if (imageFile) {
+            formData.append("image", imageFile);
+        }
 
         try {
             setLoading(true);
             if (selectedProduct) {
-                await updateProductApi(selectedProduct.id, payload);
+                await updateProductApi(selectedProduct.id, formData);
                 Swal.fire("Success", "Product updated successfully", "success");
             } else {
-                await createProductApi(payload);
+                await createProductApi(formData);
                 Swal.fire("Success", "Product created successfully", "success");
             }
             setIsModalOpen(false);
@@ -320,13 +340,31 @@ function ProductPage() {
                                     </div>
                                 </div>
                                 <div className="form-group">
-                                    <label>Image URL</label>
-                                    <input
-                                        type="url"
-                                        value={imageUrl}
-                                        onChange={e => setImageUrl(e.target.value)}
-                                        placeholder="https://example.com/image.jpg"
-                                    />
+                                    <label>Product Image</label>
+                                    <div className="image-upload-container">
+                                        {imagePreview ? (
+                                            <div className="image-preview-wrapper">
+                                                <img src={imagePreview} alt="Preview" className="image-upload-preview" />
+                                                <button type="button" className="remove-image-btn" onClick={handleRemoveImage}>
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div className="image-upload-dropzone">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleFileChange}
+                                                    id="product-image-file"
+                                                    className="file-input-hidden"
+                                                />
+                                                <label htmlFor="product-image-file" className="file-input-label">
+                                                    <FaPlus />
+                                                    <span>Upload Image</span>
+                                                </label>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="form-group">
                                     <label>Description</label>
