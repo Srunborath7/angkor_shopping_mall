@@ -268,13 +268,11 @@ th, td {
 .form-grid {
     display: flex;
     flex-direction: column;
-    gap: 16px;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 6px;
 }
 
 .form-row-2 {
@@ -680,7 +678,9 @@ th, td {
         gap: 16px;
         margin-top: 10px;
     }
-
+    .column-selector-wrapper{
+        display: none;
+    }
     .product-card-item {
         background: white;
         border: 1px solid #e2e8f0;

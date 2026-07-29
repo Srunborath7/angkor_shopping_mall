@@ -32,7 +32,7 @@ function CategoryPage() {
         hash: true,
         name: true,
         description: true,
-        productsCount: true,
+        product_count: true,
         actions: true
     });
 
@@ -40,7 +40,7 @@ function CategoryPage() {
         hash: "#",
         name: "Category Name",
         description: "Description",
-        productsCount: "Products",
+        product_count: "Products",
         actions: "Action"
     };
 
@@ -192,7 +192,7 @@ function CategoryPage() {
                                     {visibleColumns.hash && <th>#</th>}
                                     {visibleColumns.name && <th>Category Name</th>}
                                     {visibleColumns.description && <th>Description</th>}
-                                    {visibleColumns.productsCount && <th>Products</th>}
+                                    {visibleColumns.product_count && <th>Products</th>}
                                     {visibleColumns.actions && <th>Action</th>}
                                 </tr>
                             </thead>
@@ -211,10 +211,10 @@ function CategoryPage() {
                                         {visibleColumns.description && (
                                             <td>{item.description || item.note || "-"}</td>
                                         )}
-                                        {visibleColumns.productsCount && (
+                                        {visibleColumns.product_count && (
                                             <td>
                                                 <span className="products-count-badge">
-                                                    {item.products || 0} items
+                                                    {item.product_count || 0} items
                                                 </span>
                                             </td>
                                         )}
