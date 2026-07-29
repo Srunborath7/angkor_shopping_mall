@@ -4,7 +4,8 @@ import {
     FaSearch,
     FaEdit,
     FaTrash,
-    FaBookmark
+    FaBookmark,
+    FaSlidersH
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -13,12 +14,29 @@ import {
     updateBrandApi,
     deleteBrandApi
 } from "../../services/brandsService";
+import Modal from "../../components/Modal";
 import "./style/BrandPage.css";
 
 function BrandPage() {
     const [brands, setBrands] = useState([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(false);
+
+    // Column visibility states
+    const [isColDropdownOpen, setIsColDropdownOpen] = useState(false);
+    const [visibleColumns, setVisibleColumns] = useState({
+        hash: true,
+        name: true,
+        description: true,
+        actions: true
+    });
+
+    const colHeaders = {
+        hash: "#",
+        name: "Brand Name",
+        description: "Description",
+        actions: "Action"
+    };
 
     // Modal & Form States
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,6 +59,13 @@ function BrandPage() {
     useEffect(() => {
         fetchBrands();
     }, []);
+
+    const toggleColumn = (col) => {
+        setVisibleColumns(prev => ({
+            ...prev,
+            [col]: !prev[col]
+        }));
+    };
 
     const openCreateModal = () => {
         setSelectedBrand(null);
@@ -129,42 +154,76 @@ function BrandPage() {
                             onChange={e => setSearch(e.target.value)}
                         />
                     </div>
+                    
+                    {/* Column Select Filter */}
+                    <div className="column-selector-wrapper">
+                        <button 
+                            className="column-filter-toggle-btn" 
+                            onClick={() => setIsColDropdownOpen(!isColDropdownOpen)}
+                        >
+                            <FaSlidersH /> Columns
+                        </button>
+                        {isColDropdownOpen && (
+                            <div className="column-dropdown-menu">
+                                <h3>Toggle Columns</h3>
+                                <div className="column-dropdown-list">
+                                    {Object.keys(visibleColumns).map(col => (
+                                        <label key={col} className="column-checkbox-row">
+                                            <input 
+                                                type="checkbox"
+                                                checked={visibleColumns[col]}
+                                                onChange={() => toggleColumn(col)}
+                                            />
+                                            <span>{colHeaders[col]}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {loading && brands.length === 0 ? (
                     <div className="loading">Loading...</div>
                 ) : (
                     <div className="brand-table-wrapper">
-                        <table>
+                        {/* Table view (Desktop/iPad) */}
+                        <table className="desktop-table">
                             <thead>
                                 <tr>
-                                    <th>#</th>
-                                    <th>Brand</th>
-                                    <th>Description</th>
-                                    <th>Action</th>
+                                    {visibleColumns.hash && <th>#</th>}
+                                    {visibleColumns.name && <th>Brand Name</th>}
+                                    {visibleColumns.description && <th>Description</th>}
+                                    {visibleColumns.actions && <th>Action</th>}
                                 </tr>
                             </thead>
                             <tbody>
                                 {filtered.map((item, index) => (
                                     <tr key={item.id}>
-                                        <td>{index + 1}</td>
-                                        <td>
-                                            <div className="brand-name">
-                                                <div className="brand-icon">
-                                                    <FaBookmark />
+                                        {visibleColumns.hash && <td>{index + 1}</td>}
+                                        {visibleColumns.name && (
+                                            <td>
+                                                <div className="brand-name">
+                                                    <div className="brand-icon">
+                                                        <FaBookmark />
+                                                    </div>
+                                                    <strong>{item.name}</strong>
                                                 </div>
-                                                {item.name}
-                                            </div>
-                                        </td>
-                                        <td>{item.description || "-"}</td>
-                                        <td>
-                                            <button className="edit-btn" onClick={() => openEditModal(item)}>
-                                                <FaEdit />
-                                            </button>
-                                            <button className="delete-btn" onClick={() => deleteBrand(item.id)}>
-                                                <FaTrash />
-                                            </button>
-                                        </td>
+                                            </td>
+                                        )}
+                                        {visibleColumns.description && <td>{item.description || "-"}</td>}
+                                        {visibleColumns.actions && (
+                                            <td>
+                                                <div className="table-row-actions">
+                                                    <button className="edit-btn" onClick={() => openEditModal(item)} title="Edit">
+                                                        <FaEdit />
+                                                    </button>
+                                                    <button className="delete-btn" onClick={() => deleteBrand(item.id)} title="Delete">
+                                                        <FaTrash />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                                 {filtered.length === 0 && (
@@ -174,49 +233,83 @@ function BrandPage() {
                                 )}
                             </tbody>
                         </table>
+
+                        {/* Kanban cards view (Mobile) */}
+                        <div className="mobile-cards-container">
+                            {filtered.map((item) => (
+                                <div className="kanban-card product-card-item" key={item.id}>
+                                    <div className="kanban-card-header">
+                                        <div className="product-preview-info">
+                                            <div className="mobile-product-icon-placeholder"><FaBookmark /></div>
+                                            <div>
+                                                <h4 className="mobile-product-name">{item.name}</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="kanban-card-body">
+                                        {item.description && (
+                                            <div className="mobile-product-description">
+                                                <small>{item.description}</small>
+                                            </div>
+                                        )}
+                                        <div className="mobile-card-actions">
+                                            <button className="edit-btn" onClick={() => openEditModal(item)}>
+                                                <FaEdit /> Edit
+                                            </button>
+                                            <button className="delete-btn" onClick={() => deleteBrand(item.id)}>
+                                                <FaTrash /> Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {filtered.length === 0 && (
+                                <div className="no-data">No brands found</div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
 
-            {isModalOpen && (
-                <div className="modal-overlay">
-                    <div className="modal-container-card">
-                        <div className="modal-header">
-                            <h3>{selectedBrand ? "Edit Brand" : "Add Brand"}</h3>
-                            <button className="close-modal-btn" onClick={() => setIsModalOpen(false)}>&times;</button>
+            {/* Modal integration */}
+            <Modal 
+                isOpen={isModalOpen} 
+                onClose={() => setIsModalOpen(false)} 
+                title={selectedBrand ? "Edit Brand" : "Add Brand"}
+                size="md"
+            >
+                <form onSubmit={handleSave} className="product-form">
+                    <div className="form-grid">
+                        <div className="form-group">
+                            <label>Brand Name</label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                required
+                                placeholder="Enter brand name"
+                            />
                         </div>
-                        <form onSubmit={handleSave}>
-                            <div className="form-group">
-                                <label>Brand Name</label>
-                                <input
-                                    type="text"
-                                    value={name}
-                                    onChange={e => setName(e.target.value)}
-                                    required
-                                    placeholder="Enter brand name"
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label>Description</label>
-                                <textarea
-                                    value={description}
-                                    onChange={e => setDescription(e.target.value)}
-                                    placeholder="Enter brand description"
-                                    rows="4"
-                                />
-                            </div>
-                            <div className="modal-footer">
-                                <button type="button" className="cancel-btn" onClick={() => setIsModalOpen(false)}>
-                                    Cancel
-                                </button>
-                                <button type="submit" className="save-btn" disabled={loading}>
-                                    {loading ? "Saving..." : "Save"}
-                                </button>
-                            </div>
-                        </form>
+                        <div className="form-group">
+                            <label>Description</label>
+                            <textarea
+                                value={description}
+                                onChange={e => setDescription(e.target.value)}
+                                placeholder="Enter brand description"
+                                rows="4"
+                            />
+                        </div>
                     </div>
-                </div>
-            )}
+                    <div className="modal-footer">
+                        <button type="button" className="cancel-btn" onClick={() => setIsModalOpen(false)}>
+                            Cancel
+                        </button>
+                        <button type="submit" className="save-btn" disabled={loading}>
+                            {loading ? "Saving..." : "Save Brand"}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 }

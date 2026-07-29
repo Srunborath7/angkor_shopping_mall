@@ -53,12 +53,14 @@ function LoginAdmin() {
 
       const user = res.data.user;
       const accessToken = res.data.accessToken;
+      const refreshToken = res.data.refreshToken || res.data.refresh_token || null;
 
       const role = user.roles?.[0]?.name || "customer";
 
       dispatch(
         setAuth({
           token: accessToken,
+          refreshToken,
           role,
           user,
           remember: form.remember,

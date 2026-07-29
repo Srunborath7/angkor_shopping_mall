@@ -4,7 +4,8 @@ import {
     FaSearch,
     FaEdit,
     FaTrash,
-    FaBox
+    FaBox,
+    FaSlidersH
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -15,6 +16,7 @@ import {
     brandsApi
 } from "../../services/productsService";
 import { categoriesApi } from "../../services/categoriesService";
+import Modal from "../../components/Modal";
 import "./style/ProductPage.css";
 
 function ProductPage() {
@@ -23,6 +25,20 @@ function ProductPage() {
     const [brands, setBrands] = useState([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(false);
+
+    // Column visibility states
+    const [isColDropdownOpen, setIsColDropdownOpen] = useState(false);
+    const [visibleColumns, setVisibleColumns] = useState({
+        hash: true,
+        image: true,
+        name: true,
+        category: true,
+        brand: true,
+        price: true,
+        stock: true,
+        status: true,
+        actions: true
+    });
 
     // Modal & Form States
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,12 +60,13 @@ function ProductPage() {
             const [prodRes, catRes, brandRes] = await Promise.all([
                 productsApi(),
                 categoriesApi(),
-                brandsApi().catch(() => ({ data: [] })) // Fallback if brand endpoint fails
+                brandsApi().catch(() => ({ data: [] }))
             ]);
 
             setProducts(prodRes.data?.products || prodRes.data || []);
             setCategories(catRes.data || []);
             setBrands(brandRes.data?.brands || brandRes.data || []);
+
         } catch (error) {
             Swal.fire("Error", error.message || "Failed to load catalog data", "error");
         } finally {
@@ -60,6 +77,13 @@ function ProductPage() {
     useEffect(() => {
         fetchData();
     }, []);
+
+    const toggleColumn = (col) => {
+        setVisibleColumns(prev => ({
+            ...prev,
+            [col]: !prev[col]
+        }));
+    };
 
     const openCreateModal = () => {
         setSelectedProduct(null);
@@ -167,74 +191,73 @@ function ProductPage() {
         item.category?.name?.toLowerCase().includes(search.toLowerCase()) ||
         item.brand?.name?.toLowerCase().includes(search.toLowerCase())
     );
+
     const totalProductCount = products.length;
     const activeProductCount = products.filter(product => product.is_active).length;
     const inactiveProductCount = products.filter(product => !product.is_active).length;
+
+    // Helper translation map for visual column headers
+    const colHeaders = {
+        hash: "#",
+        image: "Image",
+        name: "Product Name",
+        category: "Category",
+        brand: "Brand",
+        price: "Price",
+        stock: "Stock",
+        status: "Status",
+        actions: "Action"
+    };
+
     return (
         <div className="product-page">
             <div>
                 <div className="row g-4 mb-4">
-
                     {/* Total Products */}
                     <div className="col-xl-4 col-md-6">
                         <div className="kpi-card total">
-
                             <div className="kpi-content">
-
                                 <div>
                                     <p>Total Products</p>
                                     <h1>{totalProductCount}</h1>
                                 </div>
-
                                 <div className="icon-box">
-                                    <i className="bi bi-box-seam-fill"></i>
+                                    <FaBox />
                                 </div>
-
                             </div>
-
                         </div>
                     </div>
                     {/* Active Products */}
                     <div className="col-xl-4 col-md-6">
-
                         <div className="kpi-card active-status">
-
                             <div className="kpi-content">
-
                                 <div>
                                     <p>Active Products</p>
                                     <h1>{activeProductCount}</h1>
                                 </div>
-
                                 <div className="icon-box">
-                                    <i className="bi bi-check-circle-fill"></i>
+                                    <FaBox />
                                 </div>
-
                             </div>
-
                         </div>
-
                     </div>
                     {/* Inactive Products */}
                     <div className="col-xl-4 col-md-6">
-
                         <div className="kpi-card inactive-status">
-
                             <div className="kpi-content">
-
                                 <div>
                                     <p>Inactive Products</p>
                                     <h1>{inactiveProductCount}</h1>
                                 </div>
-
                                 <div className="icon-box">
-                                    <i className="bi bi-x-circle-fill"></i>
+                                    <FaBox />
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
             <div className="page-header">
                 <div>
                     <h1>Products</h1>
@@ -255,216 +278,314 @@ function ProductPage() {
                             onChange={e => setSearch(e.target.value)}
                         />
                     </div>
+
+                    {/* Column Select Filter */}
+                    <div className="column-selector-wrapper">
+                        <button
+                            className="column-filter-toggle-btn"
+                            onClick={() => setIsColDropdownOpen(!isColDropdownOpen)}
+                        >
+                            <FaSlidersH /> Columns
+                        </button>
+                        {isColDropdownOpen && (
+                            <div className="column-dropdown-menu">
+                                <h3>Toggle Columns</h3>
+                                <div className="column-dropdown-list">
+                                    {Object.keys(visibleColumns).map(col => (
+                                        <label key={col} className="column-checkbox-row">
+                                            <input
+                                                type="checkbox"
+                                                checked={visibleColumns[col]}
+                                                onChange={() => toggleColumn(col)}
+                                            />
+                                            <span>{colHeaders[col]}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {loading && products.length === 0 ? (
                     <div className="loading">Loading...</div>
                 ) : (
                     <div className="product-table-wrapper">
-                        <table>
+                        {/* Table layout (for Desktop and iPad) */}
+                        <table className="desktop-table">
                             <thead>
                                 <tr>
-                                    <th>#</th>
-                                    <th>Image</th>
-                                    <th>Product Name</th>
-                                    <th>Category</th>
-                                    <th>Brand</th>
-                                    <th>Price</th>
-                                    <th>Stock</th>
-                                    <th>Status</th>
-                                    <th>Action</th>
+                                    {visibleColumns.hash && <th>#</th>}
+                                    {visibleColumns.image && <th>Image</th>}
+                                    {visibleColumns.name && <th>Product Name</th>}
+                                    {visibleColumns.category && <th>Category</th>}
+                                    {visibleColumns.brand && <th>Brand</th>}
+                                    {visibleColumns.price && <th>Price</th>}
+                                    {visibleColumns.stock && <th>Stock</th>}
+                                    {visibleColumns.status && <th>Status</th>}
+                                    {visibleColumns.actions && <th>Action</th>}
                                 </tr>
                             </thead>
                             <tbody>
                                 {filteredProducts.map((item, index) => (
                                     <tr key={item.id}>
-                                        <td>{index + 1}</td>
-                                        <td>
-                                            <div className="product-table-image">
-                                                {item.image_url ? (
-                                                    <img src={item.image_url} alt={item.name} />
-                                                ) : (
-                                                    <FaBox className="fallback-box-icon" />
-                                                )}
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <div className="product-info-cell">
-                                                <strong>{item.name}</strong>
-                                                <small>{item.description?.substring(0, 50)}{item.description?.length > 50 ? "..." : ""}</small>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <span className="category-badge">
-                                                {item.category?.name || "General"}
-                                            </span>
-                                        </td>
-                                        <td>{item.brand?.name || "Generic"}</td>
-                                        <td>
-                                            <strong>${Number(item.price).toFixed(2)}</strong>
-                                        </td>
-                                        <td>
-                                            <span className={`stock-indicator ${item.stock_quantity > 5 ? "in-stock" : "low-stock"}`}>
-                                                {item.stock_quantity}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <span className={`status-badge ${item.is_active ? "active" : "inactive"}`}>
-                                                {item.is_active ? "Active" : "Inactive"}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <button className="edit-btn" onClick={() => openEditModal(item)}>
-                                                <FaEdit />
-                                            </button>
-                                            <button className="delete-btn" onClick={() => handleDelete(item.id)}>
-                                                <FaTrash />
-                                            </button>
-                                        </td>
+                                        {visibleColumns.hash && <td>{index + 1}</td>}
+                                        {visibleColumns.image && (
+                                            <td>
+                                                <div className="product-table-image">
+                                                    {item.image_url ? (
+                                                        <img src={item.image_url} alt={item.name} />
+                                                    ) : (
+                                                        <FaBox className="fallback-box-icon" />
+                                                    )}
+                                                </div>
+                                            </td>
+                                        )}
+                                        {visibleColumns.name && (
+                                            <td>
+                                                <div className="product-info-cell">
+                                                    <strong>{item.name}</strong>
+                                                    <small>{item.description?.substring(0, 50)}{item.description?.length > 50 ? "..." : ""}</small>
+                                                </div>
+                                            </td>
+                                        )}
+                                        {visibleColumns.category && (
+                                            <td>
+                                                <span className="category-badge">
+                                                    {item.category?.name || "General"}
+                                                </span>
+                                            </td>
+                                        )}
+                                        {visibleColumns.brand && <td>{item.brand?.name || "Generic"}</td>}
+                                        {visibleColumns.price && (
+                                            <td>
+                                                <strong>${Number(item.price).toFixed(2)}</strong>
+                                            </td>
+                                        )}
+                                        {visibleColumns.stock && (
+                                            <td>
+                                                <span className={`stock-indicator ${item.stock_quantity > 5 ? "in-stock" : "low-stock"}`}>
+                                                    {item.stock_quantity}
+                                                </span>
+                                            </td>
+                                        )}
+                                        {visibleColumns.status && (
+                                            <td>
+                                                <span className={`status-badge ${item.is_active ? "active" : "inactive"}`}>
+                                                    {item.is_active ? "Active" : "Inactive"}
+                                                </span>
+                                            </td>
+                                        )}
+                                        {visibleColumns.actions && (
+                                            <td>
+                                                <div className="table-row-actions">
+                                                    <button className="edit-btn" onClick={() => openEditModal(item)} title="Edit">
+                                                        <FaEdit />
+                                                    </button>
+                                                    <button className="delete-btn" onClick={() => handleDelete(item.id)} title="Delete">
+                                                        <FaTrash />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                                 {filteredProducts.length === 0 && (
                                     <tr>
-                                        <td colSpan="8" className="no-data">No products found</td>
+                                        <td colSpan="9" className="no-data">No products found</td>
                                     </tr>
                                 )}
                             </tbody>
                         </table>
+
+                        {/* Kanban card list layout (for Mobile) */}
+                        <div className="mobile-cards-container">
+                            {filteredProducts.map((item) => (
+                                <div className="kanban-card product-card-item" key={item.id}>
+                                    <div className="kanban-card-header">
+                                        <div className="product-preview-info">
+                                            {item.image_url ? (
+                                                <img src={item.image_url} alt={item.name} className="mobile-product-img" />
+                                            ) : (
+                                                <div className="mobile-product-icon-placeholder"><FaBox /></div>
+                                            )}
+                                            <div>
+                                                <h4 className="mobile-product-name">{item.name}</h4>
+                                                <span className="category-badge">{item.category?.name || "General"}</span>
+                                            </div>
+                                        </div>
+                                        <span className={`status-badge ${item.is_active ? "active" : "inactive"}`}>
+                                            {item.is_active ? "Active" : "Inactive"}
+                                        </span>
+                                    </div>
+                                    <div className="kanban-card-body">
+                                        <div className="card-info-row">
+                                            <span className="info-label">Brand:</span>
+                                            <span className="info-value">{item.brand?.name || "Generic"}</span>
+                                        </div>
+                                        <div className="card-info-row">
+                                            <span className="info-label">Price:</span>
+                                            <strong className="info-value price-value">${Number(item.price).toFixed(2)}</strong>
+                                        </div>
+                                        <div className="card-info-row">
+                                            <span className="info-label">Stock:</span>
+                                            <span className={`stock-indicator ${item.stock_quantity > 5 ? "in-stock" : "low-stock"}`}>
+                                                {item.stock_quantity} units
+                                            </span>
+                                        </div>
+                                        {item.description && (
+                                            <div className="mobile-product-description">
+                                                <small>{item.description}</small>
+                                            </div>
+                                        )}
+                                        <div className="mobile-card-actions">
+                                            <button className="edit-btn" onClick={() => openEditModal(item)}>
+                                                <FaEdit /> Edit
+                                            </button>
+                                            <button className="delete-btn" onClick={() => handleDelete(item.id)}>
+                                                <FaTrash /> Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {filteredProducts.length === 0 && (
+                                <div className="no-data">No products found</div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
 
-            {isModalOpen && (
-                <div className="modal-overlay">
-                    <div className="modal-container-card">
-                        <div className="modal-header">
-                            <h3>{selectedProduct ? "Edit Product" : "Add Product"}</h3>
-                            <button className="close-modal-btn" onClick={() => setIsModalOpen(false)}>&times;</button>
+            {/* Reusable Modal implementation */}
+            <Modal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title={selectedProduct ? "Edit Product" : "Add Product"}
+                size="lg"
+            >
+                <form onSubmit={handleSave} className="product-form">
+                    <div className="form-grid">
+                        <div className="form-group">
+                            <label>Product Image</label>
+                            <div className="image-upload-container">
+                                {imagePreview ? (
+                                    <div className="image-preview-wrapper">
+                                        <img src={imagePreview} alt="Preview" className="image-upload-preview" />
+                                        <button type="button" className="remove-image-btn" onClick={handleRemoveImage}>
+                                            Remove
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="image-upload-dropzone">
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onChange={handleFileChange}
+                                            id="product-image-file"
+                                            className="file-input-hidden"
+                                        />
+                                        <label htmlFor="product-image-file" className="file-input-label">
+                                            <FaPlus />
+                                            <span>Upload Image</span>
+                                        </label>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <form onSubmit={handleSave} className="product-form">
-                            <div className="form-grid">
-                                <div className="form-group">
-                                    <label>Product Name</label>
-                                    <input
-                                        type="text"
-                                        value={name}
-                                        onChange={e => setName(e.target.value)}
-                                        required
-                                        placeholder="e.g. iPhone 16 Pro"
-                                    />
-                                </div>
-                                <div className="form-row-2">
-                                    <div className="form-group">
-                                        <label>Price ($)</label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            value={price}
-                                            onChange={e => setPrice(e.target.value)}
-                                            required
-                                            placeholder="0.00"
-                                            min="0"
-                                        />
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Stock Quantity</label>
-                                        <input
-                                            type="number"
-                                            value={stockQuantity}
-                                            onChange={e => setStockQuantity(e.target.value)}
-                                            required
-                                            placeholder="e.g. 10"
-                                            min="0"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="form-row-2">
-                                    <div className="form-group">
-                                        <label>Category</label>
-                                        <select
-                                            value={categoryId}
-                                            onChange={e => setCategoryId(e.target.value)}
-                                            required
-                                        >
-                                            <option value="" disabled>Select Category</option>
-                                            {categories.map(cat => (
-                                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    <div className="form-group">
-                                        <label>Brand</label>
-                                        <select
-                                            value={brandId}
-                                            onChange={e => setBrandId(e.target.value)}
-                                            required
-                                        >
-                                            <option value="" disabled>Select Brand</option>
-                                            {brands.map(br => (
-                                                <option key={br.id} value={br.id}>{br.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                                <div className="form-group">
-                                    <label>Product Image</label>
-                                    <div className="image-upload-container">
-                                        {imagePreview ? (
-                                            <div className="image-preview-wrapper">
-                                                <img src={imagePreview} alt="Preview" className="image-upload-preview" />
-                                                <button type="button" className="remove-image-btn" onClick={handleRemoveImage}>
-                                                    Remove
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div className="image-upload-dropzone">
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={handleFileChange}
-                                                    id="product-image-file"
-                                                    className="file-input-hidden"
-                                                />
-                                                <label htmlFor="product-image-file" className="file-input-label">
-                                                    <FaPlus />
-                                                    <span>Upload Image</span>
-                                                </label>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="form-group">
-                                    <label>Description</label>
-                                    <textarea
-                                        value={description}
-                                        onChange={e => setDescription(e.target.value)}
-                                        placeholder="Product details and specifications..."
-                                        rows="3"
-                                    />
-                                </div>
-                                <div className="form-group checkbox-group">
-                                    <label className="checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={isActive}
-                                            onChange={e => setIsActive(e.target.checked)}
-                                        />
-                                        <span>Active Catalog Product</span>
-                                    </label>
-                                </div>
+                        <div className="form-group">
+                            <label>Product Name</label>
+                            <input
+                                type="text"
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                required
+                                placeholder="e.g. iPhone 16 Pro"
+                            />
+                        </div>
+                        <div className="form-row-2">
+                            <div className="form-group">
+                                <label>Price ($)</label>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={price}
+                                    onChange={e => setPrice(e.target.value)}
+                                    required
+                                    placeholder="0.00"
+                                    min="0"
+                                />
                             </div>
-                            <div className="modal-footer">
-                                <button type="button" className="cancel-btn" onClick={() => setIsModalOpen(false)}>
-                                    Cancel
-                                </button>
-                                <button type="submit" className="save-btn" disabled={loading}>
-                                    {loading ? "Saving..." : "Save Product"}
-                                </button>
+                            <div className="form-group">
+                                <label>Stock Quantity</label>
+                                <input
+                                    type="number"
+                                    value={stockQuantity}
+                                    onChange={e => setStockQuantity(e.target.value)}
+                                    required
+                                    placeholder="e.g. 10"
+                                    min="0"
+                                />
                             </div>
-                        </form>
+                        </div>
+                        <div className="form-row-2">
+                            <div className="form-group">
+                                <label>Category</label>
+                                <select
+                                    value={categoryId}
+                                    onChange={e => setCategoryId(e.target.value)}
+                                    required
+                                >
+                                    <option value="" disabled>Select Category</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="form-group">
+                                <label>Brand</label>
+                                <select
+                                    value={brandId}
+                                    onChange={e => setBrandId(e.target.value)}
+                                    required
+                                >
+                                    <option value="" disabled>Select Brand</option>
+                                    {brands.map(br => (
+                                        <option key={br.id} value={br.id}>{br.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="form-group">
+                            <label>Description</label>
+                            <textarea
+                                value={description}
+                                onChange={e => setDescription(e.target.value)}
+                                placeholder="Product details and specifications..."
+                                rows="3"
+                            />
+                        </div>
+                        <div className="checkbox-group">
+                            <label className="checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    checked={isActive}
+                                    onChange={(e) => setIsActive(e.target.checked)}
+                                />
+                                <span>Active Catalog Product</span>
+                            </label>
+                        </div>
                     </div>
-                </div>
-            )}
+                    <div className="modal-footer">
+                        <button type="button" className="btn btn-secondary" onClick={() => setIsModalOpen(false)}>
+                            Cancel
+                        </button>
+                        <button type="submit" className="save-btn" disabled={loading}>
+                            {loading ? "Saving..." : "Save Product"}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
         </div>
     );
 }

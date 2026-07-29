@@ -313,119 +313,68 @@ function Dashboard() {
                     <h3>
                         Recent Orders
                     </h3>
-
-
-
                     <div className="order-panel">
-
-
-                        <table>
-
-
+                        <table className="desktop-table">
                             <thead>
-
                                 <tr>
-
-                                    <th>
-                                        Customer
-                                    </th>
-
-
-                                    <th>
-                                        Product
-                                    </th>
-
-
-                                    <th>
-                                        Price
-                                    </th>
-
-
-                                    <th>
-                                        Status
-                                    </th>
-
-
+                                    <th>Customer</th>
+                                    <th>Product</th>
+                                    <th>Price</th>
+                                    <th>Status</th>
                                 </tr>
-
                             </thead>
-
-
-
-
                             <tbody>
-
-
                             {
                                 orders.map(order=>(
-
-
                                     <tr key={order.id}>
-
-
+                                        <td>{order.customer}</td>
+                                        <td>{order.product}</td>
+                                        <td>{order.price}</td>
                                         <td>
-                                            {order.customer}
-                                        </td>
-
-
-                                        <td>
-                                            {order.product}
-                                        </td>
-
-
-                                        <td>
-                                            {order.price}
-                                        </td>
-
-
-                                        <td>
-
-
                                             {
                                                 order.status==="Completed"?
-
-
                                                 <span className="completed">
-
-                                                    <FaCheckCircle/>
-
-                                                    Completed
-
+                                                    <FaCheckCircle/> Completed
                                                 </span>
-
-
                                                 :
-
-
                                                 <span className="pending">
-
-                                                    <FaClock/>
-
-                                                    Pending
-
+                                                    <FaClock/> Pending
                                                 </span>
-
                                             }
-
-
                                         </td>
-
-
                                     </tr>
-
-
                                 ))
                             }
-
-
                             </tbody>
-
-
                         </table>
 
-
+                        <div className="mobile-cards-container">
+                            {orders.map(order => (
+                                <div className="kanban-card order-card" key={order.id}>
+                                    <div className="kanban-card-header">
+                                        <span className="order-id-badge">Order #{order.id}</span>
+                                        <span className={`status-badge ${order.status.toLowerCase()}`}>
+                                            {order.status === "Completed" ? <FaCheckCircle /> : <FaClock />} {order.status}
+                                        </span>
+                                    </div>
+                                    <div className="kanban-card-body">
+                                        <div className="card-info-row">
+                                            <span className="info-label">Customer:</span>
+                                            <strong className="info-value">{order.customer}</strong>
+                                        </div>
+                                        <div className="card-info-row">
+                                            <span className="info-label">Product:</span>
+                                            <span className="info-value">{order.product}</span>
+                                        </div>
+                                        <div className="card-info-row price-row">
+                                            <span className="info-label">Total Price:</span>
+                                            <strong className="info-value price-value">{order.price}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-
 
                 </div>
 

@@ -854,3 +854,162 @@ td{
 
     }
 }
+
+/* ===============================
+ Responsive Table vs Kanban Card Styles
+ ================================ */
+
+.desktop-table {
+  display: table;
+  width: 100%;
+}
+
+.mobile-cards-container {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-table {
+    display: none !important;
+  }
+  
+  .mobile-cards-container {
+    display: grid !important;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 8px 0;
+  }
+  
+  .kanban-card {
+    background: #ffffff;
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease;
+  }
+  
+  .kanban-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .kanban-card {
+      background: rgba(30, 41, 59, 0.7);
+      border-color: rgba(255, 255, 255, 0.08);
+    }
+  }
+  
+  .kanban-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .kanban-card-header {
+      border-bottom-color: rgba(255, 255, 255, 0.05);
+    }
+  }
+  
+  .order-id-badge {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .order-id-badge {
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+    }
+  }
+  
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 9999px;
+  }
+  
+  .status-badge.completed {
+    background: #e2fbe8;
+    color: #15803d;
+  }
+  
+  .status-badge.pending {
+    background: #fef3c7;
+    color: #b45309;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .status-badge.completed {
+      background: rgba(21, 128, 61, 0.15);
+      color: #4ade80;
+    }
+    .status-badge.pending {
+      background: rgba(180, 83, 9, 0.15);
+      color: #fbbf24;
+    }
+  }
+  
+  .kanban-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .card-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+  }
+  
+  .info-label {
+    color: #64748b;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .info-label {
+      color: #94a3b8;
+    }
+  }
+  
+  .info-value {
+    color: #0f172a;
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .info-value {
+      color: #f1f5f9;
+    }
+  }
+  
+  .price-row {
+    margin-top: 4px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(226, 232, 240, 0.6);
+  }
+  
+  @media (prefers-color-scheme: dark) {
+    .price-row {
+      border-top-color: rgba(255, 255, 255, 0.05);
+    }
+  }
+  
+  .price-value {
+    font-size: 1rem;
+    color: #10b981;
+  }
+}

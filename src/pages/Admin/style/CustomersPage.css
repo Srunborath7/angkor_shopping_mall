@@ -681,3 +681,233 @@ table{
         transform: translateY(0);
     }
 }
+
+/* ===============================
+   Column Selector Styles
+================================ */
+.column-selector-wrapper {
+    position: relative;
+}
+
+.column-filter-toggle-btn {
+    background: white;
+    border: 1px solid #cbd5e1;
+    color: #475569;
+    padding: 10px 16px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    height: 45px;
+}
+
+.column-filter-toggle-btn:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+.column-dropdown-menu {
+    position: absolute;
+    top: 50px;
+    right: 0;
+    width: 220px;
+    background: white;
+    border-radius: 14px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    z-index: 100;
+    padding: 14px;
+    animation: fadeInDropdown 0.2s ease;
+}
+
+@keyframes fadeInDropdown {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.column-dropdown-menu h3 {
+    margin: 0 0 10px 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+}
+
+.column-dropdown-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.column-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: #334155;
+    cursor: pointer;
+    user-select: none;
+}
+
+.column-checkbox-row input {
+    width: 16px;
+    height: 16px;
+    accent-color: #1c7e48;
+    cursor: pointer;
+}
+
+.role-badge {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* ===============================
+   KPI Metric Cards Redesign
+================================ */
+.kpi-card {
+    border-radius: 16px;
+    padding: 24px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 20px -5px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    height: auto;
+}
+
+.kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 28px -5px rgba(0,0,0,0.15);
+}
+
+.kpi-card.total {
+    background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+}
+
+.kpi-card.active-status {
+    background: linear-gradient(135deg, #14532d, #22c55e);
+}
+
+.kpi-card.inactive-status {
+    background: linear-gradient(135deg, #7f1d1d, #ef4444);
+}
+
+.kpi-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.kpi-content p {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 500;
+    opacity: 0.85;
+}
+
+.kpi-content h1 {
+    margin: 6px 0 0 0;
+    font-size: 2.2rem;
+    font-weight: 700;
+}
+
+.icon-box {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.18);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+}
+
+/* ===============================
+   Responsive Layout & Kanban Cards
+================================ */
+.table-row-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.desktop-table {
+    display: table;
+    width: 100%;
+}
+
+.mobile-cards-container {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .desktop-table {
+        display: none !important;
+    }
+
+    .mobile-cards-container {
+        display: grid !important;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        margin-top: 10px;
+    }
+
+    .product-card-item {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    }
+
+    .product-preview-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .mobile-product-icon-placeholder {
+        width: 50px;
+        height: 50px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #1c7e48;
+        font-size: 1.25rem;
+    }
+
+    .mobile-product-name {
+        margin: 0 0 4px 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
+
+    .mobile-card-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 12px;
+    }
+
+    .mobile-card-actions button {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        height: 38px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+}
