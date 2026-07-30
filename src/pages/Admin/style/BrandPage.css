@@ -98,15 +98,12 @@
 
 
 .toolbar {
-
-
     display: flex;
-
     justify-content: space-between;
-
+    align-items: center;
     margin-bottom: 20px;
-
-
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
 
@@ -328,25 +325,18 @@ td {
 
 @media(max-width:992px) {
 
-
-
     .page-header {
-
         flex-direction: column;
-
         align-items: flex-start;
-
         gap: 15px;
-
     }
 
-
-
+    .page-header h1 {
+        font-size: 26px;
+    }
 
     .search {
-
         width: 100%;
-
     }
 
 
@@ -611,6 +601,33 @@ td {
 }
 
 @media (max-width: 768px) {
+    .brand-page {
+        padding: 0;
+    }
+
+    .page-header h1 {
+        font-size: 22px;
+    }
+
+    .add-btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .search {
+        width: 100%;
+    }
+
+    .column-selector-wrapper {
+        display: none !important;
+    }
+
     .desktop-table {
         display: none !important;
     }

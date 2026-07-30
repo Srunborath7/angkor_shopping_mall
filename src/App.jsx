@@ -13,6 +13,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import BrandPage from "./pages/Admin/BrandPage";
 import NotFound from "./components/NotFound";
 import CustomersPage from "./pages/Admin/CustomersPage";
+import InventoryPage from "./pages/Admin/InventoryPage";
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             <Route path="categories" element={<CategoryPage />} />
             <Route path="brands" element={<BrandPage />} />
             <Route path="customers" element={<CustomersPage />} />
+            <Route path="inventory" element={<InventoryPage />} />
           </Route>
         </Route>
       </Routes>

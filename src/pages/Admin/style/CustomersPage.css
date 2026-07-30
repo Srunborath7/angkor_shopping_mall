@@ -8,104 +8,79 @@
     margin-bottom:25px;
 }
 
-/* KPI CARD */
-
-.kpi-card{
-
-    height:160px;
-    border-radius:20px;
-    padding:25px;
-    color:white;
-    box-shadow:0 10px 25px rgba(0,0,0,.12);
-    transition:.3s;
-
+/* ===============================
+   KPI Metric Cards
+================================ */
+.kpi-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--border-color);
+    transition: var(--transition-all);
+    height: auto;
 }
 
-
-.kpi-card:hover{
-
-    transform:translateY(-7px);
-
+.kpi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 15px 35px rgba(78, 125, 78, 0.08);
 }
 
-
-/* Colors */
-
-.total{
-
-    background:#3B82F6;
-
+.kpi-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-
-.active-status{
-
-    background:#10B981;
-
+.kpi-content p {
+    color: var(--text-muted);
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+    margin-bottom: 8px;
 }
 
-
-.inactive-status{
-
-    background:#EF4444;
-
+.kpi-content h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin: 0;
+    margin-top: 6px;
 }
 
-
-
-.kpi-content{
-
-    height:100%;
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-
+.icon-box {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
 }
 
-
-
-.kpi-content p{
-
-    margin:0;
-    font-size:16px;
-    opacity:.9;
-
+/* Color schemes for KPI cards */
+.kpi-card.total {
+    border-left: 5px solid #0288d1;
+}
+.kpi-card.total .icon-box {
+    background-color: #e1f5fe;
+    color: #0288d1;
 }
 
-
-
-.kpi-content h1{
-
-    margin-top:10px;
-    font-size:45px;
-    font-weight:700;
-
+.kpi-card.active-status {
+    border-left: 5px solid #2e7d32;
+}
+.kpi-card.active-status .icon-box {
+    background-color: #e8f5e9;
+    color: #2e7d32;
 }
 
-
-
-/* ICON */
-
-.icon-box{
-
-    width:75px;
-    height:75px;
-
-    border-radius:50%;
-
-    background:rgba(255,255,255,.25);
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
+.kpi-card.inactive-status {
+    border-left: 5px solid #d32f2f;
 }
-
-
-.icon-box i{
-
-    font-size:35px;
-
+.kpi-card.inactive-status .icon-box {
+    background-color: #ffebee;
+    color: #d32f2f;
 }
 
 
@@ -769,66 +744,6 @@ table{
     font-weight: 600;
 }
 
-/* ===============================
-   KPI Metric Cards Redesign
-================================ */
-.kpi-card {
-    border-radius: 16px;
-    padding: 24px;
-    color: white;
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 10px 20px -5px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
-    height: auto;
-}
-
-.kpi-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 14px 28px -5px rgba(0,0,0,0.15);
-}
-
-.kpi-card.total {
-    background: linear-gradient(135deg, #1e3a8a, #3b82f6);
-}
-
-.kpi-card.active-status {
-    background: linear-gradient(135deg, #14532d, #22c55e);
-}
-
-.kpi-card.inactive-status {
-    background: linear-gradient(135deg, #7f1d1d, #ef4444);
-}
-
-.kpi-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.kpi-content p {
-    margin: 0;
-    font-size: 0.95rem;
-    font-weight: 500;
-    opacity: 0.85;
-}
-
-.kpi-content h1 {
-    margin: 6px 0 0 0;
-    font-size: 2.2rem;
-    font-weight: 700;
-}
-
-.icon-box {
-    width: 50px;
-    height: 50px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.18);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.5rem;
-}
 
 /* ===============================
    Responsive Layout & Kanban Cards

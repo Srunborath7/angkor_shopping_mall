@@ -1,7 +1,7 @@
-import React from "react";
 import {
   FaTachometerAlt,
   FaBox,
+  FaBoxes,
   FaTh,
   FaUsers,
   FaShoppingCart,
@@ -29,6 +29,12 @@ function Sidebar({ open, setOpen }) {
       name: "Products",
       icon: <FaBox />,
       path: "/admin/products"
+    },
+
+    {
+      name: "Inventory",
+      icon: <FaBoxes />,
+      path: "/admin/inventory"
     },
 
     {
@@ -101,7 +107,7 @@ function Sidebar({ open, setOpen }) {
           onClick={() => setOpen(false)}
           aria-label="Close Sidebar"
         >
-          <X size={20} />
+          <X size={22} strokeWidth={3} />
         </button>
       </div>
       <ul className="sidebar-menu">
