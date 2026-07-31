@@ -16,6 +16,14 @@ export const createProductApi = (data) => {
     );
 };
 
+export const productsPagedApi = (params) => {
+    return api(
+        "/api/products/true",
+        "get",
+        params
+    );
+};
+ 
 export const updateProductApi = (id, data) => {
     return api(
         `/api/products/${id}`,

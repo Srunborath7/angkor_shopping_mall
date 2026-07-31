@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Search,
@@ -6,166 +6,74 @@ import {
   Star,
   SlidersHorizontal,
   ChevronRight,
-  Sparkles,
   ArrowUpDown,
-  RotateCcw
+  RotateCcw,
+  Loader2,
+  AlertTriangle,
+  ChevronLeft
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
+import { productsPagedApi } from "../../services/productsService";
 import "./styles/ShopPage.css";
 
-const ALL_PRODUCTS = [
-  {
-    id: 1,
-    name: "Pro Wireless Headphones",
-    category: "Electronics",
-    price: 39.99,
-    originalPrice: 59.99,
-    image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60",
-    rating: 4.8,
-    reviews: 120,
-    badge: "Trending",
-    discount: 33
-  },
-  {
-    id: 2,
-    name: "Active Smart Watch v2",
-    category: "Electronics",
-    price: 59.99,
-    originalPrice: 89.99,
-    image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60",
-    rating: 4.7,
-    reviews: 95,
-    badge: "Best Seller",
-    discount: 33
-  },
-  {
-    id: 3,
-    name: "Waterproof Travel Backpack",
-    category: "Fashion",
-    price: 29.99,
-    originalPrice: 39.99,
-    image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&auto=format&fit=crop&q=60",
-    rating: 4.5,
-    reviews: 210,
-    badge: "New",
-    discount: 25
-  },
-  {
-    id: 4,
-    name: "Retro Classic Sunglasses",
-    category: "Beauty",
-    price: 19.99,
-    originalPrice: 29.99,
-    image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&auto=format&fit=crop&q=60",
-    rating: 4.9,
-    reviews: 64,
-    badge: "Top Rated",
-    discount: 33
-  },
-  {
-    id: 5,
-    name: "Red Sports Running Shoes",
-    category: "Sports",
-    price: 49.99,
-    originalPrice: 79.99,
-    image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500&auto=format&fit=crop&q=60",
-    rating: 4.6,
-    reviews: 180,
-    badge: "Hot",
-    discount: 37
-  },
-  {
-    id: 6,
-    name: "Cotton Casual T-Shirt",
-    category: "Fashion",
-    price: 14.99,
-    originalPrice: 19.99,
-    image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=500&auto=format&fit=crop&q=60",
-    rating: 4.4,
-    reviews: 42,
-    badge: "Sale",
-    discount: 25
-  },
-  {
-    id: 7,
-    name: "Smart RGB LED Light Bulb",
-    category: "Electronics",
-    price: 12.99,
-    originalPrice: 19.99,
-    image: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=500&auto=format&fit=crop&q=60",
-    rating: 4.3,
-    reviews: 29,
-    badge: "New",
-    discount: 35
-  },
-  {
-    id: 8,
-    name: "Organic Ceremonial Match Tea",
-    category: "Food",
-    price: 24.99,
-    originalPrice: 34.99,
-    image: "https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=500&auto=format&fit=crop&q=60",
-    rating: 4.9,
-    reviews: 58,
-    badge: "Premium",
-    discount: 28
-  },
-  {
-    id: 9,
-    name: "Ergonomic Mesh Office Chair",
-    category: "Home",
-    price: 89.99,
-    originalPrice: 129.99,
-    image: "https://images.unsplash.com/photo-1505797149-43b0069ec26b?w=500&auto=format&fit=crop&q=60",
-    rating: 4.7,
-    reviews: 112,
-    badge: "Office",
-    discount: 30
-  },
-  {
-    id: 10,
-    name: "Non-Slip Yoga Exercise Mat",
-    category: "Sports",
-    price: 18.99,
-    originalPrice: 24.99,
-    image: "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=500&auto=format&fit=crop&q=60",
-    rating: 4.6,
-    reviews: 87,
-    badge: "Sports",
-    discount: 24
-  },
-  {
-    id: 11,
-    name: "Matte Velvet Red Lipstick",
-    category: "Beauty",
-    price: 9.99,
-    originalPrice: 14.99,
-    image: "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=500&auto=format&fit=crop&q=60",
-    rating: 4.4,
-    reviews: 35,
-    badge: "Beauty",
-    discount: 33
-  },
-  {
-    id: 12,
-    name: "Fresh Roasted Arabica Coffee",
-    category: "Food",
-    price: 15.99,
-    originalPrice: 21.99,
-    image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=500&auto=format&fit=crop&q=60",
-    rating: 4.8,
-    reviews: 73,
-    badge: "Hot",
-    discount: 27
-  }
-];
+// Inline "no image" placeholder — avoids depending on an external image
+// host (via.placeholder.com has been unreliable / blocked on some networks).
+const NO_IMAGE_PLACEHOLDER =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">
+      <rect width="500" height="500" fill="#F1F1F1"/>
+      <text x="50%" y="50%" font-family="Arial, sans-serif" font-size="24" fill="#9CA3AF" text-anchor="middle" dominant-baseline="middle">No Image</text>
+    </svg>`
+  );
 
-const CATEGORIES = ["All", "Electronics", "Fashion", "Beauty", "Home", "Sports", "Food"];
+const PAGE_SIZE = 12;
+
+// Normalizes a product object coming back from the API (see actual shape
+// returned by GET /api/products/:id) into the shape this page's UI expects.
+function normalizeProduct(raw) {
+  const price = Number(raw.price ?? 0);
+
+  const originalPrice = Number(raw.original_price ?? raw.compare_at_price ?? price);
+  const discount =
+    originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+
+  const images = Array.isArray(raw.images) ? raw.images : [];
+  const primaryImage = images.find((img) => img.is_primary) ?? images[0];
+  const variantImage = raw.variants?.[0]?.images?.[0];
+
+  return {
+    id: raw.id,
+    name: raw.name ?? "Untitled product",
+    description: raw.description ?? "",
+    category: raw.category?.name ?? "Uncategorized",
+    brand: raw.brand?.name ?? null,
+    price,
+    originalPrice,
+    discount,
+    stockQuantity: raw.stock_quantity ?? 0,
+    isActive: raw.is_active !== false,
+    image: primaryImage?.image_url ?? variantImage?.image_url ?? NO_IMAGE_PLACEHOLDER,
+    rating: Number(raw.ratingSummary?.averageRating ?? 0),
+    reviews: Number(raw.ratingSummary?.totalReviews ?? 0),
+    badge: raw.badge ?? null
+  };
+}
 
 function ShopPage() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Product data from API
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+
+  // Pagination state (server-driven, via GET /api/products/true)
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState("");
@@ -182,6 +90,43 @@ function ShopPage() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  // Fetch a page of products from the API
+  const fetchProducts = async (targetPage = page) => {
+    setIsLoading(true);
+    setLoadError(null);
+    try {
+      const res = await productsPagedApi({ page: targetPage, limit: PAGE_SIZE });
+
+      // Controller wraps the service result directly as data:
+      // { success, message, data: { totalItems, totalPages, currentPage, products } }.
+      // Handle a couple of possible unwrap shapes depending on the api() helper.
+      const payload = res?.data?.data ?? res?.data ?? res ?? {};
+      const list = Array.isArray(payload.products) ? payload.products : [];
+
+      setProducts(list.map(normalizeProduct));
+      setTotalPages(payload.totalPages ?? 1);
+      setTotalItems(payload.totalItems ?? list.length);
+      setPage(payload.currentPage ?? targetPage);
+    } catch (err) {
+      console.error("Failed to load products:", err);
+      setLoadError("We couldn't load products right now. Please try again.");
+      toast.error("Failed to load products");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
+  const goToPage = (nextPage) => {
+    if (nextPage < 1 || nextPage > totalPages || nextPage === page) return;
+    setPage(nextPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   // Sync wishlist to localStorage on change
   useEffect(() => {
     localStorage.setItem("wishlist", JSON.stringify(wishlist));
@@ -196,30 +141,29 @@ function ShopPage() {
     if (location.state?.initialSearch) {
       setSearchQuery(location.state.initialSearch);
     }
-    // Clean up router state so refreshing page doesn't sticky filter
     window.history.replaceState({}, document.title);
   }, [location.state]);
+
+  // Build the category list dynamically from whatever products came back
+  // on the current page (categories on other pages simply won't show a
+  // count until you land on a page that contains them).
+  const categories = useMemo(() => {
+    const unique = Array.from(new Set(products.map((p) => p.category))).filter(Boolean);
+    return ["All", ...unique];
+  }, [products]);
 
   const toggleWishlist = (id) => {
     if (wishlist.includes(id)) {
       setWishlist(wishlist.filter((item) => item !== id));
       toast.success("Removed from wishlist", {
         icon: "🤍",
-        style: {
-          borderRadius: "10px",
-          background: "#333",
-          color: "#fff"
-        }
+        style: { borderRadius: "10px", background: "#333", color: "#fff" }
       });
     } else {
       setWishlist([...wishlist, id]);
       toast.success("Added to wishlist!", {
         icon: "❤️",
-        style: {
-          borderRadius: "10px",
-          background: "#4E7D4E",
-          color: "#fff"
-        }
+        style: { borderRadius: "10px", background: "#4E7D4E", color: "#fff" }
       });
     }
   };
@@ -227,7 +171,7 @@ function ShopPage() {
   const addToCart = (product) => {
     const saved = localStorage.getItem("cartItems");
     const currentCart = saved ? JSON.parse(saved) : [];
-    
+
     const existing = currentCart.find((item) => item.id === product.id);
     let updatedCart = [];
 
@@ -240,20 +184,15 @@ function ShopPage() {
     }
 
     localStorage.setItem("cartItems", JSON.stringify(updatedCart));
-    
+
     const totalCount = updatedCart.reduce((acc, item) => acc + item.quantity, 0);
     localStorage.setItem("cartCount", String(totalCount));
 
-    // Fire sync events to Header / Drawer
     window.dispatchEvent(new Event("cart-updated"));
     window.dispatchEvent(new Event("open-cart"));
 
     toast.success(`${product.name} added to cart!`, {
-      style: {
-        borderRadius: "10px",
-        background: "#4E7D4E",
-        color: "#fff"
-      }
+      style: { borderRadius: "10px", background: "#4E7D4E", color: "#fff" }
     });
   };
 
@@ -266,30 +205,30 @@ function ShopPage() {
     toast.success("All filters cleared");
   };
 
-  // Filter and Sort execution
-  const filteredProducts = ALL_PRODUCTS.filter((prod) => {
-    const matchesSearch = prod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          prod.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "All" || prod.category === selectedCategory;
-    const matchesPrice = prod.price <= priceRange;
-    const matchesRating = prod.rating >= minRating;
+  // Filter and Sort execution — applied within the currently loaded page
+  const filteredProducts = products
+    .filter((prod) => {
+      const matchesSearch =
+        prod.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        prod.category.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === "All" || prod.category === selectedCategory;
+      const matchesPrice = prod.price <= priceRange;
+      const matchesRating = prod.rating >= minRating;
 
-    return matchesSearch && matchesCategory && matchesPrice && matchesRating;
-  }).sort((a, b) => {
-    if (sortBy === "price-asc") return a.price - b.price;
-    if (sortBy === "price-desc") return b.price - a.price;
-    if (sortBy === "rating-desc") return b.rating - a.rating;
-    return 0; // default
-  });
+      return matchesSearch && matchesCategory && matchesPrice && matchesRating;
+    })
+    .sort((a, b) => {
+      if (sortBy === "price-asc") return a.price - b.price;
+      if (sortBy === "price-desc") return b.price - a.price;
+      if (sortBy === "rating-desc") return b.rating - a.rating;
+      return 0;
+    });
 
   return (
     <div className="shop-page-layout">
       <Toaster position="bottom-right" />
-
-      {/* Render shared Header navbar */}
       <Header />
 
-      {/* Breadcrumbs Banner */}
       <div className="shop-breadcrumbs-section">
         <div className="breadcrumbs-container">
           <span className="breadcrumb-link" onClick={() => navigate("/")}>Home</span>
@@ -298,11 +237,9 @@ function ShopPage() {
         </div>
       </div>
 
-      {/* Shop Layout Workspace */}
       <div className="shop-workspace-container">
         <div className="shop-grid-wrapper">
-          
-          {/* Left Filter Sidebar */}
+
           <aside className="shop-sidebar-aside">
             <div className="sidebar-header-row">
               <div className="sidebar-title">
@@ -314,11 +251,10 @@ function ShopPage() {
               </button>
             </div>
 
-            {/* Category Filter */}
             <div className="sidebar-filter-group">
               <h4>Categories</h4>
               <div className="category-filter-list">
-                {CATEGORIES.map((cat) => (
+                {categories.map((cat) => (
                   <button
                     key={cat}
                     className={`category-filter-btn ${selectedCategory === cat ? "active" : ""}`}
@@ -326,14 +262,13 @@ function ShopPage() {
                   >
                     <span>{cat}</span>
                     <span className="cat-count">
-                      ({cat === "All" ? ALL_PRODUCTS.length : ALL_PRODUCTS.filter(p => p.category === cat).length})
+                      ({cat === "All" ? products.length : products.filter((p) => p.category === cat).length})
                     </span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Price Slider Filter */}
             <div className="sidebar-filter-group">
               <h4>Max Price</h4>
               <div className="price-slider-box">
@@ -351,7 +286,6 @@ function ShopPage() {
               </div>
             </div>
 
-            {/* Rating Filter */}
             <div className="sidebar-filter-group">
               <h4>Customer Rating</h4>
               <div className="rating-filter-list">
@@ -384,15 +318,15 @@ function ShopPage() {
             </div>
           </aside>
 
-          {/* Right Product Grid Workspace */}
           <main className="shop-products-main">
-            {/* Top Filter Summary & Sorting */}
             <div className="shop-topbar-row">
               <div className="results-counter">
-                Showing <strong>{filteredProducts.length}</strong> of <strong>{ALL_PRODUCTS.length}</strong> products
+                Showing <strong>{filteredProducts.length}</strong> of <strong>{totalItems}</strong> products
+                {totalPages > 1 && (
+                  <span className="page-indicator"> · Page {page} of {totalPages}</span>
+                )}
               </div>
 
-              {/* Live search input */}
               <div className="shop-topbar-search">
                 <Search size={16} className="topbar-search-icon" />
                 <input
@@ -414,8 +348,24 @@ function ShopPage() {
               </div>
             </div>
 
-            {/* Products Grid */}
-            {filteredProducts.length === 0 ? (
+            {isLoading && (
+              <div className="no-products-found">
+                <Loader2 size={48} className="no-results-icon spin" />
+                <h3>Loading products…</h3>
+              </div>
+            )}
+
+            {!isLoading && loadError && (
+              <div className="no-products-found">
+                <AlertTriangle size={48} className="no-results-icon" />
+                <h3>{loadError}</h3>
+                <button className="reset-sidebar-btn" onClick={() => fetchProducts(page)}>
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {!isLoading && !loadError && filteredProducts.length === 0 && (
               <div className="no-products-found">
                 <RotateCcw size={48} className="no-results-icon" />
                 <h3>No Products Found</h3>
@@ -424,15 +374,26 @@ function ShopPage() {
                   Reset Filter Guidelines
                 </button>
               </div>
-            ) : (
+            )}
+
+            {!isLoading && !loadError && filteredProducts.length > 0 && (
               <div className="shop-products-grid">
                 {filteredProducts.map((prod) => (
                   <div key={prod.id} className="product-card-item">
                     <div className="product-image-box">
-                      <img src={prod.image} alt={prod.name} />
-                      
+                      <img
+                        src={prod.image}
+                        alt={prod.name}
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = NO_IMAGE_PLACEHOLDER;
+                        }}
+                      />
+
                       {prod.badge && <span className="product-badge">{prod.badge}</span>}
-                      <span className="product-discount-tag">-{prod.discount}%</span>
+                      {prod.discount > 0 && (
+                        <span className="product-discount-tag">-{prod.discount}%</span>
+                      )}
 
                       <button
                         type="button"
@@ -444,8 +405,13 @@ function ShopPage() {
                     </div>
 
                     <div className="product-details-box">
-                      <span className="product-category">{prod.category}</span>
+                      <span className="product-category">
+                        {prod.brand ? `${prod.brand} · ${prod.category}` : prod.category}
+                      </span>
                       <h3 className="product-title">{prod.name}</h3>
+                      {prod.stockQuantity <= 0 && (
+                        <span className="product-out-of-stock">Out of stock</span>
+                      )}
 
                       <div className="product-rating-row">
                         <div className="stars-row">
@@ -464,20 +430,59 @@ function ShopPage() {
                       <div className="product-footer-row">
                         <div className="price-box">
                           <span className="sale-price">${prod.price}</span>
-                          <span className="original-price">${prod.originalPrice}</span>
+                          {prod.originalPrice > prod.price && (
+                            <span className="original-price">${prod.originalPrice}</span>
+                          )}
                         </div>
 
                         <button
                           type="button"
                           className="add-cart-btn"
+                          disabled={prod.stockQuantity <= 0}
                           onClick={() => addToCart(prod)}
                         >
-                          Add To Cart
+                          {prod.stockQuantity <= 0 ? "Out of Stock" : "Add To Cart"}
                         </button>
                       </div>
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Pagination Controls */}
+            {!isLoading && !loadError && totalPages > 1 && (
+              <div className="shop-pagination-row">
+                <button
+                  type="button"
+                  className="pagination-btn pagination-prev"
+                  disabled={page <= 1}
+                  onClick={() => goToPage(page - 1)}
+                >
+                  <ChevronLeft size={16} /> Prev
+                </button>
+
+                <div className="pagination-pages">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      className={`pagination-page-btn ${p === page ? "active" : ""}`}
+                      onClick={() => goToPage(p)}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  className="pagination-btn pagination-next"
+                  disabled={page >= totalPages}
+                  onClick={() => goToPage(page + 1)}
+                >
+                  Next <ChevronRight size={16} />
+                </button>
               </div>
             )}
           </main>
