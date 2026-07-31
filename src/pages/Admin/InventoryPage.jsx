@@ -79,7 +79,7 @@ function InventoryPage() {
                 setRowLoading(prev => ({ ...prev, [productId]: true }));
                 const res = await getProductByIdApi(productId);
                 const detailedProduct = res.data;
-                
+
                 setDetailedProducts(prev => ({
                     ...prev,
                     [productId]: detailedProduct
@@ -137,10 +137,10 @@ function InventoryPage() {
 
             if (type === "variant") {
                 await updateProductVariantInventoryApi(id, newStock);
-                
+
                 // Update detailed products local state
                 if (parentProductId && detailedProducts[parentProductId]) {
-                    const updatedVariants = detailedProducts[parentProductId].variants.map(v => 
+                    const updatedVariants = detailedProducts[parentProductId].variants.map(v =>
                         v.id === id ? { ...v, stock_quantity: newStock } : v
                     );
 
@@ -157,7 +157,7 @@ function InventoryPage() {
                     }));
 
                     // Update main products state as well
-                    setProducts(prev => prev.map(p => 
+                    setProducts(prev => prev.map(p =>
                         p.id === parentProductId ? { ...p, stock_quantity: newParentStock } : p
                     ));
                 }
@@ -169,7 +169,7 @@ function InventoryPage() {
                 await updateProductApi(id, formData);
 
                 // Update main list
-                setProducts(prev => prev.map(p => 
+                setProducts(prev => prev.map(p =>
                     p.id === id ? { ...p, stock_quantity: newStock } : p
                 ));
 
@@ -206,10 +206,10 @@ function InventoryPage() {
 
     // Filtering logic
     const filteredProducts = products.filter(p => {
-        const matchesSearch = p.name?.toLowerCase().includes(search.toLowerCase()) || 
-                              p.description?.toLowerCase().includes(search.toLowerCase());
+        const matchesSearch = p.name?.toLowerCase().includes(search.toLowerCase()) ||
+            p.description?.toLowerCase().includes(search.toLowerCase());
         const matchesCategory = selectedCategory ? p.category_id === selectedCategory : true;
-        
+
         let matchesStock = true;
         if (stockFilter === "instock") {
             matchesStock = Number(p.stock_quantity) > 5;
@@ -358,7 +358,7 @@ function InventoryPage() {
                                     const isExpanded = !!expandedRows[p.id];
                                     const details = detailedProducts[p.id];
                                     const hasVariants = details?.variants && details.variants.length > 0;
-                                    
+
                                     // Stock Level indicators
                                     let stockStatusClass = "in-stock";
                                     let stockStatusText = "In Stock";
@@ -399,7 +399,7 @@ function InventoryPage() {
                                                 <td>
                                                     <div className="inventory-info-cell">
                                                         <strong>{p.name}</strong>
-                                                        <small>ID: {p.id.substring(0, 8)}...</small>
+                                                        <small>Brand: {p.brand.name}</small>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -412,8 +412,10 @@ function InventoryPage() {
                                                         {stockStatusText}
                                                     </span>
                                                 </td>
-                                                <td align="center">
-                                                    <strong className="stock-count-label">{p.stock_quantity}</strong>
+                                                <td className="text-center">
+                                                    <strong className="stock-count-label">
+                                                        {p.stock_quantity}
+                                                    </strong>
                                                 </td>
                                                 <td>
                                                     {/* Hide adjust controls if details are loaded and it actually has variants */}
@@ -423,8 +425,8 @@ function InventoryPage() {
                                                         </span>
                                                     ) : (
                                                         <div className="quick-adjust-control">
-                                                            <button 
-                                                                type="button" 
+                                                            <button
+                                                                type="button"
                                                                 className="adjust-btn minus"
                                                                 onClick={() => {
                                                                     if (editingStock[editKey] === undefined) {
@@ -442,8 +444,8 @@ function InventoryPage() {
                                                                 onChange={e => handleStockChange(editKey, e.target.value)}
                                                                 min="0"
                                                             />
-                                                            <button 
-                                                                type="button" 
+                                                            <button
+                                                                type="button"
                                                                 className="adjust-btn plus"
                                                                 onClick={() => {
                                                                     if (editingStock[editKey] === undefined) {
@@ -492,7 +494,7 @@ function InventoryPage() {
                                                                         {details.variants.map(v => {
                                                                             const vEditKey = `variant-${v.id}`;
                                                                             const currentVEditValue = editingStock[vEditKey] !== undefined ? editingStock[vEditKey] : v.stock_quantity;
-                                                                            
+
                                                                             let vStockClass = "in-stock";
                                                                             let vStockText = "In Stock";
                                                                             if (Number(v.stock_quantity) === 0) {
@@ -520,13 +522,13 @@ function InventoryPage() {
                                                                                             {vStockText}
                                                                                         </span>
                                                                                     </td>
-                                                                                    <td align="center">
+                                                                                    <td className="text-center">
                                                                                         <span className="variant-stock-qty">{v.stock_quantity}</span>
                                                                                     </td>
                                                                                     <td>
                                                                                         <div className="quick-adjust-control">
-                                                                                            <button 
-                                                                                                type="button" 
+                                                                                            <button
+                                                                                                type="button"
                                                                                                 className="adjust-btn minus"
                                                                                                 onClick={() => handleDecrement(vEditKey)}
                                                                                             >
@@ -539,8 +541,8 @@ function InventoryPage() {
                                                                                                 onChange={e => handleStockChange(vEditKey, e.target.value)}
                                                                                                 min="0"
                                                                                             />
-                                                                                            <button 
-                                                                                                type="button" 
+                                                                                            <button
+                                                                                                type="button"
                                                                                                 className="adjust-btn plus"
                                                                                                 onClick={() => handleIncrement(vEditKey)}
                                                                                             >
