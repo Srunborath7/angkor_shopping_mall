@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -15,10 +16,20 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
+import {
+  getCartApi,
+  addToCartApi,
+  updateCartItemApi,
+  removeFromCartApi
+} from "../services/cartService";
+import { checkoutApi, payOrderApi } from "../services/orderService";
 import "./CartDrawer.css";
 
 function CartDrawer({ isOpen, onClose }) {
   const navigate = useNavigate();
+  const auth = useSelector((state) => state.auth);
+  const isLoggedIn = !!auth.token;
+  const user = auth.user;
 
   // Multi-step Checkout State: 'cart' | 'info' | 'payment' | 'confirm'
   const [step, setStep] = useState("cart");
@@ -27,6 +38,7 @@ function CartDrawer({ isOpen, onClose }) {
   const [cartItems, setCartItems] = useState([]);
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Checkout Form State
   const [form, setForm] = useState({
@@ -41,11 +53,55 @@ function CartDrawer({ isOpen, onClose }) {
   // Payment Method State: 'aba-qr' | 'aba-pay' | 'cod' | 'visa-master'
   const [paymentMethod, setPaymentMethod] = useState("aba-qr");
 
+  // Pre-fill user profile info if logged in
+  useEffect(() => {
+    if (user) {
+      setForm((prev) => ({
+        ...prev,
+        fullName: prev.fullName || user.name || "",
+        email: prev.email || user.email || "",
+        phone: prev.phone || "099888777",
+        city: prev.city || "Phnom Penh",
+        address: prev.address || "Street 271, Toul Tom Poung"
+      }));
+    }
+  }, [user]);
+
   // Load cart items initially and listen for updates
-  const loadCart = () => {
+  const loadCart = async () => {
+    if (isLoggedIn) {
+      try {
+        const res = await getCartApi();
+        const items = res.data?.items || res.items || (Array.isArray(res.data) ? res.data : []);
+        if (Array.isArray(items)) {
+          const formatted = items.map((item) => ({
+            id: item.id,
+            db_id: item.id,
+            product_id: item.product_id || item.product?.id,
+            name: item.product?.name || "Product",
+            price: parseFloat(item.product?.price || 0),
+            image: item.product?.image_url || item.product?.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
+            quantity: item.quantity
+          }));
+          setCartItems(formatted);
+          localStorage.setItem("cartItems", JSON.stringify(formatted));
+          const totalCount = formatted.reduce((acc, i) => acc + i.quantity, 0);
+          localStorage.setItem("cartCount", String(totalCount));
+          window.dispatchEvent(new Event("cart-updated"));
+          return;
+        }
+      } catch (err) {
+        console.warn("API loadCart error, using localStorage fallback:", err);
+      }
+    }
+
     const saved = localStorage.getItem("cartItems");
     if (saved) {
-      setCartItems(JSON.parse(saved));
+      try {
+        setCartItems(JSON.parse(saved));
+      } catch {
+        setCartItems([]);
+      }
     } else {
       setCartItems([]);
     }
@@ -56,7 +112,7 @@ function CartDrawer({ isOpen, onClose }) {
       loadCart();
       setStep("cart"); // Reset step when opening
     }
-  }, [isOpen]);
+  }, [isOpen, isLoggedIn]);
 
   // Sync to other pages and trigger event
   const saveCartItems = (newItems) => {
@@ -72,30 +128,62 @@ function CartDrawer({ isOpen, onClose }) {
   };
 
   // Modify Quantities
-  const incrementQuantity = (id) => {
+  const incrementQuantity = async (targetItem) => {
+    const newQty = targetItem.quantity + 1;
     const updated = cartItems.map((item) =>
-      item.id === id ? { ...item, quantity: item.quantity + 1 } : item
+      item.id === targetItem.id ? { ...item, quantity: newQty } : item
     );
     saveCartItems(updated);
-  };
 
-  const decrementQuantity = (id) => {
-    const target = cartItems.find((item) => item.id === id);
-    if (!target) return;
-    if (target.quantity === 1) {
-      removeFromCart(id);
-    } else {
-      const updated = cartItems.map((item) =>
-        item.id === id ? { ...item, quantity: item.quantity - 1 } : item
-      );
-      saveCartItems(updated);
+    if (isLoggedIn) {
+      try {
+        if (targetItem.db_id) {
+          await updateCartItemApi(targetItem.db_id, newQty);
+        } else if (targetItem.product_id || targetItem.id) {
+          await addToCartApi(targetItem.product_id || targetItem.id, 1);
+        }
+      } catch (err) {
+        console.warn("Failed to update cart API:", err);
+      }
     }
   };
 
-  const removeFromCart = (id) => {
-    const updated = cartItems.filter((item) => item.id !== id);
+  const decrementQuantity = async (targetItem) => {
+    if (targetItem.quantity === 1) {
+      removeFromCart(targetItem);
+      return;
+    }
+    const newQty = targetItem.quantity - 1;
+    const updated = cartItems.map((item) =>
+      item.id === targetItem.id ? { ...item, quantity: newQty } : item
+    );
+    saveCartItems(updated);
+
+    if (isLoggedIn) {
+      try {
+        if (targetItem.db_id) {
+          await updateCartItemApi(targetItem.db_id, newQty);
+        }
+      } catch (err) {
+        console.warn("Failed to decrement cart API:", err);
+      }
+    }
+  };
+
+  const removeFromCart = async (targetItem) => {
+    const targetId = typeof targetItem === 'object' ? targetItem.id : targetItem;
+    const itemObj = typeof targetItem === 'object' ? targetItem : cartItems.find((i) => i.id === targetId);
+    const updated = cartItems.filter((item) => item.id !== targetId);
     saveCartItems(updated);
     toast.success("Item removed from cart");
+
+    if (isLoggedIn && itemObj?.db_id) {
+      try {
+        await removeFromCartApi(itemObj.db_id);
+      } catch (err) {
+        console.warn("Failed to remove item API:", err);
+      }
+    }
   };
 
   // Coupon handling
@@ -125,6 +213,12 @@ function CartDrawer({ isOpen, onClose }) {
 
   // Progress steps
   const proceedToInfo = () => {
+    if (!isLoggedIn) {
+      toast.error("Please sign in to proceed with checkout");
+      onClose();
+      navigate("/auth/login");
+      return;
+    }
     if (cartItems.length === 0) {
       toast.error("Your cart is empty");
       return;
@@ -145,43 +239,91 @@ function CartDrawer({ isOpen, onClose }) {
     setStep("confirm");
   };
 
-  // Submit Order
-  const handlePlaceOrder = () => {
-    const orderId = "#ORD-" + Math.floor(1000 + Math.random() * 9000);
-    const orderDate = new Date().toISOString().split("T")[0];
+  // Submit Order via API & local state
+  const handlePlaceOrder = async () => {
+    if (!isLoggedIn) {
+      toast.error("Please sign in to place an order");
+      onClose();
+      navigate("/auth/login");
+      return;
+    }
 
-    const newOrder = {
-      id: orderId,
-      date: orderDate,
-      items: cartItems.reduce((acc, item) => acc + item.quantity, 0),
-      total: grandTotal.toFixed(2),
-      status: "Pending",
-      paymentMethod: paymentMethod.toUpperCase(),
-      shippingInfo: form,
-      products: cartItems
-    };
+    setIsSubmitting(true);
+    try {
+      // 1. Sync cart items to API if DB cart is empty
+      if (cartItems.length > 0) {
+        for (const item of cartItems) {
+          const prodId = item.product_id || item.id;
+          if (prodId && !item.db_id) {
+            try {
+              await addToCartApi(prodId, item.quantity);
+            } catch (e) {
+              console.warn("Sync cart item to DB:", e);
+            }
+          }
+        }
+      }
 
-    // Save to Orders List
-    const existingOrders = localStorage.getItem("orders");
-    const ordersList = existingOrders ? JSON.parse(existingOrders) : [];
-    ordersList.unshift(newOrder); // Add to beginning
-    localStorage.setItem("orders", JSON.stringify(ordersList));
+      // 2. Execute Checkout API call
+      const fullAddress = `${form.address}, ${form.city}`;
+      const res = await checkoutApi({
+        shipping_address: fullAddress,
+        contact_phone: form.phone
+      });
 
-    // Clear Cart
-    saveCartItems([]);
-    setPromoCode("");
-    setDiscount(0);
-    onClose();
+      const orderData = res.data?.order || res.order || res.data;
+      const numericId = orderData?.id || Math.floor(1000 + Math.random() * 9000);
+      const orderId = `#ORD-${numericId}`;
 
-    Swal.fire({
-      icon: "success",
-      title: "Order Placed Successfully!",
-      text: `Your Order ID is ${orderId}. Track it under Orders tab.`,
-      confirmButtonText: "View My Orders",
-      confirmButtonColor: "#4E7D4E"
-    }).then((result) => {
-      navigate("/orders");
-    });
+      // 3. Mark payment processed & send notification callback
+      if (orderData?.id) {
+        try {
+          await payOrderApi(orderData.id, `${paymentMethod.toUpperCase()}-PAYMENT-INTENT`);
+        } catch (payErr) {
+          console.warn("Pay notification error:", payErr);
+        }
+      }
+
+      // 4. Update local orders array
+      const newOrder = {
+        id: orderId,
+        rawId: orderData?.id,
+        date: new Date().toISOString().split("T")[0],
+        items: cartItems.reduce((acc, item) => acc + item.quantity, 0),
+        total: grandTotal.toFixed(2),
+        status: "Paid",
+        paymentMethod: paymentMethod.toUpperCase(),
+        shippingInfo: form,
+        products: cartItems
+      };
+
+      const existingOrders = localStorage.getItem("orders");
+      const ordersList = existingOrders ? JSON.parse(existingOrders) : [];
+      ordersList.unshift(newOrder);
+      localStorage.setItem("orders", JSON.stringify(ordersList));
+
+      // Clear Cart
+      saveCartItems([]);
+      setPromoCode("");
+      setDiscount(0);
+      setIsSubmitting(false);
+      onClose();
+
+      Swal.fire({
+        icon: "success",
+        title: "Order Placed Successfully!",
+        text: `Your Order ID is ${orderId}. Track it under Orders tab.`,
+        confirmButtonText: "View My Orders",
+        confirmButtonColor: "#4E7D4E"
+      }).then(() => {
+        navigate("/orders");
+      });
+    } catch (error) {
+      setIsSubmitting(false);
+      console.error("Checkout error:", error);
+      const errMsg = error.message || error.response?.data?.message || "Failed to place order";
+      toast.error(errMsg);
+    }
   };
 
   return (

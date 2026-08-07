@@ -15,6 +15,8 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
 import { productsPagedApi } from "../../services/productsService";
+import { useSelector } from "react-redux";
+import { addToCartApi } from "../../services/cartService";
 import "./styles/ShopPage.css";
 
 // Inline "no image" placeholder — avoids depending on an external image
@@ -64,6 +66,8 @@ function normalizeProduct(raw) {
 function ShopPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const auth = useSelector((state) => state.auth);
+  const isLoggedIn = !!auth.token;
 
   // Product data from API
   const [products, setProducts] = useState([]);
@@ -168,25 +172,33 @@ function ShopPage() {
     }
   };
 
-  const addToCart = (product) => {
+  const addToCart = async (product) => {
     const saved = localStorage.getItem("cartItems");
     const currentCart = saved ? JSON.parse(saved) : [];
 
-    const existing = currentCart.find((item) => item.id === product.id);
+    const existing = currentCart.find((item) => item.id === product.id || item.product_id === product.id);
     let updatedCart = [];
 
     if (existing) {
       updatedCart = currentCart.map((item) =>
-        item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+        (item.id === product.id || item.product_id === product.id) ? { ...item, quantity: item.quantity + 1 } : item
       );
     } else {
-      updatedCart = [...currentCart, { ...product, quantity: 1 }];
+      updatedCart = [...currentCart, { ...product, product_id: product.id, quantity: 1 }];
     }
 
     localStorage.setItem("cartItems", JSON.stringify(updatedCart));
 
     const totalCount = updatedCart.reduce((acc, item) => acc + item.quantity, 0);
     localStorage.setItem("cartCount", String(totalCount));
+
+    if (isLoggedIn && product.id) {
+      try {
+        await addToCartApi(product.id, 1);
+      } catch (err) {
+        console.warn("Failed to sync add to cart API:", err);
+      }
+    }
 
     window.dispatchEvent(new Event("cart-updated"));
     window.dispatchEvent(new Event("open-cart"));

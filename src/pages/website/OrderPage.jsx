@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
+import { getOrdersApi } from "../../services/orderService";
 import "./styles/OrderPage.css";
 
 function OrderPage() {
@@ -33,11 +34,52 @@ function OrderPage() {
   const [orders, setOrders] = useState([]);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
 
-  // Load orders from localStorage
-  const loadOrders = () => {
+  // Load orders from API & localStorage fallback
+  const loadOrders = async () => {
+    if (isLoggedIn) {
+      try {
+        const res = await getOrdersApi();
+        const apiOrders = res.data || res.orders || (Array.isArray(res) ? res : []);
+        if (Array.isArray(apiOrders) && apiOrders.length > 0) {
+          const formattedOrders = apiOrders.map((order) => ({
+            id: `#ORD-${order.id}`,
+            rawId: order.id,
+            date: new Date(order.created_at || order.createdAt || Date.now()).toISOString().split("T")[0],
+            items: order.items?.length || 0,
+            total: parseFloat(order.total_amount || 0).toFixed(2),
+            status: order.status ? (order.status.charAt(0).toUpperCase() + order.status.slice(1)) : "Pending",
+            paymentMethod: order.payment_intent_id ? "Online Pay (Paid)" : "ABA KHQR / COD",
+            shippingInfo: {
+              fullName: user?.name || "Customer",
+              email: user?.email || "",
+              phone: order.contact_phone || "099888777",
+              address: order.shipping_address || "Phnom Penh",
+              city: ""
+            },
+            products: (order.items || []).map((item) => ({
+              id: item.product?.id || item.product_id,
+              name: item.product?.name || "Product Item",
+              price: parseFloat(item.price || item.product?.price || 0),
+              image: item.product?.image_url || item.product?.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
+              quantity: item.quantity
+            }))
+          }));
+          setOrders(formattedOrders);
+          localStorage.setItem("orders", JSON.stringify(formattedOrders));
+          return;
+        }
+      } catch (err) {
+        console.warn("Failed to load orders API, using fallback:", err);
+      }
+    }
+
     const saved = localStorage.getItem("orders");
     if (saved) {
-      setOrders(JSON.parse(saved));
+      try {
+        setOrders(JSON.parse(saved));
+      } catch {
+        setOrders([]);
+      }
     } else {
       setOrders([]);
     }
