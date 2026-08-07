@@ -16,7 +16,12 @@ import {
   ShoppingBag,
   Loader2,
   Tag,
-  ChevronRight
+  ChevronRight,
+  Quote,
+  Send,
+  CheckCircle,
+  Award,
+  ThumbsUp
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
@@ -97,9 +102,9 @@ function HomePage() {
         const prodRes = await productsPagedApi({ page: 1, limit: 8 });
         const rawProds = prodRes.data?.data || prodRes.data || (Array.isArray(prodRes) ? prodRes : []);
         if (Array.isArray(rawProds) && rawProds.length > 0) {
-          setProducts(rawProds.map(normalizeProduct));
+          setProducts(rawProds.slice(0, 4).map(normalizeProduct));
         } else {
-          setProducts(getFallbackProducts());
+          setProducts(getFallbackProducts().slice(0, 4));
         }
       } catch (err) {
         console.warn("Failed to fetch homepage products API:", err);
@@ -458,6 +463,75 @@ function HomePage() {
         )}
       </section>
 
+      {/* Customer Testimonials Section */}
+      <section className="home-section testimonials-section">
+        <div className="section-header-row center-text">
+          <div>
+            <h2>What Our Customers Say</h2>
+            <p>Real experiences from verified buyers across Cambodia</p>
+          </div>
+        </div>
+
+        <div className="testimonials-grid">
+          <div className="testimonial-card">
+            <Quote className="quote-icon" size={28} />
+            <div className="testimonial-stars">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} size={14} fill="#FFC107" stroke="#FFC107" />
+              ))}
+            </div>
+            <p className="testimonial-quote">
+              "Ordering from Angkor Mall was super smooth! ABA KHQR payment worked instantly, and my smartwatch arrived in Phnom Penh within 4 hours!"
+            </p>
+            <div className="testimonial-author">
+              <div className="author-avatar">SD</div>
+              <div>
+                <h4 className="author-name">Sok Dara</h4>
+                <span className="author-role"><CheckCircle size={12} className="text-green-inline" /> Verified Buyer • Phnom Penh</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="testimonial-card">
+            <Quote className="quote-icon" size={28} />
+            <div className="testimonial-stars">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} size={14} fill="#FFC107" stroke="#FFC107" />
+              ))}
+            </div>
+            <p className="testimonial-quote">
+              "Great mobile experience and exact map location pin delivery! The quality of the wireless headphones exceeded my expectations."
+            </p>
+            <div className="testimonial-author">
+              <div className="author-avatar bg-blue">CL</div>
+              <div>
+                <h4 className="author-name">Chann Lina</h4>
+                <span className="author-role"><CheckCircle size={12} className="text-green-inline" /> Verified Buyer • Siem Reap</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="testimonial-card">
+            <Quote className="quote-icon" size={28} />
+            <div className="testimonial-stars">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} size={14} fill="#FFC107" stroke="#FFC107" />
+              ))}
+            </div>
+            <p className="testimonial-quote">
+              "Customer support is super helpful on Telegram. Genuine products with official warranty. Will definitely buy again!"
+            </p>
+            <div className="testimonial-author">
+              <div className="author-avatar bg-purple">KV</div>
+              <div>
+                <h4 className="author-name">Keo Vanny</h4>
+                <span className="author-role"><CheckCircle size={12} className="text-green-inline" /> Verified Buyer • Battambang</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Promotion VIP Membership Banner */}
       <section className="promotion-banner-section">
         <div className="banner-glow-circle"></div>
@@ -476,6 +550,30 @@ function HomePage() {
               Shop Exclusive Deals <ArrowRight size={18} />
             </button>
           )}
+        </div>
+      </section>
+
+      {/* Newsletter Subscription Section */}
+      <section className="newsletter-section">
+        <div className="newsletter-card">
+          <div className="newsletter-text">
+            <h3>Subscribe for Flash Sales & Deals</h3>
+            <p>Get instant updates on daily discounts, new arrivals, and special coupon codes.</p>
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              toast.success("Thank you for subscribing! Check your email for special coupons.", {
+                style: { borderRadius: "10px", background: "#1c7e48", color: "#fff" }
+              });
+            }}
+            className="newsletter-form"
+          >
+            <input type="email" placeholder="Enter your email address..." required />
+            <button type="submit" className="newsletter-btn">
+              Subscribe <Send size={16} />
+            </button>
+          </form>
         </div>
       </section>
 

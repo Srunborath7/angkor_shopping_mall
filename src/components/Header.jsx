@@ -10,7 +10,10 @@ import {
   LayoutDashboard,
   Menu,
   X,
-  Sparkles
+  Sparkles,
+  Home,
+  Grid,
+  ChevronRight
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
@@ -177,13 +180,13 @@ function Header() {
                 <div className="avatar-circle">
                   {user?.name ? user.name[0].toUpperCase() : <User size={16} />}
                 </div>
-                <span className="profile-username">{user?.name?.split(" ")[0]}</span>
-                <ChevronDown size={14} className={`arrow-icon ${profileDropdownOpen ? "open" : ""}`} />
+                <span className="profile-username mobile-hide-username">{user?.name?.split(" ")[0]}</span>
+                <ChevronDown size={14} className={`arrow-icon mobile-hide-arrow ${profileDropdownOpen ? "open" : ""}`} />
               </div>
             ) : (
               <button className="login-trigger-btn" onClick={() => navigate("/auth/login")}>
                 <User size={16} />
-                <span>Sign In</span>
+                <span className="mobile-hide-username">Sign In</span>
               </button>
             )}
 
@@ -220,61 +223,149 @@ function Header() {
           <button
             className="mobile-menu-toggle"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Toggle Mobile Navigation Menu"
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Navigation Drawer */}
+      {/* Mobile Backdrop & Professional Animated Drawer */}
       {mobileMenuOpen && (
-        <div className="mobile-nav-panel">
-          <span
-            className={`mobile-nav-item ${currentPath === "/" ? "active" : ""}`}
-            onClick={() => {
-              setMobileMenuOpen(false);
-              navigate("/");
-            }}
-          >
-            Home
-          </span>
-          <span
-            className={`mobile-nav-item ${currentPath === "/shop" ? "active" : ""}`}
-            onClick={() => {
-              setMobileMenuOpen(false);
-              navigate("/shop");
-            }}
-          >
-            Shop
-          </span>
-          <span
-            className="mobile-nav-item"
-            onClick={() => {
-              setMobileMenuOpen(false);
-              navigate("/shop");
-            }}
-          >
-            Categories
-          </span>
-          <span
-            className="mobile-nav-item"
-            onClick={() => {
-              setMobileMenuOpen(false);
-              toast("AI Recommendations are active!");
-            }}
-          >
-            AI Recommendations
-          </span>
-          <span
-            className={`mobile-nav-item ${currentPath === "/orders" ? "active" : ""}`}
-            onClick={() => {
-              setMobileMenuOpen(false);
-              navigate("/orders");
-            }}
-          >
-            Orders
-          </span>
-        </div>
+        <>
+          <div
+            className="mobile-nav-backdrop"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className="mobile-nav-panel">
+            {/* User Account Brief Card inside Mobile Drawer */}
+            {isLoggedIn && (
+              <div className="mobile-user-card">
+                <div className="avatar-circle">
+                  {user?.name ? user.name[0].toUpperCase() : <User size={16} />}
+                </div>
+                <div className="mobile-user-info">
+                  <span className="info-name">{user?.name || "Member User"}</span>
+                  <span className="info-email">{user?.email || ""}</span>
+                  <span className="info-role-badge">{role ? role.toUpperCase() : "CUSTOMER"}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="mobile-nav-links-list">
+              <div
+                className={`mobile-nav-item ${currentPath === "/" ? "active" : ""}`}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate("/");
+                }}
+              >
+                <div className="nav-item-left">
+                  <Home size={18} />
+                  <span>Home</span>
+                </div>
+                <ChevronRight size={16} className="arrow-dim" />
+              </div>
+
+              <div
+                className={`mobile-nav-item ${currentPath === "/shop" ? "active" : ""}`}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate("/shop");
+                }}
+              >
+                <div className="nav-item-left">
+                  <ShoppingBag size={18} />
+                  <span>Shop Catalog</span>
+                </div>
+                <ChevronRight size={16} className="arrow-dim" />
+              </div>
+
+              <div
+                className="mobile-nav-item"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate("/shop");
+                }}
+              >
+                <div className="nav-item-left">
+                  <Grid size={18} />
+                  <span>Categories</span>
+                </div>
+                <ChevronRight size={16} className="arrow-dim" />
+              </div>
+
+              <div
+                className="mobile-nav-item ai-badge-mobile"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  toast("AI Recommendations are active!");
+                }}
+              >
+                <div className="nav-item-left">
+                  <Sparkles size={18} className="text-green-icon" />
+                  <span>AI Recommendations</span>
+                </div>
+                <span className="badge-active-pill">Active</span>
+              </div>
+
+              <div
+                className={`mobile-nav-item ${currentPath === "/orders" ? "active" : ""}`}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate("/orders");
+                }}
+              >
+                <div className="nav-item-left">
+                  <ShoppingBag size={18} />
+                  <span>My Orders</span>
+                </div>
+                <ChevronRight size={16} className="arrow-dim" />
+              </div>
+
+              {(role === "admin" || role === "sale") && (
+                <div
+                  className="mobile-nav-item admin-link"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate("/admin/dashboard");
+                  }}
+                >
+                  <div className="nav-item-left">
+                    <LayoutDashboard size={18} />
+                    <span>Admin Dashboard</span>
+                  </div>
+                  <ChevronRight size={16} />
+                </div>
+              )}
+            </div>
+
+            {/* Bottom Actions inside Mobile Drawer */}
+            <div className="mobile-drawer-footer">
+              {isLoggedIn ? (
+                <button
+                  className="mobile-logout-btn"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                >
+                  <LogOut size={16} /> Logout Account
+                </button>
+              ) : (
+                <button
+                  className="mobile-login-btn"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate("/auth/login");
+                  }}
+                >
+                  <User size={16} /> Sign In / Register
+                </button>
+              )}
+            </div>
+          </div>
+        </>
       )}
 
       {/* Render shared Cart slide-out Drawer */}

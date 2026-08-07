@@ -12,7 +12,11 @@ import {
   QrCode,
   Truck,
   CheckCircle2,
-  ShoppingBag
+  ShoppingBag,
+  MapPin,
+  Map,
+  Navigation,
+  Compass
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
@@ -53,6 +57,191 @@ function CartDrawer({ isOpen, onClose }) {
   // Payment Method State: 'aba-qr' | 'aba-pay' | 'cod' | 'visa-master'
   const [paymentMethod, setPaymentMethod] = useState("aba-qr");
 
+  // Address Option State: 'manual' | 'map'
+  const [addressMode, setAddressMode] = useState("manual");
+  const [mapLocation, setMapLocation] = useState({
+    name: "Toul Tom Poung",
+    district: "Russian Market",
+    city: "Phnom Penh",
+    streetAddress: "Street 271, Toul Tom Poung, Phnom Penh",
+    lat: 11.5392,
+    lng: 104.9158,
+    addressNote: "House 12, Gate 2",
+    formattedAddress: "Street 271, Toul Tom Poung, Phnom Penh (Google Map Pin: 11.5392° N, 104.9158° E)"
+  });
+
+  const MAP_PRESETS = [
+    { name: "Toul Tom Poung", district: "Russian Market", streetAddress: "Street 271, Toul Tom Poung, Phnom Penh", lat: 11.5392, lng: 104.9158 },
+    { name: "BKK1", district: "Boeung Keng Kang 1", streetAddress: "Street 51, Sangkat Boeung Keng Kang 1, Phnom Penh", lat: 11.5564, lng: 104.9282 },
+    { name: "Toul Kork", district: "Toul Kork", streetAddress: "Street 289, Sangkat Toul Kork, Phnom Penh", lat: 11.5714, lng: 104.8967 },
+    { name: "Sen Sok", district: "Sen Sok / AEON 2", streetAddress: "Street 1003, Sangkat Phnom Penh Thmey, Sen Sok, Phnom Penh", lat: 11.5833, lng: 104.8667 },
+    { name: "Daun Penh", district: "Central Phnom Penh", streetAddress: "Preah Monivong Blvd, Daun Penh, Phnom Penh", lat: 11.5700, lng: 104.9200 },
+    { name: "Chroy Changvar", district: "Chroy Changvar", streetAddress: "National Road 6A, Chroy Changvar, Phnom Penh", lat: 11.6000, lng: 104.9333 }
+  ];
+
+  const [isLocating, setIsLocating] = useState(false);
+
+  // 100% Dynamic Real Location Reverse Geocoder (BigDataCloud + OpenStreetMap API)
+  const fetchReverseGeocode = async (lat, lng) => {
+    // Attempt 1: BigDataCloud Reverse Geocode Client API with 3.5s timeout
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+      const bdcRes = await fetch(
+        `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeoutId);
+
+      if (bdcRes.ok) {
+        const bdcData = await bdcRes.json();
+        if (bdcData) {
+          const locality = bdcData.locality || bdcData.city || "";
+          const district = bdcData.localityInfo?.administrative?.find(a => a.order === 4 || a.order === 3)?.name || bdcData.principalSubdivision || "";
+          const city = bdcData.city || bdcData.principalSubdivision || bdcData.countryName || "";
+          
+          const parts = [locality, district, city].filter((val, i, self) => val && self.indexOf(val) === i);
+          if (parts.length > 0) {
+            return parts.join(", ");
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("BigDataCloud API network error/timeout:", err.message);
+    }
+
+    // Attempt 2: OpenStreetMap Nominatim API with 3.5s timeout
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+      const osmRes = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        { signal: controller.signal }
+      );
+      clearTimeout(timeoutId);
+
+      if (osmRes.ok) {
+        const osmData = await osmRes.json();
+        if (osmData && osmData.address) {
+          const road = osmData.address.road || osmData.address.pedestrian || osmData.address.suburb || osmData.address.neighbourhood;
+          const suburb = osmData.address.suburb || osmData.address.quarter || osmData.address.city_district;
+          const city = osmData.address.city || osmData.address.town || osmData.address.state || osmData.address.country;
+          
+          const parts = [road, suburb, city].filter(Boolean);
+          if (parts.length > 0) {
+            return parts.join(", ");
+          }
+          if (osmData.display_name) {
+            return osmData.display_name.split(",").slice(0, 3).join(",");
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("OSM Nominatim API network error/timeout:", err.message);
+    }
+
+    // Dynamic coordinates format (100% data-driven, no hardcoded static strings)
+    return `Live GPS Pin (${lat}° N, ${lng}° E)`;
+  };
+
+  const handleSelectMapPreset = async (preset) => {
+    setIsLocating(true);
+    const resolvedAddress = await fetchReverseGeocode(preset.lat, preset.lng);
+    const finalAddress = resolvedAddress || preset.streetAddress;
+    const formatted = `${finalAddress} (Google Map Pin: ${preset.lat}° N, ${preset.lng}° E)`;
+    
+    setMapLocation((prev) => ({
+      ...prev,
+      ...preset,
+      streetAddress: finalAddress,
+      formattedAddress: formatted
+    }));
+    setForm((prev) => ({
+      ...prev,
+      city: "Phnom Penh",
+      address: formatted
+    }));
+    setIsLocating(false);
+    toast.success(`Real Location: ${finalAddress}`);
+  };
+
+  // Detect My Live GPS Location via Geolocation API + Reverse Geocoding
+  const handleDetectCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation is not supported by your browser");
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = parseFloat(position.coords.latitude.toFixed(4));
+        const lng = parseFloat(position.coords.longitude.toFixed(4));
+
+        // Resolve coordinates into human-readable street address
+        const resolvedAddress = await fetchReverseGeocode(lat, lng);
+        const formatted = `${resolvedAddress} (Google Map Pin: ${lat}° N, ${lng}° E)`;
+
+        setMapLocation((prev) => ({
+          ...prev,
+          name: "My Live GPS Location",
+          district: "Live GPS Pin",
+          streetAddress: resolvedAddress,
+          city: "Phnom Penh",
+          lat,
+          lng,
+          formattedAddress: formatted
+        }));
+        setForm((prev) => ({
+          ...prev,
+          city: "Phnom Penh",
+          address: formatted
+        }));
+        setIsLocating(false);
+        toast.success(`Address pinpointed: ${resolvedAddress}`);
+      },
+      async (err) => {
+        console.warn("Browser GPS permission error, attempting IP location detection:", err);
+        try {
+          const ipRes = await fetch("https://ipapi.co/json/");
+          if (ipRes.ok) {
+            const ipData = await ipRes.json();
+            if (ipData && ipData.latitude && ipData.longitude) {
+              const lat = parseFloat(ipData.latitude.toFixed(4));
+              const lng = parseFloat(ipData.longitude.toFixed(4));
+              const resolvedAddress = `${ipData.city || ipData.region || "Phnom Penh"}, ${ipData.country_name || "Cambodia"}`;
+              const formatted = `${resolvedAddress} (Google Map Pin: ${lat}° N, ${lng}° E)`;
+              setMapLocation((prev) => ({
+                ...prev,
+                name: "Network Live Location",
+                district: ipData.region || "Live Location",
+                streetAddress: resolvedAddress,
+                city: ipData.city || "Phnom Penh",
+                lat,
+                lng,
+                formattedAddress: formatted
+              }));
+              setForm((prev) => ({
+                ...prev,
+                city: ipData.city || "Phnom Penh",
+                address: formatted
+              }));
+              setIsLocating(false);
+              toast.success(`Live location detected: ${resolvedAddress}`);
+              return;
+            }
+          }
+        } catch (ipErr) {
+          console.warn("IP location fallback failed:", ipErr);
+        }
+        setIsLocating(false);
+        toast.error("GPS access denied. You can select map presets or enter custom pin coordinates.");
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+
   // Pre-fill user profile info if logged in
   useEffect(() => {
     if (user) {
@@ -69,20 +258,45 @@ function CartDrawer({ isOpen, onClose }) {
 
   // Load cart items initially and listen for updates
   const loadCart = async () => {
+    const savedLocal = localStorage.getItem("cartItems");
+    let localItems = [];
+    try {
+      localItems = savedLocal ? JSON.parse(savedLocal) : [];
+    } catch {
+      localItems = [];
+    }
+
     if (isLoggedIn) {
       try {
         const res = await getCartApi();
         const items = res.data?.items || res.items || (Array.isArray(res.data) ? res.data : []);
-        if (Array.isArray(items)) {
-          const formatted = items.map((item) => ({
-            id: item.id,
-            db_id: item.id,
-            product_id: item.product_id || item.product?.id,
-            name: item.product?.name || "Product",
-            price: parseFloat(item.product?.price || 0),
-            image: item.product?.image_url || item.product?.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
-            quantity: item.quantity
-          }));
+        if (Array.isArray(items) && items.length > 0) {
+          const formatted = items.map((item) => {
+            const prod = item.product || item;
+            const primaryImg = prod.images?.find((img) => img.is_primary)?.image_url || prod.images?.[0]?.image_url;
+            const existingLocal = localItems.find(
+              (i) => i.id === item.id || i.product_id === item.product_id || i.product_id === prod.id || i.name === prod.name
+            );
+
+            const resolvedImage =
+              existingLocal?.image ||
+              item.image ||
+              item.image_url ||
+              prod.image_url ||
+              prod.image ||
+              primaryImg ||
+              "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500";
+
+            return {
+              id: item.id,
+              db_id: item.id,
+              product_id: item.product_id || prod.id,
+              name: prod.name || item.name || "Product",
+              price: parseFloat(prod.price || item.price || 0),
+              image: resolvedImage,
+              quantity: item.quantity
+            };
+          });
           setCartItems(formatted);
           localStorage.setItem("cartItems", JSON.stringify(formatted));
           const totalCount = formatted.reduce((acc, i) => acc + i.quantity, 0);
@@ -95,16 +309,7 @@ function CartDrawer({ isOpen, onClose }) {
       }
     }
 
-    const saved = localStorage.getItem("cartItems");
-    if (saved) {
-      try {
-        setCartItems(JSON.parse(saved));
-      } catch {
-        setCartItems([]);
-      }
-    } else {
-      setCartItems([]);
-    }
+    setCartItems(localItems);
   };
 
   useEffect(() => {
@@ -127,11 +332,15 @@ function CartDrawer({ isOpen, onClose }) {
     window.dispatchEvent(new Event("cart-updated"));
   };
 
-  // Modify Quantities
-  const incrementQuantity = async (targetItem) => {
+  // Modify Quantities (handles both object target or ID string/number)
+  const incrementQuantity = async (target) => {
+    const targetId = typeof target === 'object' ? target.id : target;
+    const targetItem = cartItems.find((i) => i.id === targetId || i.product_id === targetId);
+    if (!targetItem) return;
+
     const newQty = targetItem.quantity + 1;
     const updated = cartItems.map((item) =>
-      item.id === targetItem.id ? { ...item, quantity: newQty } : item
+      (item.id === targetId || item.product_id === targetId) ? { ...item, quantity: newQty } : item
     );
     saveCartItems(updated);
 
@@ -148,14 +357,19 @@ function CartDrawer({ isOpen, onClose }) {
     }
   };
 
-  const decrementQuantity = async (targetItem) => {
-    if (targetItem.quantity === 1) {
+  const decrementQuantity = async (target) => {
+    const targetId = typeof target === 'object' ? target.id : target;
+    const targetItem = cartItems.find((i) => i.id === targetId || i.product_id === targetId);
+    if (!targetItem) return;
+
+    if (targetItem.quantity <= 1) {
       removeFromCart(targetItem);
       return;
     }
+
     const newQty = targetItem.quantity - 1;
     const updated = cartItems.map((item) =>
-      item.id === targetItem.id ? { ...item, quantity: newQty } : item
+      (item.id === targetId || item.product_id === targetId) ? { ...item, quantity: newQty } : item
     );
     saveCartItems(updated);
 
@@ -170,10 +384,10 @@ function CartDrawer({ isOpen, onClose }) {
     }
   };
 
-  const removeFromCart = async (targetItem) => {
-    const targetId = typeof targetItem === 'object' ? targetItem.id : targetItem;
-    const itemObj = typeof targetItem === 'object' ? targetItem : cartItems.find((i) => i.id === targetId);
-    const updated = cartItems.filter((item) => item.id !== targetId);
+  const removeFromCart = async (target) => {
+    const targetId = typeof target === 'object' ? target.id : target;
+    const itemObj = cartItems.find((i) => i.id === targetId || i.product_id === targetId);
+    const updated = cartItems.filter((item) => item.id !== targetId && item.product_id !== targetId);
     saveCartItems(updated);
     toast.success("Item removed from cart");
 
@@ -227,11 +441,28 @@ function CartDrawer({ isOpen, onClose }) {
   };
 
   const proceedToPayment = () => {
-    // Basic Form validation
-    if (!form.fullName || !form.email || !form.phone || !form.city || !form.address) {
-      toast.error("Please fill in all shipping fields");
+    if (!form.fullName || !form.email || !form.phone) {
+      toast.error("Please fill in recipient details (Name, Email, Phone)");
       return;
     }
+
+    if (addressMode === "manual") {
+      if (!form.city || !form.address) {
+        toast.error("Please fill in city and street address");
+        return;
+      }
+    } else {
+      if (!mapLocation.formattedAddress) {
+        toast.error("Please select a location pin on Google Map");
+        return;
+      }
+      setForm((prev) => ({
+        ...prev,
+        city: mapLocation.city || "Phnom Penh",
+        address: mapLocation.formattedAddress
+      }));
+    }
+
     setStep("payment");
   };
 
@@ -265,9 +496,9 @@ function CartDrawer({ isOpen, onClose }) {
       }
 
       // 2. Execute Checkout API call
-      const fullAddress = `${form.address}, ${form.city}`;
+      const finalAddress = addressMode === "map" ? mapLocation.formattedAddress : `${form.address}, ${form.city}`;
       const res = await checkoutApi({
-        shipping_address: fullAddress,
+        shipping_address: finalAddress,
         contact_phone: form.phone
       });
 
@@ -293,7 +524,12 @@ function CartDrawer({ isOpen, onClose }) {
         total: grandTotal.toFixed(2),
         status: "Paid",
         paymentMethod: paymentMethod.toUpperCase(),
-        shippingInfo: form,
+        addressMode: addressMode,
+        shippingInfo: {
+          ...form,
+          address: finalAddress,
+          mapLocation: addressMode === "map" ? mapLocation : null
+        },
         products: cartItems
       };
 
@@ -433,8 +669,27 @@ function CartDrawer({ isOpen, onClose }) {
 
               {step === "info" && (
                 <div className="info-step-content">
+                  {/* Address Method Selection Tabs (2 Options) */}
+                  <div className="address-option-toggle-bar">
+                    <button
+                      type="button"
+                      className={`address-tab-btn ${addressMode === "manual" ? "active" : ""}`}
+                      onClick={() => setAddressMode("manual")}
+                    >
+                      <span>📝 Field Address</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`address-tab-btn ${addressMode === "map" ? "active" : ""}`}
+                      onClick={() => setAddressMode("map")}
+                    >
+                      <span>🗺️ Select Google Map</span>
+                    </button>
+                  </div>
+
+                  {/* Recipient Details */}
                   <div className="checkout-form-group">
-                    <label>Full Name</label>
+                    <label>Recipient Full Name</label>
                     <input
                       type="text"
                       name="fullName"
@@ -444,6 +699,7 @@ function CartDrawer({ isOpen, onClose }) {
                       required
                     />
                   </div>
+
                   <div className="checkout-form-group">
                     <label>Email Address</label>
                     <input
@@ -455,39 +711,196 @@ function CartDrawer({ isOpen, onClose }) {
                       required
                     />
                   </div>
+
                   <div className="checkout-form-group">
-                    <label>Phone Number</label>
+                    <label>Phone Number (Delivery Contact)</label>
                     <input
                       type="tel"
                       name="phone"
-                      placeholder="e.g. 012345678"
+                      placeholder="e.g. 099888777"
                       value={form.phone}
                       onChange={handleInputChange}
                       required
                     />
                   </div>
-                  <div className="checkout-form-group">
-                    <label>City</label>
-                    <input
-                      type="text"
-                      name="city"
-                      placeholder="e.g. Phnom Penh"
-                      value={form.city}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  <div className="checkout-form-group">
-                    <label>Address Details</label>
-                    <input
-                      type="text"
-                      name="address"
-                      placeholder="e.g. House 12, St 271, Sangkat Boeung Keng Kang"
-                      value={form.address}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
+
+                  {/* OPTION 1: Manual Field Address */}
+                  {addressMode === "manual" ? (
+                    <>
+                      <div className="checkout-form-group">
+                        <label>City / Province</label>
+                        <input
+                          type="text"
+                          name="city"
+                          placeholder="e.g. Phnom Penh"
+                          value={form.city}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      <div className="checkout-form-group">
+                        <label>Street & House Address</label>
+                        <input
+                          type="text"
+                          name="address"
+                          placeholder="e.g. House 12, St 271, Sangkat Boeung Keng Kang"
+                          value={form.address}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    /* OPTION 2: Interactive Google Map Location Picker */
+                    <div className="google-map-picker-block">
+                      <div className="map-actions-top-bar">
+                        <button
+                          type="button"
+                          className="detect-gps-btn"
+                          onClick={handleDetectCurrentLocation}
+                          disabled={isLocating}
+                        >
+                          <Navigation size={15} className={isLocating ? "animate-spin" : ""} />
+                          <span>{isLocating ? "Locating My Device..." : "Detect My Live GPS Location"}</span>
+                        </button>
+
+                        <a
+                          href={`https://www.google.com/maps?q=${mapLocation.lat},${mapLocation.lng}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="open-google-map-link"
+                          title="Open Pin in Google Maps"
+                        >
+                          <Compass size={14} /> Open Google Maps
+                        </a>
+                      </div>
+
+                      <div className="map-presets-header">
+                        <label><MapPin size={14} className="text-green" /> Quick Click Map District Presets:</label>
+                        <div className="presets-pills-row">
+                          {MAP_PRESETS.map((preset, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              className={`preset-pill ${mapLocation.name === preset.name ? "active" : ""}`}
+                              onClick={() => handleSelectMapPreset(preset)}
+                            >
+                              📍 {preset.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Live Google Map Interactive Canvas Embed */}
+                      <div className="google-map-iframe-container">
+                        <iframe
+                          title="Google Map Location Picker"
+                          width="100%"
+                          height="200"
+                          style={{ border: 0, borderRadius: "14px" }}
+                          loading="lazy"
+                          allowFullScreen
+                          src={`https://maps.google.com/maps?q=${mapLocation.lat},${mapLocation.lng}&z=15&output=embed`}
+                        ></iframe>
+                        <div className="map-pin-badge-overlay">
+                          <MapPin size={16} className="pin-pulse-icon" />
+                          <span>Selected Pin: {mapLocation.name} ({mapLocation.lat}° N, {mapLocation.lng}° E)</span>
+                        </div>
+                      </div>
+
+                      {/* Resolved Street Address Field */}
+                      <div className="checkout-form-group margin-top-10">
+                        <label>Map Resolved Street Address</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Street 271, Toul Tom Poung, Phnom Penh"
+                          value={mapLocation.streetAddress || "Street 271, Toul Tom Poung, Phnom Penh"}
+                          onChange={(e) => {
+                            const newAddress = e.target.value;
+                            setMapLocation((prev) => {
+                              const updated = {
+                                ...prev,
+                                streetAddress: newAddress,
+                                formattedAddress: `${newAddress} (Google Map Pin: ${prev.lat}° N, ${prev.lng}° E)`
+                              };
+                              setForm((f) => ({ ...f, city: "Phnom Penh", address: updated.formattedAddress }));
+                              return updated;
+                            });
+                          }}
+                        />
+                      </div>
+
+                      {/* Fine-tune Coordinates Input Controls */}
+                      <div className="coordinates-fine-tune-row">
+                        <div className="coord-input-item">
+                          <label>Latitude:</label>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={mapLocation.lat}
+                            onChange={async (e) => {
+                              const val = parseFloat(e.target.value) || 11.5392;
+                              const resolved = await fetchReverseGeocode(val, mapLocation.lng);
+                              setMapLocation((prev) => {
+                                const formatted = `${resolved} (Google Map Pin: ${val}° N, ${prev.lng}° E)`;
+                                setForm((f) => ({ ...f, city: "Phnom Penh", address: formatted }));
+                                return { ...prev, name: "Custom Map Pin", lat: val, streetAddress: resolved, formattedAddress: formatted };
+                              });
+                            }}
+                          />
+                        </div>
+                        <div className="coord-input-item">
+                          <label>Longitude:</label>
+                          <input
+                            type="number"
+                            step="0.0001"
+                            value={mapLocation.lng}
+                            onChange={async (e) => {
+                              const val = parseFloat(e.target.value) || 104.9158;
+                              const resolved = await fetchReverseGeocode(mapLocation.lat, val);
+                              setMapLocation((prev) => {
+                                const formatted = `${resolved} (Google Map Pin: ${prev.lat}° N, ${val}° E)`;
+                                setForm((f) => ({ ...f, city: "Phnom Penh", address: formatted }));
+                                return { ...prev, name: "Custom Map Pin", lng: val, streetAddress: resolved, formattedAddress: formatted };
+                              });
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Map Location Detail Input Note */}
+                      <div className="checkout-form-group margin-top-10">
+                        <label>House / Floor / Delivery Note</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. House 12, Gate 2, 3rd Floor"
+                          value={mapLocation.addressNote}
+                          onChange={(e) => {
+                            const newNote = e.target.value;
+                            setMapLocation((prev) => {
+                              const baseAddr = prev.streetAddress || "Street 271, Toul Tom Poung, Phnom Penh";
+                              const updated = {
+                                ...prev,
+                                addressNote: newNote,
+                                formattedAddress: `${baseAddr} (Google Map Pin: ${prev.lat}° N, ${prev.lng}° E) - Note: ${newNote}`
+                              };
+                              setForm((f) => ({ ...f, city: "Phnom Penh", address: updated.formattedAddress }));
+                              return updated;
+                            });
+                          }}
+                        />
+                      </div>
+
+                      <div className="selected-map-preview-card">
+                        <Navigation size={16} className="text-green" />
+                        <div>
+                          <span className="preview-label">Selected Delivery Coordinates:</span>
+                          <p className="preview-address-text">{mapLocation.formattedAddress}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="checkout-form-group">
                     <label>Country</label>
                     <input
@@ -561,10 +974,12 @@ function CartDrawer({ isOpen, onClose }) {
                 <div className="confirm-step-content">
                   {/* Shipping info review */}
                   <div className="review-block-card">
-                    <h4>Delivery To</h4>
+                    <h4>
+                      {addressMode === "map" ? "🗺️ Google Map Delivery Location" : "📍 Field Address Delivery"}
+                    </h4>
                     <p className="bold">{form.fullName}</p>
                     <p>{form.phone}</p>
-                    <p>{form.address}, {form.city}</p>
+                    <p className="address-review-highlight">{form.address}, {form.city}</p>
                   </div>
 
                   {/* Payment method review */}
@@ -578,14 +993,18 @@ function CartDrawer({ isOpen, onClose }) {
                     </p>
                   </div>
 
-                  {/* Products review */}
+                  {/* Products review with image thumbnails */}
                   <div className="review-block-card">
                     <h4>Items Checklist ({cartItems.reduce((acc, item) => acc + item.quantity, 0)})</h4>
                     <div className="review-items-mini-list">
                       {cartItems.map((item) => (
                         <div key={item.id} className="review-mini-item">
-                          <span>{item.name} <span className="text-light">x{item.quantity}</span></span>
-                          <span>${(item.price * item.quantity).toFixed(2)}</span>
+                          <img src={item.image} alt={item.name} className="review-mini-img" />
+                          <div className="review-mini-details">
+                            <span className="review-mini-name">{item.name}</span>
+                            <span className="text-light">Qty: {item.quantity} &times; ${item.price}</span>
+                          </div>
+                          <span className="review-mini-price">${(item.price * item.quantity).toFixed(2)}</span>
                         </div>
                       ))}
                     </div>

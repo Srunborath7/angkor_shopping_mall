@@ -28,7 +28,7 @@ apiClient.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Response interceptor to handle token refresh
+// Response interceptor to handle token refresh gracefully
 let isRefreshing = false;
 let failedQueue = [];
 
@@ -48,12 +48,12 @@ apiClient.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config;
         
-        // Check if error is 401 Unauthorized and not already retrying
+        // Handle 401 Unauthorized errors
         if (error.response?.status === 401 && !originalRequest._retry) {
             const authState = store.getState()?.auth;
             const refreshToken = authState?.refreshToken;
             
-            if (refreshToken) {
+            if (refreshToken && !originalRequest.url?.includes("/auth/")) {
                 if (isRefreshing) {
                     return new Promise((resolve, reject) => {
                         failedQueue.push({ resolve, reject });
@@ -69,25 +69,18 @@ apiClient.interceptors.response.use(
                 isRefreshing = true;
                 
                 try {
-                    // Try to refresh token
-                    // We try /api/auth/refresh first, if that fails, we try /api/auth/refresh-token
-                    let refreshRes;
+                    let refreshRes = null;
+                    // Attempt token refresh if available
                     try {
-                        refreshRes = await axios.post(`${config.base_url}/api/auth/refresh`, {
+                        refreshRes = await axios.post(`${config.base_url}/api/auth/refresh-token`, {
                             refreshToken: refreshToken
                         });
                     } catch (e) {
-                        if (e.response?.status === 404) {
-                            refreshRes = await axios.post(`${config.base_url}/api/auth/refresh-token`, {
-                                refreshToken: refreshToken
-                            });
-                        } else {
-                            throw e;
-                        }
+                        console.warn("Refresh token endpoint unavailable (404/401):", e.message);
                     }
                     
-                    const newAccessToken = refreshRes.data?.accessToken || refreshRes.data?.token || refreshRes.data?.data?.accessToken;
-                    const newRefreshToken = refreshRes.data?.refreshToken || refreshRes.data?.refresh_token || refreshToken;
+                    const newAccessToken = refreshRes?.data?.accessToken || refreshRes?.data?.token || refreshRes?.data?.data?.accessToken;
+                    const newRefreshToken = refreshRes?.data?.refreshToken || refreshRes?.data?.refresh_token || refreshToken;
                     
                     if (newAccessToken) {
                         store.dispatch(setAuth({
@@ -102,20 +95,22 @@ apiClient.interceptors.response.use(
                         processQueue(null, newAccessToken);
                         isRefreshing = false;
                         return apiClient(originalRequest);
+                    } else {
+                        // Refresh token expired or unavailable, clear stale token
+                        processQueue(error, null);
+                        isRefreshing = false;
+                        store.dispatch(clearAuth());
+                        return Promise.reject(error.response?.data || error);
                     }
                 } catch (refreshError) {
                     processQueue(refreshError, null);
                     isRefreshing = false;
-                    
-                    // Clear auth state and redirect to login
                     store.dispatch(clearAuth());
-                    window.location.href = "/auth/login";
                     return Promise.reject(refreshError);
                 }
             } else {
-                // No refresh token available, logout
+                // Token invalid or no refresh token, clear stale state safely
                 store.dispatch(clearAuth());
-                window.location.href = "/auth/login";
             }
         }
         
