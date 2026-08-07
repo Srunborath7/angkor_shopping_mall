@@ -14,6 +14,8 @@ import BrandPage from "./pages/Admin/BrandPage";
 import NotFound from "./components/NotFound";
 import CustomersPage from "./pages/Admin/CustomersPage";
 import InventoryPage from "./pages/Admin/InventoryPage";
+import SupplierPage from "./pages/Admin/SupplierPage";
+import PurchasePage from "./pages/Admin/PurchasePage";
 
 function App() {
   return (
@@ -34,6 +36,8 @@ function App() {
             <Route path="brands" element={<BrandPage />} />
             <Route path="customers" element={<CustomersPage />} />
             <Route path="inventory" element={<InventoryPage />} />
+            <Route path="suppliers" element={<SupplierPage />} />
+            <Route path="purchases" element={<PurchasePage />} />
           </Route>
         </Route>
       </Routes>

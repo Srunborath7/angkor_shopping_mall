@@ -9,7 +9,9 @@ import {
   FaCog,
   FaTimes,
   FaStore,
-  FaBookmark
+  FaBookmark,
+  FaTruck,
+  FaFileInvoiceDollar
 } from "react-icons/fa";
 import logo from "../assets/logo.jpg";
 import { NavLink } from "react-router-dom";
@@ -35,6 +37,18 @@ function Sidebar({ open, setOpen }) {
       name: "Inventory",
       icon: <FaBoxes />,
       path: "/admin/inventory"
+    },
+
+    {
+      name: "Purchases",
+      icon: <FaFileInvoiceDollar />,
+      path: "/admin/purchases"
+    },
+
+    {
+      name: "Suppliers",
+      icon: <FaTruck />,
+      path: "/admin/suppliers"
     },
 
     {
