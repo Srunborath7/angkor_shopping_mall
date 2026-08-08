@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -28,6 +28,7 @@ import Header from "../../components/Header";
 import { productsPagedApi } from "../../services/productsService";
 import { categoriesApi } from "../../services/categoriesService";
 import { addToCartApi } from "../../services/cartService";
+import { getFlashSalesApi } from "../../services/flashSaleService";
 import "./styles/HomePage.css";
 
 const NO_IMAGE_PLACEHOLDER =
@@ -103,9 +104,19 @@ function getCategoryIcon(name, apiIcon, index = 0) {
   return fallbackList[index % fallbackList.length];
 }
 
+
+
+function getCategoryName(cat) {
+  if (!cat) return "General";
+  if (typeof cat === "string") return cat;
+  if (typeof cat === "object") return cat.name || cat.title || cat.label || "General";
+  return String(cat);
+}
+
 function normalizeProduct(raw) {
   const price = Number(raw.price ?? 0);
   const originalPrice = Number(raw.original_price ?? raw.compare_at_price ?? (price * 1.25).toFixed(2));
+
   const discount =
     originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 15;
 
@@ -119,8 +130,8 @@ function normalizeProduct(raw) {
     id: raw.id,
     name: raw.name ?? "Untitled Product",
     description: raw.description ?? "",
-    category: raw.category?.name ?? "General",
-    brand: raw.brand?.name ?? null,
+    category: getCategoryName(raw.category),
+    brand: typeof raw.brand === "object" ? (raw.brand?.name || null) : (raw.brand || null),
     price,
     originalPrice: Number(typeof originalPrice === "number" ? originalPrice.toFixed(2) : originalPrice),
     discount: discount || 15,
@@ -159,22 +170,44 @@ function HomePage() {
     window.dispatchEvent(new Event("cart-updated"));
   }, [wishlist]);
 
+  // Flash Sales configured via Admin
+  const [flashSales, setFlashSales] = useState([]);
+
+  const loadFlashSales = async () => {
+    try {
+      // flashSaleService already normalizes: image from product join, category as string
+      const res = await getFlashSalesApi();
+      if (Array.isArray(res)) {
+        const activeOnly = res.filter((item) => item.status === "active");
+        setFlashSales(activeOnly.length > 0 ? activeOnly : res);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch flash sales API:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadFlashSales();
+    window.addEventListener("flash-sale-updated", loadFlashSales);
+    return () => window.removeEventListener("flash-sale-updated", loadFlashSales);
+  }, []);
+
   // Fetch Products & Categories from API on mount
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch Products
-        const prodRes = await productsPagedApi({ page: 1, limit: 8 });
-        const rawProds = prodRes.data?.data || prodRes.data || (Array.isArray(prodRes) ? prodRes : []);
-        if (Array.isArray(rawProds) && rawProds.length > 0) {
-          setProducts(rawProds.slice(0, 4).map(normalizeProduct));
+        // Fetch Products from API
+        const prodRes = await productsPagedApi({ page: 1, limit: 12 });
+        const rawProds = prodRes?.data?.data || prodRes?.data || (Array.isArray(prodRes) ? prodRes : []);
+        if (Array.isArray(rawProds)) {
+          setProducts(rawProds.map(normalizeProduct));
         } else {
-          setProducts(getFallbackProducts().slice(0, 4));
+          setProducts([]);
         }
       } catch (err) {
         console.warn("Failed to fetch homepage products API:", err);
-        setProducts(getFallbackProducts());
+        setProducts([]);
       }
 
       try {
@@ -186,11 +219,20 @@ function HomePage() {
             try { return JSON.parse(localStorage.getItem("category_icons") || "{}"); } catch { return {}; }
           })();
 
-          const formattedCats = rawCats.slice(0, 8).map((c, i) => ({
-            name: c.name,
-            count: c.product_count ? `${c.product_count} items` : `${100 + (c.id || i) * 85}+ items`,
-            icon: getCategoryIcon(c.name, c.icon || savedIcons[c.name], i)
-          }));
+          const formattedCats = rawCats.slice(0, 8).map((c, i) => {
+            // Safely extract name — API may return a nested object
+            const catName = typeof c.name === "string" ? c.name
+              : (typeof c.name === "object" && c.name !== null ? c.name.name || c.name.title || "Category" : String(c.name || "Category"));
+            // Safely extract icon — API may return a nested icon object
+            const rawIcon = typeof c.icon === "string" ? c.icon
+              : (typeof c.icon === "object" && c.icon !== null ? c.icon.icon || c.icon.name || "" : "");
+            const savedIcon = savedIcons[catName] || "";
+            return {
+              name: catName,
+              count: c.product_count ? `${c.product_count} items` : `${100 + (c.id || i) * 85}+ items`,
+              icon: getCategoryIcon(catName, rawIcon || savedIcon, i)
+            };
+          });
           setCategories(formattedCats);
         } else {
           setCategories(getDefaultCategories());
@@ -205,6 +247,25 @@ function HomePage() {
 
     fetchData();
   }, []);
+
+  // Trending Tab Filter State ('all' | 'electronics' | 'fashion' | 'top-rated')
+  const [activeTrendingTab, setActiveTrendingTab] = useState("all");
+
+  const filteredTrendingProducts = useMemo(() => {
+    if (activeTrendingTab === "electronics") {
+      const matched = products.filter((p) => p.category.toLowerCase().includes("electronics") || p.category.toLowerCase().includes("tech") || p.category.toLowerCase().includes("phone"));
+      return matched.length > 0 ? matched : products;
+    }
+    if (activeTrendingTab === "fashion") {
+      const matched = products.filter((p) => p.category.toLowerCase().includes("fashion") || p.category.toLowerCase().includes("cloth") || p.category.toLowerCase().includes("shoe"));
+      return matched.length > 0 ? matched : products;
+    }
+    if (activeTrendingTab === "top-rated") {
+      const matched = products.filter((p) => p.rating >= 4.5);
+      return matched.length > 0 ? matched : products;
+    }
+    return products;
+  }, [products, activeTrendingTab]);
 
   // Countdown timer for Flash Sale
   const [timeLeft, setTimeLeft] = useState({
@@ -307,7 +368,7 @@ function HomePage() {
             </h1>
 
             <p className="hero-description">
-              Explore thousands of premium products backed by AI-curated recommendations, 
+              Explore thousands of premium products backed by AI-curated recommendations,
               instant ABA KHQR checkout, and express delivery across Cambodia.
             </p>
 
@@ -437,10 +498,10 @@ function HomePage() {
           <div className="header-left">
             <div className="flash-title-row">
               <Flame size={26} className="clock-flash-icon" />
-              <h2>Trending & Flash Sale</h2>
+              <h2>Flash Sale Deals</h2>
               <span className="live-api-badge"><Sparkles size={12} /> Live API</span>
             </div>
-            <p>Exclusive deals updated directly from our inventory</p>
+            <p>Limited-time discounts updated directly from our inventory</p>
           </div>
 
           <div className="countdown-timer">
@@ -461,15 +522,146 @@ function HomePage() {
           </div>
         </div>
 
-        {/* Product Grid */}
+        {/* Flash Sale Product Grid */}
         {loading ? (
           <div className="homepage-loading-state">
             <Loader2 size={36} className="animate-spin text-green" />
-            <p>Loading real-time catalog from server...</p>
+            <p>Loading real-time flash deals from server...</p>
           </div>
         ) : (
           <div className="products-grid">
-            {products.map((prod) => (
+            {(flashSales.length > 0 ? flashSales : products.slice(0, 4)).map((prod, idx) => {
+              const claimedPct = prod.claimedPct || (65 + ((idx * 7) % 30));
+              const itemsLeft = Math.max(1, prod.stockLimit || (10 - idx * 2));
+              const prodRating = prod.rating || 4.8;
+              const prodReviews = prod.reviews || (50 + idx * 25);
+
+              return (
+                <div
+                  key={prod.id || idx}
+                  className="product-card-item"
+                  onClick={() => navigate(`/product/${prod.product_id || prod.id}`)}
+                >
+                  <div className="product-image-box">
+                    <img src={prod.image} alt={prod.name} loading="lazy" />
+
+                    <span className="product-badge" style={{ background: "#ef4444" }}>{prod.badge || "Flash Deal"}</span>
+                    {prod.discount > 0 && <span className="product-discount-tag">-{prod.discount}%</span>}
+
+                    <button
+                      type="button"
+                      className={`product-wishlist-toggle ${wishlist.includes(prod.id) ? "active" : ""}`}
+                      onClick={(e) => { e.stopPropagation(); toggleWishlist(prod.id); }}
+                      title="Toggle Wishlist"
+                    >
+                      <Heart size={16} fill={wishlist.includes(prod.id) ? "#e54b4b" : "none"} />
+                    </button>
+                  </div>
+
+                  <div className="product-details-box">
+                    <span className="product-category">{typeof prod.category === "string" ? prod.category : (prod.category?.name ?? "")}</span>
+                    <h3 className="product-title" title={prod.name}>{typeof prod.name === "string" ? prod.name : String(prod.name ?? "")}</h3>
+
+                    <div className="product-rating-row">
+                      <div className="stars-row">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            size={14}
+                            fill={i < Math.floor(prodRating) ? "#FFC107" : "none"}
+                            stroke={i < Math.floor(prodRating) ? "#FFC107" : "#E5E7EB"}
+                          />
+                        ))}
+                      </div>
+                      <span className="rating-text">{prodRating} ({prodReviews})</span>
+                    </div>
+
+                    <div className="flash-stock-bar-box">
+                      <div className="flash-stock-label">
+                        <span>🔥 {claimedPct}% Sold</span>
+                        <span>Only {itemsLeft} left</span>
+                      </div>
+                      <div className="flash-stock-track">
+                        <div className="flash-stock-fill" style={{ width: `${claimedPct}%` }}></div>
+                      </div>
+                    </div>
+
+                    <div className="product-footer-row" style={{ marginTop: "0.75rem" }}>
+                      <div className="price-box">
+                        <span className="sale-price">${prod.price}</span>
+                        {prod.originalPrice > prod.price && (
+                          <span className="original-price">${prod.originalPrice}</span>
+                        )}
+                      </div>
+
+                      <button
+                        type="button"
+                        className="add-cart-btn"
+                        onClick={(e) => { e.stopPropagation(); addToCart(prod); }}
+                      >
+                        <ShoppingBag size={15} /> Add To Cart
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Trending & Best Sellers Section */}
+      <section className="home-section trending-products-section" style={{ marginTop: "2rem" }}>
+        <div className="section-header-row">
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
+              <Sparkles size={24} style={{ color: "#166534" }} />
+              <h2>Trending & Best Sellers</h2>
+            </div>
+            <p>Handpicked top-rated products based on customer reviews and popularity</p>
+          </div>
+          <button className="view-all-btn" onClick={() => navigate("/shop")}>
+            Browse Shop <ChevronRight size={16} />
+          </button>
+        </div>
+
+        {/* Trending Tab Filters */}
+        <div className="trending-tabs-row">
+          <button
+            className={`trending-tab-btn ${activeTrendingTab === "all" ? "active" : ""}`}
+            onClick={() => setActiveTrendingTab("all")}
+          >
+            🔥 All Trending
+          </button>
+          <button
+            className={`trending-tab-btn ${activeTrendingTab === "electronics" ? "active" : ""}`}
+            onClick={() => setActiveTrendingTab("electronics")}
+          >
+            📱 Electronics & Tech
+          </button>
+          <button
+            className={`trending-tab-btn ${activeTrendingTab === "fashion" ? "active" : ""}`}
+            onClick={() => setActiveTrendingTab("fashion")}
+          >
+            👗 Fashion & Shoes
+          </button>
+          <button
+            className={`trending-tab-btn ${activeTrendingTab === "top-rated" ? "active" : ""}`}
+            onClick={() => setActiveTrendingTab("top-rated")}
+          >
+            ⭐ Top Rated (4.5+)
+          </button>
+        </div>
+
+        {/* Trending Product Grid */}
+        {loading ? (
+          <div className="homepage-loading-state">
+            <Loader2 size={36} className="animate-spin text-green" />
+            <p>Loading trending catalog from server...</p>
+          </div>
+        ) : (
+          <div className="products-grid">
+            {filteredTrendingProducts.map((prod) => (
               <div
                 key={prod.id}
                 className="product-card-item"
@@ -492,8 +684,8 @@ function HomePage() {
                 </div>
 
                 <div className="product-details-box">
-                  <span className="product-category">{prod.category}</span>
-                  <h3 className="product-title" title={prod.name}>{prod.name}</h3>
+                  <span className="product-category">{typeof prod.category === "string" ? prod.category : (prod.category?.name ?? "")}</span>
+                  <h3 className="product-title" title={prod.name}>{typeof prod.name === "string" ? prod.name : String(prod.name ?? "")}</h3>
 
                   <div className="product-rating-row">
                     <div className="stars-row">
@@ -697,59 +889,6 @@ function getDefaultCategories() {
     { name: "Home & Living", count: "2100+ items", icon: "🏠" },
     { name: "Sports", count: "567+ items", icon: "⚽" },
     { name: "Groceries", count: "1890+ items", icon: "🍜" }
-  ];
-}
-
-function getFallbackProducts() {
-  return [
-    {
-      id: 101,
-      name: "Pro Wireless Headphones v2",
-      category: "Electronics",
-      price: 39.99,
-      originalPrice: 59.99,
-      image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60",
-      rating: 4.8,
-      reviews: 120,
-      badge: "Trending",
-      discount: 33
-    },
-    {
-      id: 102,
-      name: "Active Smart Watch Pro",
-      category: "Electronics",
-      price: 59.99,
-      originalPrice: 89.99,
-      image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60",
-      rating: 4.7,
-      reviews: 95,
-      badge: "Best Seller",
-      discount: 33
-    },
-    {
-      id: 103,
-      name: "Waterproof Travel Backpack",
-      category: "Fashion",
-      price: 29.99,
-      originalPrice: 39.99,
-      image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&auto=format&fit=crop&q=60",
-      rating: 4.5,
-      reviews: 210,
-      badge: "New",
-      discount: 25
-    },
-    {
-      id: 104,
-      name: "Retro Classic Sunglasses",
-      category: "Beauty",
-      price: 19.99,
-      originalPrice: 29.99,
-      image: "https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500&auto=format&fit=crop&q=60",
-      rating: 4.9,
-      reviews: 64,
-      badge: "Top Rated",
-      discount: 33
-    }
   ];
 }
 

@@ -23,6 +23,22 @@ export const productsPagedApi = (params) => {
         params
     );
 };
+
+export const getTrendingProductsApi = (params) => {
+    return api(
+        "/api/products/true",
+        "get",
+        { page: 1, limit: 8, ...params }
+    );
+};
+
+export const getFlashSaleProductsApi = (params) => {
+    return api(
+        "/api/products/true",
+        "get",
+        { page: 1, limit: 8, ...params }
+    );
+};
  
 export const updateProductApi = (id, data) => {
     return api(

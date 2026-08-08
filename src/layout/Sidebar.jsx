@@ -11,7 +11,8 @@ import {
   FaStore,
   FaBookmark,
   FaTruck,
-  FaFileInvoiceDollar
+  FaFileInvoiceDollar,
+  FaBolt
 } from "react-icons/fa";
 import logo from "../assets/logo.jpg";
 import { NavLink } from "react-router-dom";
@@ -25,6 +26,12 @@ function Sidebar({ open, setOpen }) {
       name: "Dashboard",
       icon: <FaTachometerAlt />,
       path: "/admin/dashboard"
+    },
+
+    {
+      name: "Flash Sale",
+      icon: <FaBolt />,
+      path: "/admin/flash-sale"
     },
 
     {

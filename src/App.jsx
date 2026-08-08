@@ -19,6 +19,7 @@ import InventoryPage from "./pages/Admin/InventoryPage";
 import SupplierPage from "./pages/Admin/SupplierPage";
 import PurchasePage from "./pages/Admin/PurchasePage";
 import AdminOrderPage from "./pages/Admin/OrderPage";
+import FlashSalePage from "./pages/Admin/FlashSalePage";
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/admin" element={<MainLayout />}>
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="flash-sale" element={<FlashSalePage />} />
             <Route path="products" element={<ProductPage />} />
             <Route path="categories" element={<CategoryPage />} />
             <Route path="brands" element={<BrandPage />} />

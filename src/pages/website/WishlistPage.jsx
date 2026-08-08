@@ -112,7 +112,7 @@ function normalizeProduct(raw) {
     id: raw.id,
     name: raw.name ?? "Untitled product",
     description: raw.description ?? "",
-    category: raw.category?.name ?? (typeof raw.category === "string" ? raw.category : "General"),
+    category: typeof raw.category === "object" ? (raw.category?.name || "General") : (raw.category || "General"),
     brand: raw.brand?.name ?? (typeof raw.brand === "string" ? raw.brand : null),
     price,
     originalPrice,
