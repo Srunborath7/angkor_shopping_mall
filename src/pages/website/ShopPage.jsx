@@ -391,7 +391,12 @@ function ShopPage() {
             {!isLoading && !loadError && filteredProducts.length > 0 && (
               <div className="shop-products-grid">
                 {filteredProducts.map((prod) => (
-                  <div key={prod.id} className="product-card-item">
+                  <div
+                    key={prod.id}
+                    className="product-card-item"
+                    onClick={() => navigate(`/product/${prod.id}`)}
+                    style={{ cursor: "pointer" }}
+                  >
                     <div className="product-image-box">
                       <img
                         src={prod.image}
@@ -451,7 +456,7 @@ function ShopPage() {
                           type="button"
                           className="add-cart-btn"
                           disabled={prod.stockQuantity <= 0}
-                          onClick={() => addToCart(prod)}
+                          onClick={(e) => { e.stopPropagation(); addToCart(prod); }}
                         >
                           {prod.stockQuantity <= 0 ? "Out of Stock" : "Add To Cart"}
                         </button>

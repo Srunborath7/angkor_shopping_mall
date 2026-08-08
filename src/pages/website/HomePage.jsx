@@ -404,7 +404,7 @@ function HomePage() {
               <div
                 key={prod.id}
                 className="product-card-item"
-                onClick={() => navigate("/shop")}
+                onClick={() => navigate(`/product/${prod.id}`)}
               >
                 <div className="product-image-box">
                   <img src={prod.image} alt={prod.name} loading="lazy" />

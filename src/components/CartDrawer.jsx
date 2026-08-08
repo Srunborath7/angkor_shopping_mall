@@ -627,29 +627,49 @@ function CartDrawer({ isOpen, onClose }) {
                     <>
                       {/* Cart Items List */}
                       <div className="cart-items-list">
-                        {cartItems.map((item) => (
-                          <div key={item.id} className="cart-item-card">
-                            <img src={item.image} alt={item.name} className="cart-item-img" />
-                            <div className="cart-item-info">
-                              <h4 className="cart-item-name">{item.name}</h4>
-                              <span className="cart-item-price">${item.price}</span>
-                              <div className="cart-qty-row">
-                                <div className="cart-qty-buttons">
-                                  <button onClick={() => decrementQuantity(item.id)}>
-                                    <Minus size={12} />
-                                  </button>
-                                  <span>{item.quantity}</span>
-                                  <button onClick={() => incrementQuantity(item.id)}>
-                                    <Plus size={12} />
+                        {cartItems.map((item) => {
+                          const targetId = item.product_id || item.id;
+                          const handleGoToDetail = () => {
+                            onClose();
+                            if (targetId) navigate(`/product/${targetId}`);
+                          };
+
+                          return (
+                            <div key={item.id} className="cart-item-card">
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="cart-item-img"
+                                onClick={handleGoToDetail}
+                                style={{ cursor: "pointer" }}
+                              />
+                              <div className="cart-item-info">
+                                <h4
+                                  className="cart-item-name"
+                                  onClick={handleGoToDetail}
+                                  style={{ cursor: "pointer" }}
+                                >
+                                  {item.name}
+                                </h4>
+                                <span className="cart-item-price">${item.price}</span>
+                                <div className="cart-qty-row">
+                                  <div className="cart-qty-buttons">
+                                    <button onClick={() => decrementQuantity(item.id)}>
+                                      <Minus size={12} />
+                                    </button>
+                                    <span>{item.quantity}</span>
+                                    <button onClick={() => incrementQuantity(item.id)}>
+                                      <Plus size={12} />
+                                    </button>
+                                  </div>
+                                  <button className="cart-item-delete" onClick={() => removeFromCart(item.id)}>
+                                    <Trash2 size={14} />
                                   </button>
                                 </div>
-                                <button className="cart-item-delete" onClick={() => removeFromCart(item.id)}>
-                                  <Trash2 size={14} />
-                                </button>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
 
                       {/* Coupon Box */}

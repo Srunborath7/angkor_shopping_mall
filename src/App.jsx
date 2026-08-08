@@ -5,6 +5,7 @@ import ForgotPassword from "./pages/Auth/ForgotPasswordPage";
 import HomePage from "./pages/website/HomePage";
 import ShopPage from "./pages/website/ShopPage";
 import OrderPage from "./pages/website/OrderPage";
+import ProductDetailPage from "./pages/website/ProductDetailPage";
 import Dashboard from "./pages/Admin/Dashboard";
 import CategoryPage from "./pages/Admin/CategoryPage";
 import ProductPage from "./pages/Admin/ProductPage";
@@ -24,6 +25,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/shop" element={<ShopPage />} />
+        <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/orders" element={<OrderPage />} />
         <Route path="/auth/login" element={<LoginAdmin />} />
         <Route path="/auth/register" element={<RegisterPage />} />

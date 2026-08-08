@@ -394,7 +394,12 @@ function OrderPage() {
                               <h5>Products Purchased</h5>
                               <div className="products-mini-cards-list">
                                 {order.products.map((item, idx) => (
-                                  <div key={idx} className="product-mini-card">
+                                  <div
+                                    key={idx}
+                                    className="product-mini-card"
+                                    onClick={() => navigate(`/product/${item.id || item.product_id || 1}`)}
+                                    style={{ cursor: "pointer" }}
+                                  >
                                     <img src={item.image} alt={item.name} />
                                     <div className="mini-card-info">
                                       <h6>{item.name}</h6>
