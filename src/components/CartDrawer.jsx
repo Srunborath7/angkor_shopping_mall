@@ -16,7 +16,8 @@ import {
   MapPin,
   Map,
   Navigation,
-  Compass
+  Compass,
+  Star
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
@@ -27,6 +28,7 @@ import {
   removeFromCartApi
 } from "../services/cartService";
 import { checkoutApi, payOrderApi } from "../services/orderService";
+import { updateProductVariantInventoryApi, updateProductApi } from "../services/productsService";
 import "./CartDrawer.css";
 
 function CartDrawer({ isOpen, onClose }) {
@@ -294,6 +296,7 @@ function CartDrawer({ isOpen, onClose }) {
               name: prod.name || item.name || "Product",
               price: parseFloat(prod.price || item.price || 0),
               image: resolvedImage,
+              rating: Number(prod.rating || item.rating || existingLocal?.rating || 4.8),
               quantity: item.quantity
             };
           });
@@ -515,6 +518,24 @@ function CartDrawer({ isOpen, onClose }) {
         }
       }
 
+      // 3.5 Automated inventory stock tracking & deduction after payment success
+      for (const item of cartItems) {
+        try {
+          const variantId = item.variant_id || item.selectedVariant?.id;
+          const productId = item.product_id || item.id;
+          const currentStock = Number(item.stock_quantity ?? 10);
+          const remainingStock = Math.max(0, currentStock - item.quantity);
+
+          if (variantId) {
+            await updateProductVariantInventoryApi(variantId, remainingStock);
+          } else if (productId) {
+            await updateProductApi(productId, { stock_quantity: remainingStock });
+          }
+        } catch (stockErr) {
+          console.warn("Post-payment stock tracking update warning for item:", item.name, stockErr);
+        }
+      }
+
       // 4. Update local orders array
       const newOrder = {
         id: orderId,
@@ -651,6 +672,12 @@ function CartDrawer({ isOpen, onClose }) {
                                 >
                                   {item.name}
                                 </h4>
+                                <div className="cart-item-rating-row" style={{ display: "flex", alignItems: "center", gap: "0.25rem", margin: "2px 0 4px 0" }}>
+                                  <Star size={12} fill="#FFC107" stroke="#FFC107" />
+                                  <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#475569" }}>
+                                    {item.rating ? Number(item.rating).toFixed(1) : "4.8"}
+                                  </span>
+                                </div>
                                 <span className="cart-item-price">${item.price}</span>
                                 <div className="cart-qty-row">
                                   <div className="cart-qty-buttons">

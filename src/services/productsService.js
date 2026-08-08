@@ -106,3 +106,27 @@ export const brandsApi = () => {
         "get"
     );
 };
+
+export const createProductReviewApi = async (productId, data) => {
+    const payload = {
+        product_id: productId,
+        rating: Number(data.rating || 5),
+        comment: data.comment || "",
+        images: Array.isArray(data.images) ? data.images : (data.imageUrl ? [data.imageUrl] : []),
+        ...(data.user_id ? { user_id: data.user_id } : {}),
+        ...(data.user_name ? { user_name: data.user_name } : {})
+    };
+    try {
+        return await api(`/api/products/${productId}/reviews`, "post", payload);
+    } catch (err) {
+        const status = err?.status || err?.statusCode || err?.response?.status;
+        if (status === 404) {
+            return await api("/api/reviews", "post", payload);
+        }
+        throw err;
+    }
+};
+
+export const getProductReviewsApi = (productId) => {
+    return api(`/api/products/${productId}/reviews`, "get");
+};

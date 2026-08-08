@@ -185,24 +185,30 @@
 .rating-filter-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
   width: 100%;
-  padding: 6px 12px;
+  padding: 8px 12px;
   border-radius: 8px;
+  border: 1px solid #e2e8f0;
   font-size: 13px;
-  color: var(--text-muted);
+  color: #334155;
   text-align: left;
-  transition: var(--transition-all);
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 .rating-filter-btn:hover {
-  background-color: var(--bg-light);
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
 }
 
 .rating-filter-btn.active {
-  background-color: var(--primary-light);
-  color: var(--primary-color);
-  font-weight: 600;
+  background-color: #f0fdf4;
+  color: #166534;
+  border-color: #bbf7d0;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(22, 101, 52, 0.1);
 }
 
 .rating-stars-row {

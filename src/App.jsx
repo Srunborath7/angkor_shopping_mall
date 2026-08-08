@@ -6,6 +6,7 @@ import HomePage from "./pages/website/HomePage";
 import ShopPage from "./pages/website/ShopPage";
 import OrderPage from "./pages/website/OrderPage";
 import ProductDetailPage from "./pages/website/ProductDetailPage";
+import WishlistPage from "./pages/website/WishlistPage";
 import Dashboard from "./pages/Admin/Dashboard";
 import CategoryPage from "./pages/Admin/CategoryPage";
 import ProductPage from "./pages/Admin/ProductPage";
@@ -27,6 +28,7 @@ function App() {
         <Route path="/shop" element={<ShopPage />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/orders" element={<OrderPage />} />
+        <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/auth/login" element={<LoginAdmin />} />
         <Route path="/auth/register" element={<RegisterPage />} />
         <Route path="/auth/forgot-password" element={<ForgotPassword />} />

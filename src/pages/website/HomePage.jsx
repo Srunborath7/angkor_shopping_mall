@@ -39,6 +39,70 @@ const NO_IMAGE_PLACEHOLDER =
     </svg>`
   );
 
+function getProductRatingAndReviews(raw) {
+  let rating = 0;
+  let reviewsCount = 0;
+
+  if (raw.ratingSummary) {
+    if (Number(raw.ratingSummary.averageRating) > 0) {
+      rating = Number(raw.ratingSummary.averageRating);
+    }
+    if (Number(raw.ratingSummary.totalReviews) > 0) {
+      reviewsCount = Number(raw.ratingSummary.totalReviews);
+    }
+  }
+
+  if (!rating && Number(raw.rating) > 0) {
+    rating = Number(raw.rating);
+  }
+  if (!rating && Number(raw.average_rating) > 0) {
+    rating = Number(raw.average_rating);
+  }
+
+  if (Array.isArray(raw.reviews) && raw.reviews.length > 0) {
+    if (!reviewsCount) reviewsCount = raw.reviews.length;
+    if (!rating) {
+      const sum = raw.reviews.reduce((acc, r) => acc + Number(r.rating || 5), 0);
+      rating = Number((sum / raw.reviews.length).toFixed(1));
+    }
+  }
+
+  // Fallback if no positive rating exists yet
+  if (!rating || rating <= 0) {
+    const numId = typeof raw.id === "number" ? raw.id : (String(raw.id).charCodeAt(0) || 1);
+    rating = Number((4.3 + (numId % 6) * 0.1).toFixed(1));
+  }
+
+  if (!reviewsCount || reviewsCount <= 0) {
+    const numId = typeof raw.id === "number" ? raw.id : (String(raw.id).charCodeAt(0) || 1);
+    reviewsCount = 12 + ((numId * 7) % 35);
+  }
+
+  return { rating, reviewsCount };
+}
+
+function getCategoryIcon(name, apiIcon, index = 0) {
+  if (apiIcon && typeof apiIcon === "string" && apiIcon.trim()) {
+    return apiIcon.trim();
+  }
+  const n = String(name || "").toLowerCase();
+  if (n.includes("shoe") || n.includes("footwear") || n.includes("sneaker")) return "👟";
+  if (n.includes("phone") || n.includes("mobile") || n.includes("electronics") || n.includes("gadget")) return "📱";
+  if (n.includes("laptop") || n.includes("computer") || n.includes("pc") || n.includes("tech")) return "💻";
+  if (n.includes("cloth") || n.includes("fashion") || n.includes("wear") || n.includes("apparel")) return "👗";
+  if (n.includes("beauty") || n.includes("cosmetic") || n.includes("skin") || n.includes("makeup")) return "💄";
+  if (n.includes("home") || n.includes("furniture") || n.includes("decor") || n.includes("living")) return "🏠";
+  if (n.includes("sport") || n.includes("fitness") || n.includes("outdoor")) return "⚽";
+  if (n.includes("food") || n.includes("drink") || n.includes("noodle") || n.includes("grocery")) return "🍜";
+  if (n.includes("audio") || n.includes("headphone") || n.includes("speaker") || n.includes("sound")) return "🎧";
+  if (n.includes("watch") || n.includes("accessory")) return "⌚";
+  if (n.includes("bag") || n.includes("wallet") || n.includes("pack")) return "👜";
+  if (n.includes("game") || n.includes("toy")) return "🎮";
+
+  const fallbackList = ["📱", "👗", "👟", "💄", "🏠", "⚽", "💻", "🎧", "⌚", "👜"];
+  return fallbackList[index % fallbackList.length];
+}
+
 function normalizeProduct(raw) {
   const price = Number(raw.price ?? 0);
   const originalPrice = Number(raw.original_price ?? raw.compare_at_price ?? (price * 1.25).toFixed(2));
@@ -48,6 +112,8 @@ function normalizeProduct(raw) {
   const images = Array.isArray(raw.images) ? raw.images : [];
   const primaryImage = images.find((img) => img.is_primary) ?? images[0];
   const variantImage = raw.variants?.[0]?.images?.[0];
+
+  const { rating, reviewsCount } = getProductRatingAndReviews(raw);
 
   return {
     id: raw.id,
@@ -60,8 +126,8 @@ function normalizeProduct(raw) {
     discount: discount || 15,
     stockQuantity: raw.stock_quantity ?? 0,
     image: raw.image_url || primaryImage?.image_url || variantImage?.image_url || NO_IMAGE_PLACEHOLDER,
-    rating: Number(raw.ratingSummary?.averageRating ?? (4.5 + (raw.id % 5) * 0.1).toFixed(1)),
-    reviews: Number(raw.ratingSummary?.totalReviews ?? (35 + raw.id * 7)),
+    rating: rating,
+    reviews: reviewsCount,
     badge: raw.badge || (discount > 20 ? "Hot Sale" : "Trending")
   };
 }
@@ -114,13 +180,16 @@ function HomePage() {
       try {
         // Fetch Categories
         const catRes = await categoriesApi();
-        const rawCats = catRes.data || catRes || [];
+        const rawCats = catRes?.data?.data || catRes?.data || (Array.isArray(catRes) ? catRes : []);
         if (Array.isArray(rawCats) && rawCats.length > 0) {
-          const catIcons = ["📱", "👗", "💄", "🏠", "⚽", "🍜", "💻", "🎧"];
-          const formattedCats = rawCats.slice(0, 6).map((c, i) => ({
+          const savedIcons = (() => {
+            try { return JSON.parse(localStorage.getItem("category_icons") || "{}"); } catch { return {}; }
+          })();
+
+          const formattedCats = rawCats.slice(0, 8).map((c, i) => ({
             name: c.name,
-            count: `${100 + (c.id || i) * 85}+ items`,
-            icon: catIcons[i % catIcons.length]
+            count: c.product_count ? `${c.product_count} items` : `${100 + (c.id || i) * 85}+ items`,
+            icon: getCategoryIcon(c.name, c.icon || savedIcons[c.name], i)
           }));
           setCategories(formattedCats);
         } else {

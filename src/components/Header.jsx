@@ -120,18 +120,6 @@ function Header() {
             Shop
           </span>
           <span
-            className="nav-item"
-            onClick={() => {
-              if (currentPath !== "/shop") {
-                navigate("/shop");
-              } else {
-                toast("Scroll down or use categories filter in sidebar!");
-              }
-            }}
-          >
-            Categories
-          </span>
-          <span
             className="nav-item ai-badge-nav"
             onClick={() => toast("AI recommendations are active in our Shop!")}
           >
@@ -149,14 +137,9 @@ function Header() {
         <div className="header-actions">
           <div
             className="icon-wrapper"
-            onClick={() => {
-              if (currentPath !== "/shop") {
-                navigate("/shop");
-                toast("Showing all wishlist items in your catalog!");
-              } else {
-                toast("Use filters or click heart buttons to manage wishlist!");
-              }
-            }}
+            onClick={() => navigate("/wishlist")}
+            title="View My Wishlist"
+            style={{ cursor: "pointer" }}
           >
             <Heart size={20} className={wishlistCount > 0 ? "heart-active" : ""} />
             {wishlistCount > 0 && <span className="action-badge bg-red">{wishlistCount}</span>}
