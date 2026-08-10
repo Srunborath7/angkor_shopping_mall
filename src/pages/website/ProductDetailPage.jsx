@@ -623,7 +623,7 @@ function ProductDetailPage() {
 
     if (isLoggedIn && product.id) {
       try {
-        await addToCartApi(product.id, quantity);
+        await addToCartApi(product.id, quantity, variantId || null, selectedAttributes || {});
       } catch (err) {
         console.warn("Failed sync to cart API:", err);
       }

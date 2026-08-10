@@ -129,7 +129,7 @@ function ForgotPassword() {
           res.message ||
           "Password reset successfully"
       });
-      navigate("/login");
+      navigate("/auth/login");
     } catch (err) {
       Swal.fire({
         icon: "error",

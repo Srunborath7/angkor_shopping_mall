@@ -17,7 +17,12 @@ import {
   FaUser,
   FaPhone,
   FaMapMarkerAlt,
-  FaBan
+  FaBan,
+  FaTag,
+  FaBox,
+  FaEnvelope,
+  FaBoxes,
+  FaTimes
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -54,10 +59,19 @@ function OrderPage() {
     actions: true
   });
 
-  // Modal States
+  // View Order Details Modal
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
+  // Customer Detail Modal
+  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+
+  // Items Detail Modal
+  const [isItemsModalOpen, setIsItemsModalOpen] = useState(false);
+  const [selectedOrderItems, setSelectedOrderItems] = useState(null);
+
+  // Create Order Modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createUserId, setCreateUserId] = useState("");
   const [createAddress, setCreateAddress] = useState("");
@@ -110,7 +124,6 @@ function OrderPage() {
   const filteredOrders = useMemo(() => {
     return orders
       .filter((ord) => {
-        // Search matching
         const searchLower = search.toLowerCase();
         const orderIdStr = (ord.id || "").toLowerCase();
         const customerName = (ord.user?.name || "").toLowerCase();
@@ -126,7 +139,6 @@ function OrderPage() {
           customerPhone.includes(searchLower) ||
           address.includes(searchLower);
 
-        // Status matching
         const matchesStatus =
           statusFilter === "all" || ord.status === statusFilter;
 
@@ -149,7 +161,6 @@ function OrderPage() {
       .reduce((sum, o) => sum + parseFloat(o.total_amount || 0), 0);
     const pendingCount = orders.filter((o) => o.status === "pending").length;
     const completedCount = orders.filter((o) => o.status === "completed" || o.status === "paid").length;
-
     return { totalCount, totalRev, pendingCount, completedCount };
   }, [orders]);
 
@@ -164,12 +175,9 @@ function OrderPage() {
         timer: 1500,
         showConfirmButton: false
       });
-
-      // Update state locally
       setOrders((prev) =>
         prev.map((ord) => (ord.id === orderId ? { ...ord, status: newStatus } : ord))
       );
-
       if (selectedOrder && selectedOrder.id === orderId) {
         setSelectedOrder((prev) => ({ ...prev, status: newStatus }));
       }
@@ -201,7 +209,6 @@ function OrderPage() {
     });
   };
 
-  // Toggle Column Visibility
   const toggleColumn = (colKey) => {
     setVisibleColumns((prev) => ({ ...prev, [colKey]: !prev[colKey] }));
   };
@@ -250,10 +257,7 @@ function OrderPage() {
           price: prod ? prod.price : updated[index].price
         };
       } else {
-        updated[index] = {
-          ...updated[index],
-          [field]: value
-        };
+        updated[index] = { ...updated[index], [field]: value };
       }
       return updated;
     });
@@ -261,15 +265,9 @@ function OrderPage() {
 
   const handleCreateOrderSubmit = async (e) => {
     e.preventDefault();
-    if (!createUserId) {
-      return Swal.fire("Validation Error", "Please select a customer.", "warning");
-    }
-    if (!createAddress.trim()) {
-      return Swal.fire("Validation Error", "Please provide a shipping address.", "warning");
-    }
-    if (!createPhone.trim()) {
-      return Swal.fire("Validation Error", "Please provide a contact phone number.", "warning");
-    }
+    if (!createUserId) return Swal.fire("Validation Error", "Please select a customer.", "warning");
+    if (!createAddress.trim()) return Swal.fire("Validation Error", "Please provide a shipping address.", "warning");
+    if (!createPhone.trim()) return Swal.fire("Validation Error", "Please provide a contact phone number.", "warning");
 
     try {
       const payload = {
@@ -282,7 +280,6 @@ function OrderPage() {
           quantity: parseInt(item.quantity, 10) || 1
         }))
       };
-
       await createAdminOrderApi(payload);
       Swal.fire("Success", "Order created successfully!", "success");
       setIsCreateModalOpen(false);
@@ -302,13 +299,7 @@ function OrderPage() {
       cancelled: { label: "Cancelled", icon: <FaBan />, class: "cancelled" },
       failed: { label: "Failed", icon: <FaTimesCircle />, class: "failed" }
     };
-
-    const current = statusMap[status] || {
-      label: status,
-      icon: <FaClock />,
-      class: "pending"
-    };
-
+    const current = statusMap[status] || { label: status, icon: <FaClock />, class: "pending" };
     return (
       <span className={`status-pill ${current.class}`}>
         {current.icon}
@@ -317,7 +308,6 @@ function OrderPage() {
     );
   };
 
-  // Format helper
   const formatDate = (dateStr) => {
     if (!dateStr) return "N/A";
     const d = new Date(dateStr);
@@ -330,9 +320,54 @@ function OrderPage() {
     });
   };
 
-  // Printable Invoice
-  const handlePrintInvoice = () => {
-    window.print();
+  const handlePrintInvoice = () => window.print();
+
+  // Render variant attributes as colored badges
+  const renderAttributeBadges = (attributes) => {
+    if (!attributes || typeof attributes !== "object") return null;
+    const entries = Object.entries(attributes).filter(([, v]) => v !== null && v !== undefined && v !== "");
+    if (entries.length === 0) return <span style={{ color: "#9ca3af", fontSize: "12px" }}>No variant</span>;
+    const colors = ["#dbeafe", "#dcfce7", "#fef3c7", "#f3e8ff", "#ffe4e6", "#e0f2fe"];
+    const textColors = ["#1d4ed8", "#166534", "#92400e", "#7c3aed", "#be123c", "#0369a1"];
+    return (
+      <div className="attr-badges-row">
+        {entries.map(([key, value], idx) => (
+          <span
+            key={key}
+            className="attr-badge"
+            style={{
+              background: colors[idx % colors.length],
+              color: textColors[idx % textColors.length]
+            }}
+          >
+            <strong>{key}:</strong> {String(value)}
+          </span>
+        ))}
+      </div>
+    );
+  };
+
+  // Open customer detail modal
+  const openCustomerModal = (ord, e) => {
+    e.stopPropagation();
+    setSelectedCustomer({
+      name: ord.user?.name || "Guest Customer",
+      email: ord.user?.email || "—",
+      phone: ord.contact_phone || ord.user?.phone || "—",
+      address: ord.shipping_address || "—",
+      orderId: ord.id,
+      orderStatus: ord.status,
+      totalAmount: ord.total_amount,
+      orderDate: ord.created_at
+    });
+    setIsCustomerModalOpen(true);
+  };
+
+  // Open items detail modal
+  const openItemsModal = (ord, e) => {
+    e.stopPropagation();
+    setSelectedOrderItems({ orderId: ord.id, items: ord.items || [] });
+    setIsItemsModalOpen(true);
   };
 
   return (
@@ -356,39 +391,28 @@ function OrderPage() {
       {/* Stats Summary Cards */}
       <div className="order-stats">
         <div className="order-stat-card total">
-          <div className="stat-icon">
-            <FaShoppingCart />
-          </div>
+          <div className="stat-icon"><FaShoppingCart /></div>
           <div className="stat-info">
             <span>Total Orders</span>
             <h3>{stats.totalCount}</h3>
           </div>
         </div>
-
         <div className="order-stat-card revenue">
-          <div className="stat-icon">
-            <FaDollarSign />
-          </div>
+          <div className="stat-icon"><FaDollarSign /></div>
           <div className="stat-info">
             <span>Total Sales</span>
             <h3>${stats.totalRev.toFixed(2)}</h3>
           </div>
         </div>
-
         <div className="order-stat-card pending">
-          <div className="stat-icon">
-            <FaClock />
-          </div>
+          <div className="stat-icon"><FaClock /></div>
           <div className="stat-info">
             <span>Pending Orders</span>
             <h3>{stats.pendingCount}</h3>
           </div>
         </div>
-
         <div className="order-stat-card completed">
-          <div className="stat-icon">
-            <FaCheckCircle />
-          </div>
+          <div className="stat-icon"><FaCheckCircle /></div>
           <div className="stat-info">
             <span>Completed / Paid</span>
             <h3>{stats.completedCount}</h3>
@@ -396,7 +420,7 @@ function OrderPage() {
         </div>
       </div>
 
-      {/* Controls Bar (Search, Filters, Column Toggle) */}
+      {/* Controls Bar */}
       <div className="order-controls">
         <div className="search-filter-group">
           <div className="search-box">
@@ -408,11 +432,7 @@ function OrderPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="all">All Statuses</option>
             <option value="pending">Pending</option>
             <option value="paid">Paid</option>
@@ -421,11 +441,7 @@ function OrderPage() {
             <option value="cancelled">Cancelled</option>
             <option value="failed">Failed</option>
           </select>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
+          <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
             <option value="newest">Sort: Newest First</option>
             <option value="oldest">Sort: Oldest First</option>
             <option value="total_high">Total: High to Low</option>
@@ -443,62 +459,19 @@ function OrderPage() {
           </button>
           {isColDropdownOpen && (
             <div className="column-toggle-menu">
-              <label className="column-toggle-item">
-                <input
-                  type="checkbox"
-                  checked={visibleColumns.orderId}
-                  onChange={() => toggleColumn("orderId")}
-                />
-                Order ID
-              </label>
-              <label className="column-toggle-item">
-                <input
-                  type="checkbox"
-                  checked={visibleColumns.customer}
-                  onChange={() => toggleColumn("customer")}
-                />
-                Customer
-              </label>
-              <label className="column-toggle-item">
-                <input
-                  type="checkbox"
-                  checked={visibleColumns.date}
-                  onChange={() => toggleColumn("date")}
-                />
-                Date
-              </label>
-              <label className="column-toggle-item">
-                <input
-                  type="checkbox"
-                  checked={visibleColumns.items}
-                  onChange={() => toggleColumn("items")}
-                />
-                Items Preview
-              </label>
-              <label className="column-toggle-item">
-                <input
-                  type="checkbox"
-                  checked={visibleColumns.total}
-                  onChange={() => toggleColumn("total")}
-                />
-                Total Amount
-              </label>
-              <label className="column-toggle-item">
-                <input
-                  type="checkbox"
-                  checked={visibleColumns.status}
-                  onChange={() => toggleColumn("status")}
-                />
-                Status
-              </label>
-              <label className="column-toggle-item">
-                <input
-                  type="checkbox"
-                  checked={visibleColumns.actions}
-                  onChange={() => toggleColumn("actions")}
-                />
-                Actions
-              </label>
+              {["orderId", "customer", "date", "items", "total", "status", "actions"].map((col) => (
+                <label key={col} className="column-toggle-item">
+                  <input
+                    type="checkbox"
+                    checked={visibleColumns[col]}
+                    onChange={() => toggleColumn(col)}
+                  />
+                  {col === "orderId" ? "Order ID" :
+                   col === "items" ? "Items Preview" :
+                   col === "total" ? "Total Amount" :
+                   col.charAt(0).toUpperCase() + col.slice(1)}
+                </label>
+              ))}
             </div>
           )}
         </div>
@@ -552,10 +525,7 @@ function OrderPage() {
                           <span
                             className="order-id-code"
                             title={ord.id}
-                            onClick={() => {
-                              setSelectedOrder(ord);
-                              setIsViewModalOpen(true);
-                            }}
+                            onClick={() => { setSelectedOrder(ord); setIsViewModalOpen(true); }}
                             style={{ cursor: "pointer" }}
                           >
                             #ORD-{ord.id.slice(-6).toUpperCase()}
@@ -563,12 +533,17 @@ function OrderPage() {
                         </td>
                       )}
 
+                      {/* CLICKABLE CUSTOMER COLUMN */}
                       {visibleColumns.customer && (
                         <td>
-                          <div className="customer-cell">
+                          <div
+                            className="customer-cell clickable-cell"
+                            onClick={(e) => openCustomerModal(ord, e)}
+                            title="Click to view customer details"
+                          >
                             <div className="customer-avatar">{initial}</div>
                             <div className="customer-info">
-                              <span className="name">{customerName}</span>
+                              <span className="name customer-link">{customerName}</span>
                               <span className="contact">
                                 {ord.contact_phone || ord.user?.phone || ord.user?.email || "No contact"}
                               </span>
@@ -581,23 +556,43 @@ function OrderPage() {
                         <td>{formatDate(ord.created_at)}</td>
                       )}
 
+                      {/* CLICKABLE ITEMS SUMMARY COLUMN */}
                       {visibleColumns.items && (
                         <td>
-                          <div className="items-preview">
+                          <div
+                            className="items-preview clickable-cell"
+                            onClick={(e) => openItemsModal(ord, e)}
+                            title="Click to view order items & variants"
+                          >
                             <div className="item-thumb-list">
                               {ord.items &&
                                 ord.items.slice(0, 3).map((item, idx) => (
                                   <img
                                     key={idx}
-                                    src={item.product?.image || item.product?.images?.[0]?.image_url || "https://placehold.co/40"}
+                                    src={item.product?.image_url || item.product?.images?.[0]?.image_url || "https://placehold.co/40"}
                                     alt={item.product?.name || "Product"}
                                     className="item-thumb-img"
                                   />
                                 ))}
                             </div>
-                            <span className="item-count-badge">
-                              {itemCount} {itemCount === 1 ? "item" : "items"}
-                            </span>
+                            <div className="items-summary-text">
+                              <span className="item-count-badge">
+                                {itemCount} {itemCount === 1 ? "item" : "items"}
+                              </span>
+                              {/* Show first item's variant attributes as preview */}
+                              {ord.items && ord.items[0] && (
+                                (() => {
+                                  const attrs = ord.items[0].attributes || ord.items[0].variant?.attributes || {};
+                                  const attrEntries = Object.entries(attrs).filter(([, v]) => v);
+                                  return attrEntries.length > 0 ? (
+                                    <span className="variant-preview-tag">
+                                      {attrEntries[0][0]}: {attrEntries[0][1]}
+                                      {attrEntries.length > 1 ? ` +${attrEntries.length - 1}` : ""}
+                                    </span>
+                                  ) : null;
+                                })()
+                              )}
+                            </div>
                           </div>
                         </td>
                       )}
@@ -636,10 +631,7 @@ function OrderPage() {
                             <button
                               className="action-btn view"
                               title="View Order Details"
-                              onClick={() => {
-                                setSelectedOrder(ord);
-                                setIsViewModalOpen(true);
-                              }}
+                              onClick={() => { setSelectedOrder(ord); setIsViewModalOpen(true); }}
                             >
                               <FaEye />
                             </button>
@@ -662,7 +654,162 @@ function OrderPage() {
         </div>
       </div>
 
-      {/* View Order Details Modal */}
+      {/* ============ CUSTOMER DETAIL MODAL ============ */}
+      <Modal
+        isOpen={isCustomerModalOpen}
+        onClose={() => setIsCustomerModalOpen(false)}
+        title="Customer Details"
+        size="sm"
+      >
+        {selectedCustomer && (
+          <div className="customer-detail-modal">
+            {/* Avatar + Name */}
+            <div className="customer-modal-header">
+              <div className="customer-modal-avatar">
+                {selectedCustomer.name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <h3 className="customer-modal-name">{selectedCustomer.name}</h3>
+                <span className={`status-pill ${selectedCustomer.orderStatus}`} style={{ fontSize: "12px" }}>
+                  Order: {selectedCustomer.orderStatus?.toUpperCase()}
+                </span>
+              </div>
+            </div>
+
+            {/* Info Grid */}
+            <div className="customer-modal-grid">
+              <div className="customer-modal-info-item">
+                <FaEnvelope className="cmi-icon" />
+                <div>
+                  <label>Email</label>
+                  <span>{selectedCustomer.email}</span>
+                </div>
+              </div>
+              <div className="customer-modal-info-item">
+                <FaPhone className="cmi-icon" />
+                <div>
+                  <label>Phone</label>
+                  <span>{selectedCustomer.phone}</span>
+                </div>
+              </div>
+              <div className="customer-modal-info-item">
+                <FaMapMarkerAlt className="cmi-icon" />
+                <div>
+                  <label>Shipping Address</label>
+                  <span>{selectedCustomer.address}</span>
+                </div>
+              </div>
+              <div className="customer-modal-info-item">
+                <FaDollarSign className="cmi-icon" />
+                <div>
+                  <label>Order Total</label>
+                  <span style={{ fontWeight: 700, color: "#166534" }}>
+                    ${parseFloat(selectedCustomer.totalAmount || 0).toFixed(2)}
+                  </span>
+                </div>
+              </div>
+              <div className="customer-modal-info-item">
+                <FaClock className="cmi-icon" />
+                <div>
+                  <label>Order Date</label>
+                  <span>{formatDate(selectedCustomer.orderDate)}</span>
+                </div>
+              </div>
+              <div className="customer-modal-info-item">
+                <FaTag className="cmi-icon" />
+                <div>
+                  <label>Order ID</label>
+                  <span style={{ fontFamily: "monospace", fontSize: "12px", color: "#2563eb" }}>
+                    #ORD-{selectedCustomer.orderId?.slice(-8).toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-actions-bar" style={{ marginTop: "20px" }}>
+              <button className="btn-primary" onClick={() => setIsCustomerModalOpen(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ============ ITEMS DETAIL MODAL ============ */}
+      <Modal
+        isOpen={isItemsModalOpen}
+        onClose={() => setIsItemsModalOpen(false)}
+        title="Order Items & Variants"
+        size="lg"
+      >
+        {selectedOrderItems && (
+          <div className="items-detail-modal">
+            <p className="items-detail-subtitle">
+              <FaBoxes style={{ marginRight: 6, color: "#2563eb" }} />
+              Order <strong style={{ fontFamily: "monospace", color: "#2563eb" }}>
+                #ORD-{selectedOrderItems.orderId?.slice(-8).toUpperCase()}
+              </strong> — {selectedOrderItems.items.length} item(s)
+            </p>
+
+            {selectedOrderItems.items.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}>
+                <FaBox style={{ fontSize: 40, marginBottom: 12 }} />
+                <p>No items found for this order.</p>
+              </div>
+            ) : (
+              <div className="items-detail-list">
+                {selectedOrderItems.items.map((item, idx) => {
+                  const attrs = item.attributes || item.variant?.attributes || {};
+                  const productName = item.product?.name || "Product Item";
+                  const productImage = item.product?.image_url || item.product?.images?.[0]?.image_url || "https://placehold.co/60";
+                  const sku = item.variant?.sku || item.product?.sku || "—";
+                  const price = parseFloat(item.price || item.variant?.price || item.product?.price || 0);
+                  const subtotal = price * (item.quantity || 1);
+
+                  return (
+                    <div key={idx} className="item-detail-card">
+                      <img src={productImage} alt={productName} className="item-detail-img" />
+                      <div className="item-detail-body">
+                        <div className="item-detail-name">{productName}</div>
+                        <div className="item-detail-sku">
+                          <FaTag style={{ marginRight: 4, fontSize: 11 }} />
+                          SKU: <code>{sku}</code>
+                        </div>
+                        {/* Variant Attributes */}
+                        <div className="item-detail-attrs">
+                          {renderAttributeBadges(attrs)}
+                        </div>
+                      </div>
+                      <div className="item-detail-pricing">
+                        <div className="item-detail-qty">× {item.quantity || 1}</div>
+                        <div className="item-detail-price">${price.toFixed(2)}</div>
+                        <div className="item-detail-subtotal">= ${subtotal.toFixed(2)}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Total Row */}
+            <div className="items-detail-total">
+              <span>Order Total:</span>
+              <strong>
+                ${selectedOrderItems.items.reduce((sum, item) => {
+                  const price = parseFloat(item.price || item.variant?.price || item.product?.price || 0);
+                  return sum + price * (item.quantity || 1);
+                }, 0).toFixed(2)}
+              </strong>
+            </div>
+
+            <div className="modal-actions-bar" style={{ marginTop: "16px" }}>
+              <button className="btn-primary" onClick={() => setIsItemsModalOpen(false)}>Close</button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* ============ VIEW ORDER DETAILS MODAL ============ */}
       <Modal
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
@@ -700,9 +847,7 @@ function OrderPage() {
             {/* Information Grid */}
             <div className="order-detail-grid">
               <div className="detail-card">
-                <h4>
-                  <FaUser /> Customer Info
-                </h4>
+                <h4><FaUser /> Customer Info</h4>
                 <p><strong>{selectedOrder.user?.name || "Guest"}</strong></p>
                 <p className="sub-text">{selectedOrder.user?.email || "No Email"}</p>
                 <p className="sub-text">
@@ -710,27 +855,19 @@ function OrderPage() {
                   {selectedOrder.contact_phone || selectedOrder.user?.phone || "No Phone"}
                 </p>
               </div>
-
               <div className="detail-card">
-                <h4>
-                  <FaMapMarkerAlt /> Shipping Details
-                </h4>
+                <h4><FaMapMarkerAlt /> Shipping Details</h4>
                 <p>{selectedOrder.shipping_address}</p>
                 <p className="sub-text">Contact Phone: {selectedOrder.contact_phone}</p>
               </div>
-
               <div className="detail-card">
-                <h4>
-                  <FaFileInvoice /> Payment & Reference
-                </h4>
-                <p className="sub-text">
-                  Payment Intent: {selectedOrder.payment_intent_id || "N/A"}
-                </p>
+                <h4><FaFileInvoice /> Payment & Reference</h4>
+                <p className="sub-text">Payment Intent: {selectedOrder.payment_intent_id || "N/A"}</p>
                 <p className="sub-text">Full UUID: {selectedOrder.id}</p>
               </div>
             </div>
 
-            {/* Order Items Table */}
+            {/* Order Items Table with Variant Column */}
             <h4 style={{ fontSize: "14px", textTransform: "uppercase", color: "#6b7280", marginBottom: "10px" }}>
               Ordered Products
             </h4>
@@ -738,24 +875,27 @@ function OrderPage() {
               <thead>
                 <tr>
                   <th>Product</th>
+                  <th>Variant / Attributes</th>
                   <th>Price</th>
-                  <th>Quantity</th>
+                  <th>Qty</th>
                   <th style={{ textAlign: "right" }}>Subtotal</th>
                 </tr>
               </thead>
               <tbody>
                 {selectedOrder.items && selectedOrder.items.length > 0 ? (
                   selectedOrder.items.map((item, idx) => {
-                    const price = parseFloat(item.price || item.product?.price || 0);
+                    const price = parseFloat(item.price || item.variant?.price || item.product?.price || 0);
                     const qty = item.quantity || 1;
                     const lineSubtotal = price * qty;
+                    const attrs = item.attributes || item.variant?.attributes || {};
+                    const sku = item.variant?.sku || "—";
 
                     return (
                       <tr key={idx}>
                         <td>
                           <div className="modal-item-product">
                             <img
-                              src={item.product?.image || item.product?.images?.[0]?.image_url || "https://placehold.co/44"}
+                              src={item.product?.image_url || item.product?.images?.[0]?.image_url || "https://placehold.co/44"}
                               alt={item.product?.name}
                               className="modal-item-img"
                             />
@@ -764,11 +904,12 @@ function OrderPage() {
                                 {item.product?.name || "Product Item"}
                               </strong>
                               <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                                SKU: {item.product?.sku || item.product_id}
+                                SKU: {sku}
                               </span>
                             </div>
                           </div>
                         </td>
+                        <td>{renderAttributeBadges(attrs)}</td>
                         <td>${price.toFixed(2)}</td>
                         <td>{qty}</td>
                         <td style={{ textAlign: "right", fontWeight: "600" }}>
@@ -779,7 +920,7 @@ function OrderPage() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="4" style={{ textAlign: "center", color: "#6b7280" }}>
+                    <td colSpan="5" style={{ textAlign: "center", color: "#6b7280" }}>
                       No items attached to this order.
                     </td>
                   </tr>
@@ -808,10 +949,7 @@ function OrderPage() {
               <button className="btn-secondary" onClick={handlePrintInvoice}>
                 <FaPrint /> Print Invoice
               </button>
-              <button
-                className="btn-primary"
-                onClick={() => setIsViewModalOpen(false)}
-              >
+              <button className="btn-primary" onClick={() => setIsViewModalOpen(false)}>
                 Done
               </button>
             </div>
@@ -819,7 +957,7 @@ function OrderPage() {
         )}
       </Modal>
 
-      {/* Place New Order Modal (Admin Manual Order Creation) */}
+      {/* ============ CREATE ORDER MODAL ============ */}
       <Modal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -846,7 +984,6 @@ function OrderPage() {
                 ))}
               </select>
             </div>
-
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
                 Shipping Address *
@@ -859,7 +996,6 @@ function OrderPage() {
                 required
               />
             </div>
-
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
                 Contact Phone *
@@ -873,7 +1009,6 @@ function OrderPage() {
                 required
               />
             </div>
-
             <div>
               <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
                 Order Status
@@ -897,31 +1032,15 @@ function OrderPage() {
                 <button
                   type="button"
                   onClick={handleAddItemRow}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#2563eb",
-                    fontSize: "13px",
-                    fontWeight: "600",
-                    cursor: "pointer"
-                  }}
+                  style={{ background: "none", border: "none", color: "#2563eb", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}
                 >
                   + Add Product Item
                 </button>
               </div>
-
               {createItems.map((item, idx) => (
                 <div
                   key={idx}
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    alignItems: "center",
-                    marginBottom: "10px",
-                    background: "#f9fafb",
-                    padding: "8px",
-                    borderRadius: "8px"
-                  }}
+                  style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px", background: "#f9fafb", padding: "8px", borderRadius: "8px" }}
                 >
                   <select
                     style={{ flex: 2, padding: "8px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "13px" }}
@@ -936,7 +1055,6 @@ function OrderPage() {
                       </option>
                     ))}
                   </select>
-
                   <input
                     type="number"
                     min="1"
@@ -945,22 +1063,14 @@ function OrderPage() {
                     onChange={(e) => handleItemChange(idx, "quantity", e.target.value)}
                     required
                   />
-
                   <span style={{ fontSize: "13px", fontWeight: "600", minWidth: "60px" }}>
                     ${(parseFloat(item.price || 0) * (parseInt(item.quantity) || 1)).toFixed(2)}
                   </span>
-
                   {createItems.length > 1 && (
                     <button
                       type="button"
                       onClick={() => handleRemoveItemRow(idx)}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#ef4444",
-                        cursor: "pointer",
-                        padding: "4px"
-                      }}
+                      style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: "4px" }}
                     >
                       <FaTrash />
                     </button>
@@ -970,16 +1080,10 @@ function OrderPage() {
             </div>
 
             <div className="modal-actions-bar">
-              <button
-                type="button"
-                className="btn-secondary"
-                onClick={() => setIsCreateModalOpen(false)}
-              >
+              <button type="button" className="btn-secondary" onClick={() => setIsCreateModalOpen(false)}>
                 Cancel
               </button>
-              <button type="submit" className="btn-primary">
-                Create Order
-              </button>
+              <button type="submit" className="btn-primary">Create Order</button>
             </div>
           </div>
         </form>

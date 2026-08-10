@@ -316,15 +316,18 @@ function HomePage() {
     const saved = localStorage.getItem("cartItems");
     const currentCart = saved ? JSON.parse(saved) : [];
 
-    const existing = currentCart.find((item) => item.id === product.id || item.product_id === product.id);
+    // For flash sale items, product_id holds the real product UUID; fall back to id
+    const realProductId = product.product_id || product.id;
+
+    const existing = currentCart.find((item) => item.id === realProductId || item.product_id === realProductId);
     let updatedCart = [];
 
     if (existing) {
       updatedCart = currentCart.map((item) =>
-        (item.id === product.id || item.product_id === product.id) ? { ...item, quantity: item.quantity + 1 } : item
+        (item.id === realProductId || item.product_id === realProductId) ? { ...item, quantity: item.quantity + 1 } : item
       );
     } else {
-      updatedCart = [...currentCart, { ...product, product_id: product.id, quantity: 1 }];
+      updatedCart = [...currentCart, { ...product, id: realProductId, product_id: realProductId, quantity: 1 }];
     }
 
     localStorage.setItem("cartItems", JSON.stringify(updatedCart));
@@ -332,9 +335,10 @@ function HomePage() {
     const totalCount = updatedCart.reduce((acc, item) => acc + item.quantity, 0);
     localStorage.setItem("cartCount", String(totalCount));
 
-    if (isLoggedIn && product.id) {
+    if (isLoggedIn && realProductId) {
       try {
-        await addToCartApi(product.id, 1);
+        // Always sync to server with the real product UUID (no variant from homepage flash sale)
+        await addToCartApi(realProductId, 1, null, {});
       } catch (err) {
         console.warn("Failed to sync add to cart API:", err);
       }
