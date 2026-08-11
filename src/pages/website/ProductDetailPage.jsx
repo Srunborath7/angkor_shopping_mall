@@ -435,6 +435,27 @@ function ProductDetailPage() {
     }
   }, [dynamicAttributes]);
 
+  // Auto-sync selectedVariant whenever selectedAttributes or product changes
+  useEffect(() => {
+    if (product?.variants && product.variants.length > 0 && Object.keys(selectedAttributes).length > 0) {
+      const matchedVariant = product.variants.find((v) => {
+        if (!v.attributes || typeof v.attributes !== "object") return false;
+        return Object.entries(selectedAttributes).every(([k, val]) => {
+          const vAttrVal = v.attributes[k] || v.attributes[k.toLowerCase()];
+          if (!vAttrVal) return false;
+          return String(vAttrVal).toLowerCase() === String(val).toLowerCase();
+        });
+      });
+
+      if (matchedVariant) {
+        setSelectedVariant(matchedVariant);
+        if (matchedVariant.image_url) {
+          setSelectedImage(matchedVariant.image_url);
+        }
+      }
+    }
+  }, [selectedAttributes, product]);
+
   // Handle user selecting an attribute chip (e.g. Color: "Space Gray", Size: "41")
   const handleSelectAttribute = (attrKey, value) => {
     const updated = { ...selectedAttributes, [attrKey]: value };

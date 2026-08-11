@@ -289,12 +289,24 @@ function CartDrawer({ isOpen, onClose }) {
               primaryImg ||
               "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500";
 
+            const variantId = item.variant_id || item.variant?.id || existingLocal?.variant_id || null;
+            const itemVariant = item.variant || existingLocal?.variant || null;
+            const itemAttributes = (item.attributes && Object.keys(item.attributes).length > 0)
+              ? item.attributes
+              : (existingLocal?.attributes || itemVariant?.attributes || {});
+            const effectivePrice = itemVariant?.price
+              ? parseFloat(itemVariant.price)
+              : parseFloat(item.price || prod.price || 0);
+
             return {
               id: item.id,
               db_id: item.id,
               product_id: item.product_id || prod.id,
+              variant_id: variantId,
+              variant: itemVariant,
+              attributes: itemAttributes,
               name: prod.name || item.name || "Product",
-              price: parseFloat(prod.price || item.price || 0),
+              price: effectivePrice,
               image: resolvedImage,
               rating: Number(prod.rating || item.rating || existingLocal?.rating || 4.8),
               quantity: item.quantity
@@ -490,7 +502,7 @@ function CartDrawer({ isOpen, onClose }) {
           const prodId = item.product_id || item.id;
           if (prodId && !item.db_id) {
             try {
-              await addToCartApi(prodId, item.quantity);
+              await addToCartApi(prodId, item.quantity, item.variant_id || null, item.attributes || {});
             } catch (e) {
               console.warn("Sync cart item to DB:", e);
             }
@@ -672,6 +684,15 @@ function CartDrawer({ isOpen, onClose }) {
                                 >
                                   {item.name}
                                 </h4>
+                                {item.attributes && Object.keys(item.attributes).length > 0 && (
+                                  <div className="cart-item-attributes-badges" style={{ display: "flex", flexWrap: "wrap", gap: "4px", margin: "2px 0 4px 0" }}>
+                                    {Object.entries(item.attributes).map(([k, val]) => (
+                                      <span key={k} style={{ fontSize: "0.7rem", padding: "1px 6px", background: "#f1f5f9", color: "#475569", borderRadius: "4px", fontWeight: 600 }}>
+                                        {k}: {val}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                                 <div className="cart-item-rating-row" style={{ display: "flex", alignItems: "center", gap: "0.25rem", margin: "2px 0 4px 0" }}>
                                   <Star size={12} fill="#FFC107" stroke="#FFC107" />
                                   <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#475569" }}>
@@ -1049,7 +1070,12 @@ function CartDrawer({ isOpen, onClose }) {
                           <img src={item.image} alt={item.name} className="review-mini-img" />
                           <div className="review-mini-details">
                             <span className="review-mini-name">{item.name}</span>
-                            <span className="text-light">Qty: {item.quantity} &times; ${item.price}</span>
+                            {item.attributes && Object.keys(item.attributes).length > 0 && (
+                              <span className="review-mini-attrs" style={{ fontSize: "0.75rem", color: "#64748b", display: "block" }}>
+                                {Object.entries(item.attributes).map(([k, v]) => `${k}: ${v}`).join(" | ")}
+                              </span>
+                            )}
+                            <span className="text-light">Qty: {item.quantity} &times; ${Number(item.price).toFixed(2)}</span>
                           </div>
                           <span className="review-mini-price">${(item.price * item.quantity).toFixed(2)}</span>
                         </div>
