@@ -120,8 +120,8 @@ function Header() {
             Shop
           </span>
           <span
-            className="nav-item ai-badge-nav"
-            onClick={() => toast("AI recommendations are active in our Shop!")}
+            className={`nav-item ai-badge-nav ${currentPath === "/recommendations" ? "active" : ""}`}
+            onClick={() => navigate("/recommendations")}
           >
             AI Recommendations <Sparkles size={12} className="sparkle-icon" />
           </span>
@@ -279,17 +279,17 @@ function Header() {
               </div>
 
               <div
-                className="mobile-nav-item ai-badge-mobile"
+                className={`mobile-nav-item ai-badge-mobile ${currentPath === "/recommendations" ? "active" : ""}`}
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  toast("AI Recommendations are active!");
+                  navigate("/recommendations");
                 }}
               >
                 <div className="nav-item-left">
                   <Sparkles size={18} className="text-green-icon" />
                   <span>AI Recommendations</span>
                 </div>
-                <span className="badge-active-pill">Active</span>
+                <ChevronRight size={16} className="arrow-dim" />
               </div>
 
               <div

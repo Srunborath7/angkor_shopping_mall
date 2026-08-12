@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   Star,
@@ -27,6 +27,7 @@ import {
   productsPagedApi,
   createProductReviewApi
 } from "../../services/productsService";
+import { getFlashSalesApi } from "../../services/flashSaleService";
 import { addToCartApi } from "../../services/cartService";
 import "./styles/ProductDetailPage.css";
 
@@ -353,11 +354,33 @@ function ProductDetailPage() {
   // Related Products
   const [relatedProducts, setRelatedProducts] = useState([]);
 
+  const location = useLocation();
+  const locationState = location.state || {};
+  const fromFlashSale = locationState.fromFlashSale || false;
+  const passedFlashSale = locationState.flashSale || null;
+  const passedFlashPrice = locationState.flashPrice || passedFlashSale?.price || null;
+
+  // Active Flash Sales State
+  const [activeFlashSale, setActiveFlashSale] = useState(null);
+
   useEffect(() => {
-    if (user?.name) {
-      setReviewerName(user.name);
-    }
-  }, [user]);
+    const fetchFlashSale = async () => {
+      try {
+        const sales = await getFlashSalesApi();
+        if (Array.isArray(sales)) {
+          const match = sales.find(
+            (s) => (String(s.product_id) === String(id) || String(s.id) === String(id)) && s.status === "active"
+          );
+          if (match) {
+            setActiveFlashSale(match);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to check active flash sales:", err);
+      }
+    };
+    fetchFlashSale();
+  }, [id]);
 
   useEffect(() => {
     localStorage.setItem("wishlist", JSON.stringify(wishlist));
@@ -567,9 +590,19 @@ function ProductDetailPage() {
     });
   };
 
-  // Stock & Pricing calculations based on selected variant or base product
-  const currentPrice = selectedVariant ? selectedVariant.price : (product?.price ?? 0);
+  // Stock & Pricing calculations based on selected variant, base product, or flash sale
+  const effectiveFlashSale = passedFlashSale || activeFlashSale;
+  const isFlashSaleActive = fromFlashSale || (effectiveFlashSale && locationState.fromFlashSale !== false);
+  const flashPrice = passedFlashPrice !== null ? Number(passedFlashPrice) : (effectiveFlashSale ? Number(effectiveFlashSale.price) : null);
+
+  const baseOriginalPrice = product?.originalPrice || (product?.price ? Number((product.price * 1.25).toFixed(2)) : 0);
+  const regularPrice = selectedVariant ? Number(selectedVariant.price) : Number(product?.price ?? 0);
   const availableStock = selectedVariant ? selectedVariant.stock_quantity : (product?.stockQuantity ?? 0);
+
+  const currentPrice = isFlashSaleActive && flashPrice ? flashPrice : regularPrice;
+  const displayOriginalPrice = isFlashSaleActive
+    ? (regularPrice > (flashPrice || 0) ? regularPrice : baseOriginalPrice)
+    : (product?.originalPrice > regularPrice ? product.originalPrice : null);
 
   // Pre-Add-To-Cart Stock Check Validation
   const handleAddToCart = async () => {
@@ -596,10 +629,18 @@ function ProductDetailPage() {
 
     const variantId = selectedVariant ? selectedVariant.id : null;
     const attrSummary = Object.values(selectedAttributes).filter(Boolean).join(" / ");
-    const itemKey = `${product.id}-${variantId || attrSummary || "default"}`;
+    
+    const isFlash = isFlashSaleActive && !!flashPrice;
+    const finalPrice = isFlash ? flashPrice : regularPrice;
+    const itemKey = `${product.id}-${variantId || attrSummary || "default"}${isFlash ? "-flash" : ""}`;
+
+    const attributesToSend = {
+      ...selectedAttributes,
+      ...(isFlash ? { is_flash_sale: true, flash_price: finalPrice } : {})
+    };
 
     const existingIndex = currentCart.findIndex(
-      (item) => item.itemKey === itemKey || (item.product_id === product.id && item.variant_id === variantId)
+      (item) => item.itemKey === itemKey || (item.product_id === product.id && item.variant_id === variantId && Boolean(item.is_flash_sale) === isFlash)
     );
 
     let updatedCart = [];
@@ -617,7 +658,8 @@ function ProductDetailPage() {
       updatedCart = [...currentCart];
       updatedCart[existingIndex] = {
         ...existingItem,
-        quantity: newQty
+        quantity: newQty,
+        attributes: attributesToSend
       };
     } else {
       updatedCart = [
@@ -627,11 +669,14 @@ function ProductDetailPage() {
           itemKey,
           product_id: product.id,
           variant_id: variantId,
-          name: product.name + (attrSummary ? ` (${attrSummary})` : ""),
-          price: currentPrice,
+          name: product.name + (attrSummary ? ` (${attrSummary})` : "") + (isFlash ? " (Flash Sale)" : ""),
+          price: finalPrice,
+          originalPrice: displayOriginalPrice || baseOriginalPrice,
+          is_flash_sale: isFlash,
+          flash_price: isFlash ? finalPrice : null,
           image: selectedImage || product.images[0] || NO_IMAGE_PLACEHOLDER,
           quantity: quantity,
-          attributes: selectedAttributes,
+          attributes: attributesToSend,
           stock_quantity: availableStock
         }
       ];
@@ -644,7 +689,7 @@ function ProductDetailPage() {
 
     if (isLoggedIn && product.id) {
       try {
-        await addToCartApi(product.id, quantity, variantId || null, selectedAttributes || {});
+        await addToCartApi(product.id, quantity, variantId || null, attributesToSend);
       } catch (err) {
         console.warn("Failed sync to cart API:", err);
       }
@@ -804,17 +849,24 @@ function ProductDetailPage() {
 
             {/* Pricing */}
             <div className="product-price-section">
-              <span className="current-price">${currentPrice.toFixed(2)}</span>
-              {product.originalPrice > currentPrice && (
-                <>
-                  <span className="original-price-strike">
-                    ${product.originalPrice.toFixed(2)}
-                  </span>
-                  <span className="savings-tag">
-                    Save ${(product.originalPrice - currentPrice).toFixed(2)}
-                  </span>
-                </>
+              {isFlashSaleActive && (
+                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#fef2f2", color: "#ef4444", padding: "4px 12px", borderRadius: "20px", fontSize: "0.85rem", fontWeight: 700, marginBottom: "8px" }}>
+                  <Zap size={14} fill="#ef4444" /> Flash Sale Deal
+                </div>
               )}
+              <div>
+                <span className="current-price">${currentPrice.toFixed(2)}</span>
+                {displayOriginalPrice && displayOriginalPrice > currentPrice && (
+                  <>
+                    <span className="original-price-strike">
+                      ${Number(displayOriginalPrice).toFixed(2)}
+                    </span>
+                    <span className="savings-tag">
+                      Save ${(Number(displayOriginalPrice) - currentPrice).toFixed(2)}
+                    </span>
+                  </>
+                )}
+              </div>
             </div>
 
             <p className="product-short-desc">{product.description}</p>

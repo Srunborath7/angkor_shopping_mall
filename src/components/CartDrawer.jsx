@@ -294,9 +294,36 @@ function CartDrawer({ isOpen, onClose }) {
             const itemAttributes = (item.attributes && Object.keys(item.attributes).length > 0)
               ? item.attributes
               : (existingLocal?.attributes || itemVariant?.attributes || {});
-            const effectivePrice = itemVariant?.price
-              ? parseFloat(itemVariant.price)
-              : parseFloat(item.price || prod.price || 0);
+            const isFlashItem = !!(
+              itemAttributes.is_flash_sale ||
+              itemAttributes.flash_price ||
+              existingLocal?.is_flash_sale ||
+              item.is_flash_sale
+            );
+
+            let effectivePrice;
+            if (isFlashItem) {
+              if (itemAttributes.flash_price) {
+                effectivePrice = parseFloat(itemAttributes.flash_price);
+              } else if (existingLocal?.flash_price || existingLocal?.price) {
+                effectivePrice = parseFloat(existingLocal.flash_price || existingLocal.price);
+              } else if (prod.flashSales && prod.flashSales.length > 0) {
+                effectivePrice = parseFloat(prod.flashSales[0].price);
+              } else {
+                effectivePrice = parseFloat(item.price || prod.price || 0);
+              }
+            } else {
+              // FOR NON-FLASH SALE ITEMS: SHOW ORIGINAL REGULAR PRICE
+              if (itemVariant?.price) {
+                effectivePrice = parseFloat(itemVariant.price);
+              } else if (item.price !== undefined && item.price !== null && !isNaN(parseFloat(item.price)) && parseFloat(item.price) > 0) {
+                effectivePrice = parseFloat(item.price);
+              } else if (existingLocal?.price) {
+                effectivePrice = parseFloat(existingLocal.price);
+              } else {
+                effectivePrice = parseFloat(prod.price || 0);
+              }
+            }
 
             return {
               id: item.id,
@@ -307,6 +334,8 @@ function CartDrawer({ isOpen, onClose }) {
               attributes: itemAttributes,
               name: prod.name || item.name || "Product",
               price: effectivePrice,
+              is_flash_sale: isFlashItem,
+              flash_price: isFlashItem ? effectivePrice : null,
               image: resolvedImage,
               rating: Number(prod.rating || item.rating || existingLocal?.rating || 4.8),
               quantity: item.quantity
@@ -364,7 +393,12 @@ function CartDrawer({ isOpen, onClose }) {
         if (targetItem.db_id) {
           await updateCartItemApi(targetItem.db_id, newQty);
         } else if (targetItem.product_id || targetItem.id) {
-          await addToCartApi(targetItem.product_id || targetItem.id, 1);
+          await addToCartApi(
+            targetItem.product_id || targetItem.id, 
+            1, 
+            targetItem.variant_id || null, 
+            targetItem.attributes || {}
+          );
         }
       } catch (err) {
         console.warn("Failed to update cart API:", err);
@@ -662,9 +696,18 @@ function CartDrawer({ isOpen, onClose }) {
                       <div className="cart-items-list">
                         {cartItems.map((item) => {
                           const targetId = item.product_id || item.id;
+                          const isFlashItem = !!(item.is_flash_sale || item.attributes?.is_flash_sale);
+                          const userFacingAttributes = item.attributes
+                            ? Object.entries(item.attributes).filter(([k]) => k !== "is_flash_sale" && k !== "flash_price")
+                            : [];
+
                           const handleGoToDetail = () => {
                             onClose();
-                            if (targetId) navigate(`/product/${targetId}`);
+                            if (targetId) {
+                              navigate(`/product/${targetId}`, {
+                                state: isFlashItem ? { fromFlashSale: true, flashPrice: item.price } : { fromFlashSale: false }
+                              });
+                            }
                           };
 
                           return (
@@ -684,9 +727,14 @@ function CartDrawer({ isOpen, onClose }) {
                                 >
                                   {item.name}
                                 </h4>
-                                {item.attributes && Object.keys(item.attributes).length > 0 && (
+                                {(isFlashItem || userFacingAttributes.length > 0) && (
                                   <div className="cart-item-attributes-badges" style={{ display: "flex", flexWrap: "wrap", gap: "4px", margin: "2px 0 4px 0" }}>
-                                    {Object.entries(item.attributes).map(([k, val]) => (
+                                    {isFlashItem && (
+                                      <span style={{ fontSize: "0.7rem", padding: "1px 6px", background: "#fef2f2", color: "#ef4444", borderRadius: "4px", fontWeight: 700 }}>
+                                        🔥 Flash Sale
+                                      </span>
+                                    )}
+                                    {userFacingAttributes.map(([k, val]) => (
                                       <span key={k} style={{ fontSize: "0.7rem", padding: "1px 6px", background: "#f1f5f9", color: "#475569", borderRadius: "4px", fontWeight: 600 }}>
                                         {k}: {val}
                                       </span>
@@ -699,7 +747,7 @@ function CartDrawer({ isOpen, onClose }) {
                                     {item.rating ? Number(item.rating).toFixed(1) : "4.8"}
                                   </span>
                                 </div>
-                                <span className="cart-item-price">${item.price}</span>
+                                <span className="cart-item-price">${Number(item.price).toFixed(2)}</span>
                                 <div className="cart-qty-row">
                                   <div className="cart-qty-buttons">
                                     <button onClick={() => decrementQuantity(item.id)}>

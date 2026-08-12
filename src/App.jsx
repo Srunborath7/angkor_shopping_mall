@@ -7,6 +7,7 @@ import ShopPage from "./pages/website/ShopPage";
 import OrderPage from "./pages/website/OrderPage";
 import ProductDetailPage from "./pages/website/ProductDetailPage";
 import WishlistPage from "./pages/website/WishlistPage";
+import RecommendationPage from "./pages/website/RecommendationPage";
 import Dashboard from "./pages/Admin/Dashboard";
 import CategoryPage from "./pages/Admin/CategoryPage";
 import ProductPage from "./pages/Admin/ProductPage";
@@ -27,6 +28,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/shop" element={<ShopPage />} />
+        <Route path="/recommendations" element={<RecommendationPage />} />
         <Route path="/product/:id" element={<ProductDetailPage />} />
         <Route path="/orders" element={<OrderPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />

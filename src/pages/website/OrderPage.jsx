@@ -39,13 +39,16 @@ function OrderPage() {
     if (isLoggedIn) {
       try {
         const res = await getOrdersApi();
-        const apiOrders = res.data || res.orders || (Array.isArray(res) ? res : []);
-        if (Array.isArray(apiOrders) && apiOrders.length > 0) {
+        // Handle various Axios/fetch response wrappings
+        const payload = res?.data?.data || res?.data || res || {};
+        const apiOrders = Array.isArray(payload) ? payload : (Array.isArray(payload.orders) ? payload.orders : []);
+        
+        if (apiOrders && apiOrders.length >= 0) {
           const formattedOrders = apiOrders.map((order) => ({
             id: `#ORD-${order.id}`,
             rawId: order.id,
             date: new Date(order.created_at || order.createdAt || Date.now()).toISOString().split("T")[0],
-            items: order.items?.length || 0,
+            items: order.items?.reduce((acc, item) => acc + item.quantity, 0) || 0, // calculate total quantity
             total: parseFloat(order.total_amount || 0).toFixed(2),
             status: order.status ? (order.status.charAt(0).toUpperCase() + order.status.slice(1)) : "Pending",
             paymentMethod: order.payment_intent_id ? "Online Pay (Paid)" : "ABA KHQR / COD",
@@ -60,7 +63,7 @@ function OrderPage() {
               id: item.product?.id || item.product_id,
               name: item.product?.name || "Product Item",
               price: parseFloat(item.price || item.product?.price || 0),
-              image: item.product?.image_url || item.product?.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
+              image: item.images?.[0]?.image_url || item.product?.images?.[0]?.image_url || item.product?.image_url || item.product?.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
               quantity: item.quantity
             }))
           }));
@@ -91,49 +94,7 @@ function OrderPage() {
     }
   }, [isLoggedIn]);
 
-  // Prepopulate a finished mock order if none exist, so the workspace is rich
-  useEffect(() => {
-    if (isLoggedIn && user) {
-      const existing = localStorage.getItem("orders");
-      if (!existing || JSON.parse(existing).length === 0) {
-        const defaultOrders = [
-          {
-            id: "#ORD-9921",
-            date: "2026-07-15",
-            items: 2,
-            total: "99.98",
-            status: "Delivered",
-            paymentMethod: "ABA KHQR",
-            shippingInfo: {
-              fullName: user.name,
-              email: user.email,
-              phone: "099888777",
-              city: "Phnom Penh",
-              address: "Sangkat Toul Tom Poung, Khan Chamkarmon"
-            },
-            products: [
-              {
-                id: 2,
-                name: "Active Smart Watch v2",
-                price: 59.99,
-                image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500&auto=format&fit=crop&q=60",
-                quantity: 1
-              },
-              {
-                id: 1,
-                name: "Pro Wireless Headphones",
-                price: 39.99,
-                image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60",
-                quantity: 1
-              }
-            ]
-          }
-        ];
-        localStorage.setItem("orders", JSON.stringify(defaultOrders));
-        setOrders(defaultOrders);
-      }
-    }
-  }, [isLoggedIn, user]);
+  // Mock order prepopulation removed to use API data only
 
   const toggleOrderDetails = (id) => {
     if (expandedOrderId === id) {

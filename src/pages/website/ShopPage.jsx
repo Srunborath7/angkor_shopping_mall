@@ -220,15 +220,15 @@ function ShopPage() {
     const saved = localStorage.getItem("cartItems");
     const currentCart = saved ? JSON.parse(saved) : [];
 
-    const existing = currentCart.find((item) => item.id === product.id || item.product_id === product.id);
+    const existingIndex = currentCart.findIndex((item) => (item.id === product.id || item.product_id === product.id) && !item.is_flash_sale);
     let updatedCart = [];
 
-    if (existing) {
-      updatedCart = currentCart.map((item) =>
-        (item.id === product.id || item.product_id === product.id) ? { ...item, quantity: item.quantity + 1 } : item
+    if (existingIndex > -1) {
+      updatedCart = currentCart.map((item, idx) =>
+        idx === existingIndex ? { ...item, quantity: item.quantity + 1 } : item
       );
     } else {
-      updatedCart = [...currentCart, { ...product, product_id: product.id, quantity: 1 }];
+      updatedCart = [...currentCart, { ...product, product_id: product.id, is_flash_sale: false, quantity: 1 }];
     }
 
     localStorage.setItem("cartItems", JSON.stringify(updatedCart));
@@ -238,7 +238,7 @@ function ShopPage() {
 
     if (isLoggedIn && product.id) {
       try {
-        await addToCartApi(product.id, 1);
+        await addToCartApi(product.id, 1, null, {});
       } catch (err) {
         console.warn("Failed to sync add to cart API:", err);
       }
@@ -458,7 +458,7 @@ function ShopPage() {
                   <div
                     key={prod.id}
                     className="product-card-item"
-                    onClick={() => navigate(`/product/${prod.id}`)}
+                    onClick={() => navigate(`/product/${prod.id}`, { state: { fromFlashSale: false } })}
                     style={{ cursor: "pointer" }}
                   >
                     <div className="product-image-box">

@@ -318,16 +318,41 @@ function HomePage() {
 
     // For flash sale items, product_id holds the real product UUID; fall back to id
     const realProductId = product.product_id || product.id;
+    const isFlashSale = !!(product.is_flash_sale || product.badge === "Flash Deal" || product.flash_price || product.claimedPct !== undefined);
+    const flashPrice = isFlashSale ? Number(product.price) : null;
+    const displayPrice = Number(product.price);
+    const itemKey = `${realProductId}${isFlashSale ? "-flash" : ""}`;
 
-    const existing = currentCart.find((item) => item.id === realProductId || item.product_id === realProductId);
+    const existingIndex = currentCart.findIndex(
+      (item) => item.id === itemKey || (item.product_id === realProductId && Boolean(item.is_flash_sale) === isFlashSale)
+    );
+
+    const attributesToSend = isFlashSale
+      ? { ...(product.attributes || {}), is_flash_sale: true, flash_price: flashPrice }
+      : { ...(product.attributes || {}) };
+
     let updatedCart = [];
-
-    if (existing) {
-      updatedCart = currentCart.map((item) =>
-        (item.id === realProductId || item.product_id === realProductId) ? { ...item, quantity: item.quantity + 1 } : item
+    if (existingIndex > -1) {
+      updatedCart = currentCart.map((item, idx) =>
+        idx === existingIndex ? { ...item, quantity: item.quantity + 1, attributes: attributesToSend } : item
       );
     } else {
-      updatedCart = [...currentCart, { ...product, id: realProductId, product_id: realProductId, quantity: 1 }];
+      updatedCart = [
+        ...currentCart,
+        {
+          ...product,
+          id: itemKey,
+          itemKey,
+          product_id: realProductId,
+          name: product.name + (isFlashSale ? " (Flash Sale)" : ""),
+          price: displayPrice,
+          originalPrice: product.originalPrice || (isFlashSale ? Number((displayPrice * 1.25).toFixed(2)) : displayPrice),
+          is_flash_sale: isFlashSale,
+          flash_price: flashPrice,
+          quantity: 1,
+          attributes: attributesToSend
+        }
+      ];
     }
 
     localStorage.setItem("cartItems", JSON.stringify(updatedCart));
@@ -337,8 +362,7 @@ function HomePage() {
 
     if (isLoggedIn && realProductId) {
       try {
-        // Always sync to server with the real product UUID (no variant from homepage flash sale)
-        await addToCartApi(realProductId, 1, null, {});
+        await addToCartApi(realProductId, 1, null, attributesToSend);
       } catch (err) {
         console.warn("Failed to sync add to cart API:", err);
       }
@@ -544,7 +568,11 @@ function HomePage() {
                 <div
                   key={prod.id || idx}
                   className="product-card-item"
-                  onClick={() => navigate(`/product/${prod.product_id || prod.id}`)}
+                  onClick={() =>
+                    navigate(`/product/${prod.product_id || prod.id}`, {
+                      state: { fromFlashSale: true, flashSale: prod, flashPrice: prod.price }
+                    })
+                  }
                 >
                   <div className="product-image-box">
                     <img src={prod.image} alt={prod.name} loading="lazy" />
@@ -669,7 +697,11 @@ function HomePage() {
               <div
                 key={prod.id}
                 className="product-card-item"
-                onClick={() => navigate(`/product/${prod.id}`)}
+                onClick={() =>
+                  navigate(`/product/${prod.id}`, {
+                    state: { fromFlashSale: false }
+                  })
+                }
               >
                 <div className="product-image-box">
                   <img src={prod.image} alt={prod.name} loading="lazy" />

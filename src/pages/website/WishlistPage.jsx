@@ -301,7 +301,7 @@ function WishlistPage() {
               <div key={prod.id} className="wishlist-card">
                 <div
                   className="wishlist-card-img-box"
-                  onClick={() => navigate(`/product/${prod.id}`)}
+                  onClick={() => navigate(`/product/${prod.id}`, { state: { fromFlashSale: false } })}
                 >
                   <img
                     src={prod.image}
@@ -334,7 +334,7 @@ function WishlistPage() {
 
                   <h3
                     className="wishlist-card-title"
-                    onClick={() => navigate(`/product/${prod.id}`)}
+                    onClick={() => navigate(`/product/${prod.id}`, { state: { fromFlashSale: false } })}
                   >
                     {prod.name}
                   </h3>
