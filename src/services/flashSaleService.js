@@ -12,9 +12,15 @@ export const getFlashSalesFromStorage = () => {
   return [];
 };
 
-export const saveFlashSalesToStorage = (sales) => {
-  localStorage.setItem(FLASH_SALE_STORAGE_KEY, JSON.stringify(sales));
-  window.dispatchEvent(new Event("flash-sale-updated"));
+export const saveFlashSalesToStorage = (sales, notify = true) => {
+  try {
+    localStorage.setItem(FLASH_SALE_STORAGE_KEY, JSON.stringify(sales));
+  } catch {
+    // ignore
+  }
+  if (notify) {
+    window.dispatchEvent(new Event("flash-sale-updated"));
+  }
 };
 
 /**
@@ -55,7 +61,7 @@ export const getFlashSalesApi = async () => {
     const raw = res?.data?.data || res?.data || (Array.isArray(res) ? res : []);
     if (Array.isArray(raw) && raw.length > 0) {
       const normalized = raw.map(normalizeFlashSaleItem);
-      saveFlashSalesToStorage(normalized);
+      saveFlashSalesToStorage(normalized, false);
       return normalized;
     }
   } catch (err) {

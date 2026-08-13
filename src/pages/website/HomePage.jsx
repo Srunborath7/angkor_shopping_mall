@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
+import AISearchInput from "../../components/AISearchInput";
 import { productsPagedApi } from "../../services/productsService";
 import { categoriesApi } from "../../services/categoriesService";
 import { addToCartApi } from "../../services/cartService";
@@ -400,20 +401,20 @@ function HomePage() {
               instant ABA KHQR checkout, and express delivery across Cambodia.
             </p>
 
-            <form onSubmit={handleSearchSubmit} className="hero-search-form">
-              <div className="search-input-group">
-                <Search className="search-icon" size={20} />
-                <input
-                  type="text"
-                  placeholder="Search products, brands, categories..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <button type="submit" className="search-submit-btn">
-                Search
-              </button>
-            </form>
+            <div className="hero-search-wrapper-container" style={{ margin: "1.5rem 0", maxWidth: "600px" }}>
+              <AISearchInput
+                placeholder="Search products, brands, categories with AI..."
+                initialValue={searchQuery}
+                onSearchSubmit={(q) => {
+                  if (q.trim()) {
+                    navigate("/shop", { state: { initialSearch: q } });
+                  } else {
+                    toast.error("Please enter a keyword to search");
+                  }
+                }}
+                className="hero-ai-search"
+              />
+            </div>
 
             <div className="hero-quick-tags">
               <span className="tags-label">Popular:</span>

@@ -102,7 +102,7 @@ function CartDrawer({ isOpen, onClose }) {
           const locality = bdcData.locality || bdcData.city || "";
           const district = bdcData.localityInfo?.administrative?.find(a => a.order === 4 || a.order === 3)?.name || bdcData.principalSubdivision || "";
           const city = bdcData.city || bdcData.principalSubdivision || bdcData.countryName || "";
-          
+
           const parts = [locality, district, city].filter((val, i, self) => val && self.indexOf(val) === i);
           if (parts.length > 0) {
             return parts.join(", ");
@@ -130,7 +130,7 @@ function CartDrawer({ isOpen, onClose }) {
           const road = osmData.address.road || osmData.address.pedestrian || osmData.address.suburb || osmData.address.neighbourhood;
           const suburb = osmData.address.suburb || osmData.address.quarter || osmData.address.city_district;
           const city = osmData.address.city || osmData.address.town || osmData.address.state || osmData.address.country;
-          
+
           const parts = [road, suburb, city].filter(Boolean);
           if (parts.length > 0) {
             return parts.join(", ");
@@ -153,7 +153,7 @@ function CartDrawer({ isOpen, onClose }) {
     const resolvedAddress = await fetchReverseGeocode(preset.lat, preset.lng);
     const finalAddress = resolvedAddress || preset.streetAddress;
     const formatted = `${finalAddress} (Google Map Pin: ${preset.lat}° N, ${preset.lng}° E)`;
-    
+
     setMapLocation((prev) => ({
       ...prev,
       ...preset,
@@ -367,11 +367,11 @@ function CartDrawer({ isOpen, onClose }) {
   const saveCartItems = (newItems) => {
     setCartItems(newItems);
     localStorage.setItem("cartItems", JSON.stringify(newItems));
-    
+
     // Calculate total count
     const totalCount = newItems.reduce((acc, item) => acc + item.quantity, 0);
     localStorage.setItem("cartCount", String(totalCount));
-    
+
     // Dispatch events
     window.dispatchEvent(new Event("cart-updated"));
   };
@@ -394,9 +394,9 @@ function CartDrawer({ isOpen, onClose }) {
           await updateCartItemApi(targetItem.db_id, newQty);
         } else if (targetItem.product_id || targetItem.id) {
           await addToCartApi(
-            targetItem.product_id || targetItem.id, 
-            1, 
-            targetItem.variant_id || null, 
+            targetItem.product_id || targetItem.id,
+            1,
+            targetItem.variant_id || null,
             targetItem.attributes || {}
           );
         }
@@ -686,7 +686,7 @@ function CartDrawer({ isOpen, onClose }) {
                       <ShoppingBag size={64} className="empty-cart-icon" />
                       <h4>Your cart is empty</h4>
                       <p>Browse products and add them to your cart to checkout.</p>
-                      <button className="empty-continue-btn" onClick={onClose}>
+                      <button className="empty-continue-btn" onClick={() => { onClose(); navigate("/shop"); }}>
                         Continue Shopping
                       </button>
                     </div>

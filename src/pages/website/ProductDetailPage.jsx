@@ -18,7 +18,8 @@ import {
   AlertCircle,
   Send,
   Camera,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Sparkles
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
@@ -27,6 +28,10 @@ import {
   productsPagedApi,
   createProductReviewApi
 } from "../../services/productsService";
+import {
+  getSimilarRecommendationsApi,
+  trackInteractionApi
+} from "../../services/recommendationService";
 import { getFlashSalesApi } from "../../services/flashSaleService";
 import { addToCartApi } from "../../services/cartService";
 import "./styles/ProductDetailPage.css";
@@ -310,9 +315,16 @@ function getDynamicAttributes(prod) {
 function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const auth = useSelector((state) => state.auth);
   const isLoggedIn = !!auth.token;
   const user = auth.user;
+
+  const locationState = location?.state || {};
+  const fromFlashSale = Boolean(locationState.fromFlashSale || locationState.isFlashSale);
+  const passedFlashSale = locationState.flashSale || locationState.passedFlashSale || null;
+  const passedFlashPrice = locationState.flashPrice ?? locationState.passedFlashPrice ?? null;
+  const [activeFlashSale, setActiveFlashSale] = useState(passedFlashSale);
 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -351,171 +363,172 @@ function ProductDetailPage() {
     }
   });
 
-  // Related Products
-  const [relatedProducts, setRelatedProducts] = useState([]);
+  // Dynamic attributes extracted from current product schema
+  const dynamicAttributes = useMemo(() => getDynamicAttributes(product), [product]);
 
-  const location = useLocation();
-  const locationState = location.state || {};
-  const fromFlashSale = locationState.fromFlashSale || false;
-  const passedFlashSale = locationState.flashSale || null;
-  const passedFlashPrice = locationState.flashPrice || passedFlashSale?.price || null;
+  // Attribute selector handler with variant matching logic
+  const handleSelectAttribute = (attrKey, val) => {
+    const nextAttrs = { ...selectedAttributes, [attrKey]: val };
+    setSelectedAttributes(nextAttrs);
 
-  // Active Flash Sales State
-  const [activeFlashSale, setActiveFlashSale] = useState(null);
-
-  useEffect(() => {
-    const fetchFlashSale = async () => {
-      try {
-        const sales = await getFlashSalesApi();
-        if (Array.isArray(sales)) {
-          const match = sales.find(
-            (s) => (String(s.product_id) === String(id) || String(s.id) === String(id)) && s.status === "active"
-          );
-          if (match) {
-            setActiveFlashSale(match);
-          }
-        }
-      } catch (err) {
-        console.warn("Failed to check active flash sales:", err);
-      }
-    };
-    fetchFlashSale();
-  }, [id]);
-
-  useEffect(() => {
-    localStorage.setItem("wishlist", JSON.stringify(wishlist));
-    window.dispatchEvent(new Event("cart-updated"));
-  }, [wishlist]);
-
-  // Extract normalized dynamic attribute options based on current product
-  const dynamicAttributes = useMemo(() => {
-    return getDynamicAttributes(product);
-  }, [product]);
-
-  // Fetch Product details by ID from API
-  useEffect(() => {
-    const fetchProductDetails = async () => {
-      setLoading(true);
-      setError(null);
-
-      try {
-        const res = await getProductByIdApi(id);
-        const raw = res?.data?.data || res?.data || res;
-
-        if (raw && (raw.id || raw.name)) {
-          const norm = normalizeProduct(raw);
-          setProduct(norm);
-          setSelectedImage(norm.images[0] || NO_IMAGE_PLACEHOLDER);
-
-          if (norm.variants && norm.variants.length > 0) {
-            setSelectedVariant(norm.variants[0]);
-          }
-        } else {
-          const mockMatch = MOCK_FALLBACK_PRODUCTS.find((p) => String(p.id) === String(id));
-          if (mockMatch) {
-            const norm = normalizeProduct(mockMatch);
-            setProduct(norm);
-            setSelectedImage(norm.images[0]);
-            if (norm.variants && norm.variants.length > 0) {
-              setSelectedVariant(norm.variants[0]);
-            }
-          } else {
-            setError("Product not found");
-          }
-        }
-      } catch (err) {
-        console.warn("Failed to fetch product details API:", err);
-        const mockMatch = MOCK_FALLBACK_PRODUCTS.find((p) => String(p.id) === String(id));
-        if (mockMatch) {
-          const norm = normalizeProduct(mockMatch);
-          setProduct(norm);
-          setSelectedImage(norm.images[0]);
-          if (norm.variants && norm.variants.length > 0) {
-            setSelectedVariant(norm.variants[0]);
-          }
-        } else {
-          setError("Failed to load product details from server");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProductDetails();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [id]);
-
-  // Initialize selected attribute values when product/dynamicAttributes load
-  useEffect(() => {
-    if (dynamicAttributes && Object.keys(dynamicAttributes).length > 0) {
-      const initial = {};
-      Object.entries(dynamicAttributes).forEach(([key, values]) => {
-        if (values && values.length > 0) {
-          initial[key] = values[0];
-        }
-      });
-      setSelectedAttributes(initial);
-    }
-  }, [dynamicAttributes]);
-
-  // Auto-sync selectedVariant whenever selectedAttributes or product changes
-  useEffect(() => {
-    if (product?.variants && product.variants.length > 0 && Object.keys(selectedAttributes).length > 0) {
-      const matchedVariant = product.variants.find((v) => {
-        if (!v.attributes || typeof v.attributes !== "object") return false;
-        return Object.entries(selectedAttributes).every(([k, val]) => {
-          const vAttrVal = v.attributes[k] || v.attributes[k.toLowerCase()];
-          if (!vAttrVal) return false;
-          return String(vAttrVal).toLowerCase() === String(val).toLowerCase();
-        });
-      });
-
-      if (matchedVariant) {
-        setSelectedVariant(matchedVariant);
-        if (matchedVariant.image_url) {
-          setSelectedImage(matchedVariant.image_url);
-        }
-      }
-    }
-  }, [selectedAttributes, product]);
-
-  // Handle user selecting an attribute chip (e.g. Color: "Space Gray", Size: "41")
-  const handleSelectAttribute = (attrKey, value) => {
-    const updated = { ...selectedAttributes, [attrKey]: value };
-    setSelectedAttributes(updated);
-
-    // If variants exist, attempt to match the variant corresponding to selected attributes
-    if (product?.variants && product.variants.length > 0) {
-      const matchedVariant = product.variants.find((v) => {
+    if (product?.variants?.length > 0) {
+      const matched = product.variants.find((v) => {
         if (!v.attributes) return false;
-        return Object.entries(updated).every(([k, val]) => {
-          const vAttrVal = v.attributes[k] || v.attributes[k.toLowerCase()];
-          if (!vAttrVal) return true;
-          return String(vAttrVal).toLowerCase() === String(val).toLowerCase();
-        });
+        return Object.entries(nextAttrs).every(
+          ([k, value]) => String(v.attributes[k] || v.attributes[k.toLowerCase()] || "").toLowerCase() === String(value).toLowerCase()
+        );
       });
-
-      if (matchedVariant) {
-        setSelectedVariant(matchedVariant);
-        if (matchedVariant.image_url) {
-          setSelectedImage(matchedVariant.image_url);
-        }
+      if (matched) {
+        setSelectedVariant(matched);
+        if (matched.image_url) setSelectedImage(matched.image_url);
       }
     }
   };
 
-  // Fetch Related products
+  // Fetch product attributes & details from backend server API
+  useEffect(() => {
+    let isMounted = true;
+    const fetchProductDetails = async () => {
+      if (!id) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await getProductByIdApi(id);
+        const rawData = res?.data?.data || res?.data || res;
+        if (isMounted) {
+          if (rawData && (rawData.id || rawData.name)) {
+            const normalized = normalizeProduct(rawData);
+            setProduct(normalized);
+            setSelectedImage(normalized.images[0] || NO_IMAGE_PLACEHOLDER);
+
+            const attrs = getDynamicAttributes(normalized);
+            const initialAttrs = {};
+            Object.keys(attrs).forEach((key) => {
+              if (attrs[key]?.length > 0) {
+                initialAttrs[key] = attrs[key][0];
+              }
+            });
+            setSelectedAttributes(initialAttrs);
+            if (normalized.variants?.length > 0) {
+              setSelectedVariant(normalized.variants[0]);
+            }
+          } else {
+            const fallback = MOCK_FALLBACK_PRODUCTS.find((p) => String(p.id) === String(id));
+            if (fallback) {
+              const normalized = normalizeProduct(fallback);
+              setProduct(normalized);
+              setSelectedImage(normalized.images[0] || NO_IMAGE_PLACEHOLDER);
+              const attrs = getDynamicAttributes(normalized);
+              const initialAttrs = {};
+              Object.keys(attrs).forEach((key) => {
+                if (attrs[key]?.length > 0) {
+                  initialAttrs[key] = attrs[key][0];
+                }
+              });
+              setSelectedAttributes(initialAttrs);
+            } else {
+              setError("Product details could not be found.");
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("API getProductByIdApi error, checking fallback products:", err);
+        if (isMounted) {
+          const fallback = MOCK_FALLBACK_PRODUCTS.find((p) => String(p.id) === String(id));
+          if (fallback) {
+            const normalized = normalizeProduct(fallback);
+            setProduct(normalized);
+            setSelectedImage(normalized.images[0] || NO_IMAGE_PLACEHOLDER);
+            const attrs = getDynamicAttributes(normalized);
+            const initialAttrs = {};
+            Object.keys(attrs).forEach((key) => {
+              if (attrs[key]?.length > 0) {
+                initialAttrs[key] = attrs[key][0];
+              }
+            });
+            setSelectedAttributes(initialAttrs);
+          } else {
+            setError(err?.message || "Failed to load product details from server.");
+          }
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchProductDetails();
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  // Auto-fetch active flash sale details for product if not passed in location state
+  useEffect(() => {
+    const fetchFlashSale = async () => {
+      if (passedFlashSale) {
+        setActiveFlashSale(passedFlashSale);
+        return;
+      }
+      try {
+        const res = await getFlashSalesApi();
+        const salesList = res?.data?.data || res?.data || (Array.isArray(res) ? res : []);
+        if (Array.isArray(salesList)) {
+          const matched = salesList.find(
+            (s) => String(s.product_id || s.productId || s.product?.id) === String(id) && s.status === 'active'
+          );
+          if (matched) {
+            setActiveFlashSale(matched);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to check active flash sales for product:', err);
+      }
+    };
+    if (id) fetchFlashSale();
+  }, [id, passedFlashSale]);
+
+  // Related Products
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [relatedSource, setRelatedSource] = useState("similar");
+
+  // Fetch AI Similar / Related products from Backend API
   useEffect(() => {
     const fetchRelated = async () => {
+      if (!id) return;
+      if (isLoggedIn) {
+        trackInteractionApi(id, "view").catch(() => {});
+      }
       try {
-        const res = await productsPagedApi({ page: 1, limit: 8 });
-        const list = res?.data?.data?.products || res?.data?.products || res?.data || (Array.isArray(res) ? res : []);
+        const res = await getSimilarRecommendationsApi(id, 8);
+        const dataObj = res?.data || res;
+        const list = dataObj?.products || (Array.isArray(dataObj) ? dataObj : []);
+        const source = dataObj?.source || "similar";
+        setRelatedSource(source);
+
         if (Array.isArray(list) && list.length > 0) {
           const filtered = list.filter((p) => String(p.id) !== String(id)).map(normalizeProduct);
           setRelatedProducts(filtered.slice(0, 4));
+        } else {
+          // Fallback to general catalog
+          const fallbackRes = await productsPagedApi({ page: 1, limit: 8 });
+          const fallbackList = fallbackRes?.data?.data?.products || fallbackRes?.data?.products || fallbackRes?.data || [];
+          if (Array.isArray(fallbackList)) {
+            setRelatedProducts(fallbackList.filter((p) => String(p.id) !== String(id)).map(normalizeProduct).slice(0, 4));
+          }
         }
       } catch (err) {
-        console.warn("Failed to fetch related products:", err);
+        console.warn("Failed to fetch AI similar products API:", err);
+        try {
+          const fallbackRes = await productsPagedApi({ page: 1, limit: 8 });
+          const fallbackList = fallbackRes?.data?.data?.products || fallbackRes?.data?.products || fallbackRes?.data || [];
+          if (Array.isArray(fallbackList)) {
+            setRelatedProducts(fallbackList.filter((p) => String(p.id) !== String(id)).map(normalizeProduct).slice(0, 4));
+          }
+        } catch (fErr) {
+          console.warn("Fallback related products failed:", fErr);
+        }
       }
     };
     fetchRelated();
@@ -690,6 +703,7 @@ function ProductDetailPage() {
     if (isLoggedIn && product.id) {
       try {
         await addToCartApi(product.id, quantity, variantId || null, attributesToSend);
+        trackInteractionApi(product.id, "cart").catch(() => {});
       } catch (err) {
         console.warn("Failed sync to cart API:", err);
       }
@@ -1255,7 +1269,15 @@ function ProductDetailPage() {
         {/* Related Products Grid */}
         {relatedProducts.length > 0 && (
           <div className="related-products-section">
-            <h2 className="related-section-title">You Might Also Like</h2>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.75rem" }}>
+              <h2 className="related-section-title" style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <Sparkles size={22} style={{ color: "#166534" }} />
+                You Might Also Like
+              </h2>
+              <span style={{ fontSize: "0.8rem", padding: "4px 10px", borderRadius: "20px", background: "#f0fdf4", color: "#166534", fontWeight: 600, border: "1px solid #bbf7d0", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                <Sparkles size={12} /> {relatedSource === "similar" ? "AI Embedding Match" : "Category Recommendation"}
+              </span>
+            </div>
             <div className="related-products-grid">
               {relatedProducts.map((relProd) => (
                 <div

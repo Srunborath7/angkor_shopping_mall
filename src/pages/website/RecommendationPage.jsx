@@ -108,6 +108,7 @@ function RecommendationPage() {
 
   const [personalised, setPersonalised] = useState([]);
   const [popular, setPopular] = useState([]);
+  const [personalisedSource, setPersonalisedSource] = useState("popular");
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
 
@@ -124,21 +125,22 @@ function RecommendationPage() {
         let popList = [];
         let persList = [];
 
-        // Fetch Popular
+        // Fetch Popular Recommendations
         try {
-          const popRes = await getPopularRecommendationsApi();
-          const popData = popRes?.data?.data ?? popRes?.data ?? popRes ?? [];
-          popList = Array.isArray(popData) ? popData : (popData.products || []);
+          const popRes = await getPopularRecommendationsApi(12);
+          const popObj = popRes?.data || popRes;
+          popList = popObj?.products || (Array.isArray(popObj) ? popObj : []);
         } catch (err) {
           console.warn("Failed to load popular recommendations:", err);
         }
 
-        // Fetch Personalised if logged in
+        // Fetch Personalised Recommendations if logged in
         if (isLoggedIn) {
           try {
-            const persRes = await getRecommendationsApi();
-            const persData = persRes?.data?.data ?? persRes?.data ?? persRes ?? [];
-            persList = Array.isArray(persData) ? persData : (persData.products || []);
+            const persRes = await getRecommendationsApi(12);
+            const persObj = persRes?.data || persRes;
+            persList = persObj?.products || (Array.isArray(persObj) ? persObj : []);
+            setPersonalisedSource(persObj?.source || "popular");
           } catch (err) {
             console.warn("Failed to load personalised recommendations:", err);
           }
@@ -340,14 +342,40 @@ function RecommendationPage() {
           </div>
         ) : (
           <>
+            {!isLoggedIn && (
+              <div className="recommendation-guest-banner" style={{ background: "linear-gradient(135deg, #166534 0%, #15803d 100%)", color: "#fff", padding: "1.5rem 2rem", borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem", marginBottom: "2rem", boxShadow: "0 10px 25px -5px rgba(22, 101, 52, 0.25)" }}>
+                <div>
+                  <h3 style={{ margin: "0 0 0.25rem 0", fontSize: "1.25rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <Sparkles size={20} /> Unlock Personalised AI Recommendations
+                  </h3>
+                  <p style={{ margin: 0, opacity: 0.9, fontSize: "0.95rem" }}>
+                    Sign in to get ML-driven product picks tailored specifically to your interaction history.
+                  </p>
+                </div>
+                <button onClick={() => navigate("/auth/login")} style={{ background: "#ffffff", color: "#166534", border: "none", padding: "0.75rem 1.5rem", borderRadius: "10px", fontWeight: 700, cursor: "pointer", fontSize: "0.95rem" }}>
+                  Sign In Now
+                </button>
+              </div>
+            )}
+
             {isLoggedIn && (
               <section className="recommendation-section">
-                <div className="section-header">
-                  <h2>
-                    <Zap size={24} className="section-icon text-yellow" />
-                    Recommended For You
-                  </h2>
-                  <p>Based on your activity and preferences</p>
+                <div className="section-header" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
+                  <div>
+                    <h2>
+                      <Zap size={24} className="section-icon text-yellow" />
+                      Recommended For You
+                    </h2>
+                    <p>Based on your activity, searches, and preferences</p>
+                  </div>
+                  <span className="source-badge" style={{ padding: "6px 14px", borderRadius: "20px", background: "#fef3c7", color: "#92400e", fontWeight: 600, fontSize: "0.85rem", display: "inline-flex", alignItems: "center", gap: "6px", border: "1px solid #fde68a" }}>
+                    <Sparkles size={14} />
+                    {personalisedSource === "ml"
+                      ? "⚡ AI Machine Learning Model"
+                      : personalisedSource === "user_history_personalized"
+                      ? "📊 Activity History Personalized"
+                      : "🔥 Popular Recommendations"}
+                  </span>
                 </div>
                 {renderProductGrid(personalised)}
               </section>
@@ -359,7 +387,7 @@ function RecommendationPage() {
                   <TrendingUp size={24} className="section-icon text-blue" />
                   Trending Now
                 </h2>
-                <p>Popular products loved by everyone</p>
+                <p>Popular products loved by buyers across AngkorMall</p>
               </div>
               {renderProductGrid(popular)}
             </section>

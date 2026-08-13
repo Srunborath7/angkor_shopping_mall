@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
+import AISearchInput from "../../components/AISearchInput";
 import { productsPagedApi } from "../../services/productsService";
 import { useSelector } from "react-redux";
 import { addToCartApi } from "../../services/cartService";
@@ -403,13 +404,12 @@ function ShopPage() {
                 )}
               </div>
 
-              <div className="shop-topbar-search">
-                <Search size={16} className="topbar-search-icon" />
-                <input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+              <div className="shop-topbar-search-wrapper" style={{ flex: "1", maxWidth: "360px", minWidth: "220px" }}>
+                <AISearchInput
+                  placeholder="Search catalog with AI..."
+                  initialValue={searchQuery}
+                  onSearchSubmit={(q) => setSearchQuery(q)}
+                  className="shop-topbar-ai-search"
                 />
               </div>
 
