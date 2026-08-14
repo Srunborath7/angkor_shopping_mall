@@ -354,6 +354,20 @@
     display: inline-block;
 }
 
+/* Clickable Cells */
+.clickable-cell {
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 6px 8px;
+    margin: -6px -8px;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.clickable-cell:hover {
+    background: #f1f5f9;
+    transform: translateX(2px);
+}
+
 /* Customer Cell */
 .customer-cell {
     display: flex;
@@ -365,7 +379,7 @@
     width: 38px;
     height: 38px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    background: linear-gradient(135deg, #166534 0%, #15803d 100%);
     color: #ffffff;
     font-weight: 700;
     font-size: 14px;
@@ -374,26 +388,33 @@
     justify-content: center;
     text-transform: uppercase;
     flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(22, 101, 52, 0.2);
 }
 
-.customer-info .name {
-    font-weight: 600;
-    color: #111827;
+.customer-info .name.customer-link {
+    font-weight: 700;
+    color: #0f172a;
     display: block;
     margin-bottom: 2px;
+    transition: color 0.15s ease;
+}
+
+.customer-cell:hover .customer-info .name.customer-link {
+    color: #166534;
+    text-decoration: underline;
 }
 
 .customer-info .contact {
     font-size: 12px;
-    color: #6b7280;
+    color: #64748b;
     display: block;
 }
 
-/* Items Preview Cell */
+/* Items Preview Cell in Main Table */
 .items-preview {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .item-thumb-list {
@@ -402,26 +423,52 @@
 }
 
 .item-thumb-img {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     object-fit: cover;
     border: 2px solid #ffffff;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    margin-left: -8px;
+    background: #f8fafc;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    margin-left: -10px;
+    transition: transform 0.2s ease, z-index 0.2s ease;
 }
 
 .item-thumb-img:first-child {
     margin-left: 0;
 }
 
+.items-preview:hover .item-thumb-img {
+    transform: translateY(-2px);
+}
+
+.items-summary-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
 .item-count-badge {
     font-size: 12px;
-    font-weight: 600;
-    color: #4b5563;
-    background: #f3f4f6;
+    font-weight: 700;
+    color: #166534;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
     padding: 2px 8px;
     border-radius: 12px;
+    display: inline-block;
+    width: fit-content;
+}
+
+.variant-preview-tag {
+    font-size: 11px;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-weight: 600;
+    white-space: nowrap;
 }
 
 /* Status Badges */
@@ -692,7 +739,7 @@
 }
 
 .btn-primary {
-    background: #2563eb;
+    background: linear-gradient(135deg, #166534 0%, #15803d 100%);
     border: none;
     color: #ffffff;
     padding: 9px 18px;
@@ -704,10 +751,414 @@
     align-items: center;
     gap: 8px;
     transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(22, 101, 52, 0.2);
 }
 
 .btn-primary:hover {
-    background: #1d4ed8;
+    background: linear-gradient(135deg, #14532d 0%, #166534 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(22, 101, 52, 0.3);
+}
+
+/* ==========================================================================
+   Attribute Badges (Variants & Specifications)
+   ========================================================================== */
+.attr-badges-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.attr-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.2;
+    border: 1px solid transparent;
+}
+
+.attr-badge .attr-key {
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.attr-badge .attr-val {
+    font-weight: 600;
+}
+
+.attr-color-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.attr-badge.attr-type-1 {
+    background: #dbeafe;
+    color: #1e40af;
+    border-color: #bfdbfe;
+}
+
+.attr-badge.attr-type-2 {
+    background: #dcfce7;
+    color: #166534;
+    border-color: #bbf7d0;
+}
+
+.attr-badge.attr-type-3 {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+.attr-badge.attr-type-4 {
+    background: #f3e8ff;
+    color: #6b21a8;
+    border-color: #e9d5ff;
+}
+
+.attr-badge.attr-type-5 {
+    background: #ffe4e6;
+    color: #9f1239;
+    border-color: #fecdd3;
+}
+
+.attr-badge.attr-type-6 {
+    background: #e0f2fe;
+    color: #075985;
+    border-color: #bae6fd;
+}
+
+.no-variant-pill {
+    font-size: 11px;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    font-weight: 600;
+}
+
+/* ==========================================================================
+   Order Items & Variants Modal (.items-detail-modal)
+   ========================================================================== */
+.items-detail-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.items-modal-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.order-tag-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.order-id-chip {
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #166534;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    padding: 4px 10px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.items-count-pill {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 4px 10px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.empty-items-box {
+    text-align: center;
+    padding: 40px 20px;
+    color: #64748b;
+}
+
+.items-detail-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 480px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.item-detail-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: 72px 1fr auto;
+    gap: 16px;
+    align-items: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.item-detail-card:hover {
+    border-color: #86efac;
+    box-shadow: 0 4px 14px rgba(22, 101, 52, 0.08);
+    transform: translateY(-1px);
+}
+
+.item-img-container {
+    width: 72px;
+    height: 72px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.item-detail-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 4px;
+}
+
+.item-detail-body {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.item-category-pill {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #166534;
+    letter-spacing: 0.5px;
+}
+
+.item-detail-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.item-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.item-sku-chip {
+    font-size: 11px;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.item-sku-chip code {
+    font-family: monospace;
+    color: #0f172a;
+    font-weight: 600;
+    background: #f1f5f9;
+    padding: 1px 4px;
+    border-radius: 4px;
+}
+
+.item-detail-attrs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+.attrs-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+}
+
+/* Pricing Column in Item Card */
+.item-detail-pricing {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    text-align: right;
+    min-width: 110px;
+}
+
+.unit-price-line {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.pricing-val {
+    font-weight: 600;
+    color: #0f172a;
+    margin-left: 4px;
+}
+
+.qty-pill {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.subtotal-badge-line .subtotal-val {
+    font-size: 16px;
+    font-weight: 800;
+    color: #166534;
+}
+
+/* Total Summary Strip in Modal */
+.items-detail-total-strip {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.total-items-stat {
+    font-size: 13px;
+    color: #475569;
+}
+
+.total-items-stat strong {
+    color: #0f172a;
+}
+
+.total-amount-stat {
+    font-size: 14px;
+    color: #475569;
+}
+
+.total-amount-stat span {
+    font-size: 20px;
+    font-weight: 800;
+    color: #166534;
+    margin-left: 6px;
+}
+
+/* ==========================================================================
+   Customer Detail Modal (.customer-detail-modal)
+   ========================================================================== */
+.customer-detail-modal {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.customer-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.customer-modal-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #166534 0%, #15803d 100%);
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(22, 101, 52, 0.25);
+}
+
+.customer-modal-name {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 4px 0;
+}
+
+.customer-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+}
+
+.customer-modal-info-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.customer-modal-info-item .cmi-icon {
+    color: #166534;
+    margin-top: 2px;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.customer-modal-info-item label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #64748b;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.customer-modal-info-item span {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    display: block;
+    word-break: break-word;
 }
 
 /* Print Invoice Styling */

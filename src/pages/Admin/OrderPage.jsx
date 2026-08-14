@@ -324,25 +324,35 @@ function OrderPage() {
 
   // Render variant attributes as colored badges
   const renderAttributeBadges = (attributes) => {
-    if (!attributes || typeof attributes !== "object") return null;
-    const entries = Object.entries(attributes).filter(([, v]) => v !== null && v !== undefined && v !== "");
-    if (entries.length === 0) return <span style={{ color: "#9ca3af", fontSize: "12px" }}>No variant</span>;
-    const colors = ["#dbeafe", "#dcfce7", "#fef3c7", "#f3e8ff", "#ffe4e6", "#e0f2fe"];
-    const textColors = ["#1d4ed8", "#166534", "#92400e", "#7c3aed", "#be123c", "#0369a1"];
+    if (!attributes || typeof attributes !== "object") {
+      return <span className="no-variant-pill">Standard / Default</span>;
+    }
+    const entries = Object.entries(attributes).filter(
+      ([k, v]) => v !== null && v !== undefined && v !== "" && k !== "is_flash_sale" && k !== "flash_price"
+    );
+    if (entries.length === 0) {
+      return <span className="no-variant-pill">Standard Item</span>;
+    }
     return (
       <div className="attr-badges-row">
-        {entries.map(([key, value], idx) => (
-          <span
-            key={key}
-            className="attr-badge"
-            style={{
-              background: colors[idx % colors.length],
-              color: textColors[idx % textColors.length]
-            }}
-          >
-            <strong>{key}:</strong> {String(value)}
-          </span>
-        ))}
+        {entries.map(([key, value], idx) => {
+          const isColor = key.toLowerCase().includes("color");
+          return (
+            <span key={key} className={`attr-badge attr-type-${(idx % 6) + 1}`}>
+              {isColor && (
+                <span
+                  className="attr-color-dot"
+                  style={{
+                    backgroundColor: String(value).toLowerCase(),
+                    border: "1px solid rgba(0,0,0,0.15)"
+                  }}
+                />
+              )}
+              <strong className="attr-key">{key}:</strong>
+              <span className="attr-val">{String(value)}</span>
+            </span>
+          );
+        })}
       </div>
     );
   };
@@ -739,51 +749,73 @@ function OrderPage() {
       <Modal
         isOpen={isItemsModalOpen}
         onClose={() => setIsItemsModalOpen(false)}
-        title="Order Items & Variants"
+        title="Order Items & Variants Breakdown"
         size="lg"
       >
         {selectedOrderItems && (
           <div className="items-detail-modal">
-            <p className="items-detail-subtitle">
-              <FaBoxes style={{ marginRight: 6, color: "#2563eb" }} />
-              Order <strong style={{ fontFamily: "monospace", color: "#2563eb" }}>
-                #ORD-{selectedOrderItems.orderId?.slice(-8).toUpperCase()}
-              </strong> — {selectedOrderItems.items.length} item(s)
-            </p>
+            <div className="items-modal-top-bar">
+              <div className="order-tag-wrap">
+                <span className="order-id-chip">
+                  <FaTag size={11} /> #ORD-{selectedOrderItems.orderId?.slice(-8).toUpperCase()}
+                </span>
+                <span className="items-count-pill">
+                  <FaBoxes size={12} /> {selectedOrderItems.items.length} {selectedOrderItems.items.length === 1 ? "Product" : "Products"} Ordered
+                </span>
+              </div>
+            </div>
 
             {selectedOrderItems.items.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "40px", color: "#9ca3af" }}>
-                <FaBox style={{ fontSize: 40, marginBottom: 12 }} />
-                <p>No items found for this order.</p>
+              <div className="empty-items-box">
+                <FaBox style={{ fontSize: 44, color: "#cbd5e1", marginBottom: 12 }} />
+                <p>No products attached to this order.</p>
               </div>
             ) : (
               <div className="items-detail-list">
                 {selectedOrderItems.items.map((item, idx) => {
                   const attrs = item.attributes || item.variant?.attributes || {};
                   const productName = item.product?.name || "Product Item";
-                  const productImage = item.product?.image_url || item.product?.images?.[0]?.image_url || "https://placehold.co/60";
-                  const sku = item.variant?.sku || item.product?.sku || "—";
+                  const categoryName = item.product?.category?.name || item.product?.category || "General";
+                  const productImage = item.product?.image_url || item.product?.images?.[0]?.image_url || item.variant?.images?.[0]?.image_url || "https://placehold.co/80";
+                  const sku = item.variant?.sku || item.product?.sku || "STANDARD";
                   const price = parseFloat(item.price || item.variant?.price || item.product?.price || 0);
-                  const subtotal = price * (item.quantity || 1);
+                  const qty = parseInt(item.quantity, 10) || 1;
+                  const subtotal = price * qty;
 
                   return (
                     <div key={idx} className="item-detail-card">
-                      <img src={productImage} alt={productName} className="item-detail-img" />
+                      <div className="item-img-container">
+                        <img src={productImage} alt={productName} className="item-detail-img" />
+                      </div>
+
                       <div className="item-detail-body">
-                        <div className="item-detail-name">{productName}</div>
-                        <div className="item-detail-sku">
-                          <FaTag style={{ marginRight: 4, fontSize: 11 }} />
-                          SKU: <code>{sku}</code>
+                        <div className="item-category-pill">{categoryName}</div>
+                        <h4 className="item-detail-name">{productName}</h4>
+
+                        <div className="item-meta-row">
+                          <span className="item-sku-chip">
+                            <FaTag size={10} /> SKU: <code>{sku}</code>
+                          </span>
                         </div>
-                        {/* Variant Attributes */}
+
+                        {/* Variant Attributes Chips */}
                         <div className="item-detail-attrs">
+                          <span className="attrs-label">Variant / Specs:</span>
                           {renderAttributeBadges(attrs)}
                         </div>
                       </div>
+
                       <div className="item-detail-pricing">
-                        <div className="item-detail-qty">× {item.quantity || 1}</div>
-                        <div className="item-detail-price">${price.toFixed(2)}</div>
-                        <div className="item-detail-subtotal">= ${subtotal.toFixed(2)}</div>
+                        <div className="unit-price-line">
+                          <span className="pricing-lbl">Unit Price:</span>
+                          <span className="pricing-val">${price.toFixed(2)}</span>
+                        </div>
+                        <div className="qty-badge-line">
+                          <span className="qty-pill">Qty: <strong>{qty}</strong></span>
+                        </div>
+                        <div className="subtotal-badge-line">
+                          <span className="subtotal-val">${subtotal.toFixed(2)}</span>
+                        </div>
                       </div>
                     </div>
                   );
@@ -791,19 +823,27 @@ function OrderPage() {
               </div>
             )}
 
-            {/* Total Row */}
-            <div className="items-detail-total">
-              <span>Order Total:</span>
-              <strong>
-                ${selectedOrderItems.items.reduce((sum, item) => {
-                  const price = parseFloat(item.price || item.variant?.price || item.product?.price || 0);
-                  return sum + price * (item.quantity || 1);
-                }, 0).toFixed(2)}
-              </strong>
+            {/* Total Summary Strip */}
+            <div className="items-detail-total-strip">
+              <div className="total-items-stat">
+                Total Quantity: <strong>
+                  {selectedOrderItems.items.reduce((sum, item) => sum + (parseInt(item.quantity, 10) || 1), 0)} items
+                </strong>
+              </div>
+              <div className="total-amount-stat">
+                Order Total: <span>
+                  ${selectedOrderItems.items.reduce((sum, item) => {
+                    const price = parseFloat(item.price || item.variant?.price || item.product?.price || 0);
+                    return sum + price * (parseInt(item.quantity, 10) || 1);
+                  }, 0).toFixed(2)}
+                </span>
+              </div>
             </div>
 
-            <div className="modal-actions-bar" style={{ marginTop: "16px" }}>
-              <button className="btn-primary" onClick={() => setIsItemsModalOpen(false)}>Close</button>
+            <div className="modal-actions-bar" style={{ marginTop: "20px" }}>
+              <button className="btn-primary" onClick={() => setIsItemsModalOpen(false)}>
+                Close Window
+              </button>
             </div>
           </div>
         )}
@@ -928,12 +968,37 @@ function OrderPage() {
               </tbody>
             </table>
 
+            {/* Trade-In Exchange Badge if order utilized Trade-In */}
+            {selectedOrder.trade_in_product && (
+              <div style={{ background: "#f0fdf4", border: "1px solid #86efac", padding: "12px 14px", borderRadius: "10px", marginBottom: "14px", display: "flex", alignItems: "center", gap: "12px" }}>
+                <img
+                  src={selectedOrder.trade_in_product.image_url || "https://placehold.co/44"}
+                  alt={selectedOrder.trade_in_product.title}
+                  style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover", border: "1px solid #bbf7d0" }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#166534", display: "flex", alignItems: "center", gap: 6 }}>
+                    <FaTag /> Customer Trade-In: {selectedOrder.trade_in_product.title}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#15803d", marginTop: 2 }}>
+                    Trade-In Credit: <strong>${parseFloat(selectedOrder.trade_in_discount || selectedOrder.trade_in_product.estimated_value || 0).toFixed(2)}</strong> | Status: <span style={{ textTransform: "capitalize", fontWeight: 600 }}>{selectedOrder.trade_in_product.status}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Summary Box */}
             <div className="order-summary-box">
               <div className="order-summary-row">
                 <span>Subtotal:</span>
-                <span>${parseFloat(selectedOrder.total_amount).toFixed(2)}</span>
+                <span>${parseFloat(selectedOrder.subtotal_amount || selectedOrder.total_amount).toFixed(2)}</span>
               </div>
+              {parseFloat(selectedOrder.trade_in_discount || 0) > 0 && (
+                <div className="order-summary-row" style={{ color: "#16a34a", fontWeight: "600" }}>
+                  <span>Trade-In Credit Applied:</span>
+                  <span>-${parseFloat(selectedOrder.trade_in_discount).toFixed(2)}</span>
+                </div>
+              )}
               <div className="order-summary-row">
                 <span>Shipping Fee:</span>
                 <span>$0.00</span>

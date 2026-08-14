@@ -14,6 +14,13 @@ export const getPopularRecommendationsApi = (limit = 10) => {
     );
 };
 
+export const getBestSellersRecommendationsApi = (limit = 10) => {
+    return api(
+        `/api/recommendations/best-sellers?limit=${limit}`,
+        "GET"
+    );
+};
+
 export const getSearchRecommendationsApi = (query, limit = 10) => {
     if (!query || !query.trim()) {
         return Promise.resolve({ success: true, data: { categories: [], brands: [], models: [], products: [], ai_suggestions: [] } });

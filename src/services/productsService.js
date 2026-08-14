@@ -32,6 +32,14 @@ export const getTrendingProductsApi = (params) => {
     );
 };
 
+export const getBestSellersApi = (limit = 10) => {
+    return api(
+        "/api/products/best-sellers",
+        "get",
+        { limit }
+    );
+};
+
 export const getFlashSaleProductsApi = (params) => {
     return api(
         "/api/products/true",

@@ -29,6 +29,7 @@ import {
 } from "../services/cartService";
 import { checkoutApi, payOrderApi } from "../services/orderService";
 import { updateProductVariantInventoryApi, updateProductApi } from "../services/productsService";
+import { getMyTradeProductsApi } from "../services/tradeService";
 import "./CartDrawer.css";
 
 function CartDrawer({ isOpen, onClose }) {
@@ -45,6 +46,10 @@ function CartDrawer({ isOpen, onClose }) {
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Trade-In Exchange Credit State
+  const [userTradeProducts, setUserTradeProducts] = useState([]);
+  const [selectedTradeIn, setSelectedTradeIn] = useState(null);
 
   // Checkout Form State
   const [form, setForm] = useState({
@@ -360,6 +365,15 @@ function CartDrawer({ isOpen, onClose }) {
     if (isOpen) {
       loadCart();
       setStep("cart"); // Reset step when opening
+
+      if (isLoggedIn) {
+        getMyTradeProductsApi({ status: "available" })
+          .then((res) => {
+            const list = res?.data?.tradeProducts || res?.data || [];
+            setUserTradeProducts(Array.isArray(list) ? list.filter((p) => p.status === "available") : []);
+          })
+          .catch((e) => console.warn("Failed to load user trade products:", e));
+      }
     }
   }, [isOpen, isLoggedIn]);
 
@@ -464,7 +478,8 @@ function CartDrawer({ isOpen, onClose }) {
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = subtotal > 0 ? 4.99 : 0;
   const promoDiscountVal = subtotal * discount;
-  const grandTotal = subtotal + shipping - promoDiscountVal;
+  const tradeInDiscountVal = selectedTradeIn ? Math.min(subtotal, parseFloat(selectedTradeIn.estimated_value || 0)) : 0;
+  const grandTotal = Math.max(0, subtotal + shipping - promoDiscountVal - tradeInDiscountVal);
 
   // Form input handler
   const handleInputChange = (e) => {
@@ -544,11 +559,12 @@ function CartDrawer({ isOpen, onClose }) {
         }
       }
 
-      // 2. Execute Checkout API call
+      // 2. Execute Checkout API call with optional trade_in_product_id
       const finalAddress = addressMode === "map" ? mapLocation.formattedAddress : `${form.address}, ${form.city}`;
       const res = await checkoutApi({
         shipping_address: finalAddress,
-        contact_phone: form.phone
+        contact_phone: form.phone,
+        trade_in_product_id: selectedTradeIn ? selectedTradeIn.id : undefined
       });
 
       const orderData = res.data?.order || res.order || res.data;
@@ -1083,6 +1099,50 @@ function CartDrawer({ isOpen, onClose }) {
                       </div>
                     </div>
                   </div>
+
+                  {/* Trade-In Exchange Credit Option */}
+                  {isLoggedIn && userTradeProducts && userTradeProducts.length > 0 && (
+                    <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "14px", padding: "14px 16px", marginTop: "16px" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: "#166534", display: "flex", alignItems: "center", gap: 6 }}>
+                          🔄 Apply Trade-In Credit
+                        </span>
+                        {selectedTradeIn && (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedTradeIn(null)}
+                            style={{ background: "none", border: "none", color: "#ef4444", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <p style={{ margin: "0 0 8px", fontSize: "12px", color: "#15803d" }}>
+                        Exchange one of your listed pre-owned items for instant discount credit.
+                      </p>
+                      <select
+                        value={selectedTradeIn ? selectedTradeIn.id : ""}
+                        onChange={(e) => {
+                          const found = userTradeProducts.find((p) => String(p.id) === String(e.target.value));
+                          setSelectedTradeIn(found || null);
+                          if (found) toast.success(`Trade-in credit of $${parseFloat(found.estimated_value || 0).toFixed(2)} applied!`);
+                        }}
+                        style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #bbf7d0", background: "#ffffff", fontSize: "13px", outline: "none" }}
+                      >
+                        <option value="">-- No Trade-In (Pay full price) --</option>
+                        {userTradeProducts.map((tp) => (
+                          <option key={tp.id} value={tp.id}>
+                            {tp.title} (Credit: ${parseFloat(tp.estimated_value || 0).toFixed(2)})
+                          </option>
+                        ))}
+                      </select>
+                      {selectedTradeIn && (
+                        <div style={{ marginTop: "8px", fontSize: "12px", color: "#166534", fontWeight: 600 }}>
+                          ✓ Credit applied: ${parseFloat(selectedTradeIn.estimated_value || 0).toFixed(2)}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1107,6 +1167,11 @@ function CartDrawer({ isOpen, onClose }) {
                       {paymentMethod === "visa-master" && "Credit / Debit Card"}
                       {paymentMethod === "cod" && "Cash on Delivery"}
                     </p>
+                    {selectedTradeIn && (
+                      <p style={{ fontSize: "12px", color: "#166534", marginTop: 4 }}>
+                        🔄 With Trade-In: <strong>{selectedTradeIn.title}</strong> (-${tradeInDiscountVal.toFixed(2)})
+                      </p>
+                    )}
                   </div>
 
                   {/* Products review with image thumbnails */}
@@ -1150,6 +1215,12 @@ function CartDrawer({ isOpen, onClose }) {
                     <div className="summary-row text-green">
                       <span>Discount (30%)</span>
                       <span>-${promoDiscountVal.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {tradeInDiscountVal > 0 && (
+                    <div className="summary-row text-green">
+                      <span>Trade-In Credit</span>
+                      <span>-${tradeInDiscountVal.toFixed(2)}</span>
                     </div>
                   )}
                   <div className="summary-row total-row">

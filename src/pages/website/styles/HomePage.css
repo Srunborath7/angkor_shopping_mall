@@ -633,6 +633,74 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  z-index: 2;
+}
+
+.best-seller-rank-tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 2;
+  letter-spacing: 0.3px;
+}
+
+.best-seller-rank-tag.rank-1 {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  color: #78350f;
+  border: 1px solid #fde68a;
+}
+
+.best-seller-rank-tag.rank-2 {
+  background: linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%);
+  color: #1e293b;
+  border: 1px solid #ffffff;
+}
+
+.best-seller-rank-tag.rank-3 {
+  background: linear-gradient(135deg, #fed7aa 0%, #ea580c 100%);
+  color: #7c2d12;
+  border: 1px solid #ffedd5;
+}
+
+.best-seller-rank-tag.rank-other {
+  background: #064e3b;
+  color: #ecfdf5;
+  border: 1px solid #059669;
+}
+
+.sales-track-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid #fee2e2;
+  margin-left: 6px;
+}
+
+.order-tracking-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .product-discount-tag {

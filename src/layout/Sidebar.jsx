@@ -7,12 +7,11 @@ import {
   FaShoppingCart,
   FaChartBar,
   FaCog,
-  FaTimes,
-  FaStore,
   FaBookmark,
   FaTruck,
   FaFileInvoiceDollar,
-  FaBolt
+  FaBolt,
+  FaExchangeAlt
 } from "react-icons/fa";
 import logo from "../assets/logo.jpg";
 import { NavLink } from "react-router-dom";
@@ -21,52 +20,49 @@ import "./style/Sidebar.css";
 
 function Sidebar({ open, setOpen }) {
   const menus = [
-
     {
       name: "Dashboard",
       icon: <FaTachometerAlt />,
       path: "/admin/dashboard"
     },
-
     {
       name: "Flash Sale",
       icon: <FaBolt />,
       path: "/admin/flash-sale"
     },
-
     {
       name: "Products",
       icon: <FaBox />,
       path: "/admin/products"
     },
-
+    {
+      name: "Trading / Trade-In",
+      icon: <FaExchangeAlt />,
+      path: "/admin/trading"
+    },
     {
       name: "Inventory",
       icon: <FaBoxes />,
       path: "/admin/inventory"
     },
-
     {
       name: "Purchases",
       icon: <FaFileInvoiceDollar />,
       path: "/admin/purchases"
     },
-
     {
       name: "Suppliers",
       icon: <FaTruck />,
       path: "/admin/suppliers"
     },
-
     {
       name: "Categories",
       icon: <FaTh />,
       path: "/admin/categories"
     },
-
     {
       name: "Brands",
-      icon: <FaBookmark/>,
+      icon: <FaBookmark />,
       path: "/admin/brands"
     },
     {
@@ -74,101 +70,72 @@ function Sidebar({ open, setOpen }) {
       icon: <FaUsers />,
       path: "/admin/customers"
     },
-
-
     {
       name: "Orders",
       icon: <FaShoppingCart />,
       path: "/admin/orders"
     },
-
-
     {
       name: "Reports",
       icon: <FaChartBar />,
       path: "/admin/reports"
     },
-
-
     {
       name: "Settings",
       icon: <FaCog />,
       path: "/admin/settings"
     }
-
   ];
 
-  return (<>
-    {
-      open &&
-      <div
-        className="sidebar-overlay"
-        onClick={() => setOpen(false)}
-      />
-    }
-    <aside
-      className={`sidebar ${open ? "show" : ""}`}
-    >
-      <div className="sidebar-header">
-        <div className="brand">
-          <div className="brand-icon">
-             <img src={logo} alt="AngkorMall Logo" />
-          </div>
-          <div>
-            <h2>
-              Angkor Shopping Mall
-            </h2>
-            <span>
-              Admin Panel
-            </span>
-          </div>
-        </div>
-        <button
-          className="close-sidebar"
+  return (
+    <>
+      {open && (
+        <div
+          className="sidebar-overlay"
           onClick={() => setOpen(false)}
-          aria-label="Close Sidebar"
-        >
-          <X size={22} strokeWidth={3} />
-        </button>
-      </div>
-      <ul className="sidebar-menu">
-        {
-          menus.map((item, index) => (
+        />
+      )}
+      <aside className={`sidebar ${open ? "show" : ""}`}>
+        <div className="sidebar-header">
+          <div className="brand">
+            <div className="brand-icon">
+              <img src={logo} alt="AngkorMall Logo" />
+            </div>
+            <div>
+              <h2>Angkor Shopping Mall</h2>
+              <span>Admin Panel</span>
+            </div>
+          </div>
+          <button
+            className="close-sidebar"
+            onClick={() => setOpen(false)}
+            aria-label="Close Sidebar"
+          >
+            <X size={22} strokeWidth={3} />
+          </button>
+        </div>
+        <ul className="sidebar-menu">
+          {menus.map((item, index) => (
             <li key={index}>
               <NavLink
                 to={item.path}
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
-                  isActive
-                    ?
-                    "menu-link active"
-                    :
-                    "menu-link"
-
+                  isActive ? "menu-link active" : "menu-link"
                 }
               >
-                <span className="menu-icon">
-                  {item.icon}
-                </span>
-                <span>
-                  {item.name}
-                </span>
+                <span className="menu-icon">{item.icon}</span>
+                <span>{item.name}</span>
               </NavLink>
             </li>
-          ))
-        }
-      </ul>
-      <div className="sidebar-footer">
-
-        <p>
-          © 2026 Angkor Shopping Mall
-        </p>
-
-      </div>
-    </aside>
-  </>
-
+          ))}
+        </ul>
+        <div className="sidebar-footer">
+          <p>© 2026 Angkor Shopping Mall</p>
+        </div>
+      </aside>
+    </>
   );
-
 }
+
 export default Sidebar;

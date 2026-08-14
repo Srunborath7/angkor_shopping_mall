@@ -49,6 +49,9 @@ function OrderPage() {
             rawId: order.id,
             date: new Date(order.created_at || order.createdAt || Date.now()).toISOString().split("T")[0],
             items: order.items?.reduce((acc, item) => acc + item.quantity, 0) || 0, // calculate total quantity
+            subtotal: parseFloat(order.subtotal_amount || order.total_amount || 0).toFixed(2),
+            tradeInDiscount: parseFloat(order.trade_in_discount || 0),
+            tradeInProduct: order.trade_in_product || null,
             total: parseFloat(order.total_amount || 0).toFixed(2),
             status: order.status ? (order.status.charAt(0).toUpperCase() + order.status.slice(1)) : "Pending",
             paymentMethod: order.payment_intent_id ? "Online Pay (Paid)" : "ABA KHQR / COD",
@@ -339,6 +342,16 @@ function OrderPage() {
                                     <span className="bold">{order.paymentMethod || "COD"}</span>
                                   </div>
                                   <div className="billing-line">
+                                    <span>Subtotal:</span>
+                                    <span>${order.subtotal || order.total}</span>
+                                  </div>
+                                  {order.tradeInDiscount > 0 && (
+                                    <div className="billing-line" style={{ color: "#16a34a", fontWeight: 600 }}>
+                                      <span>Trade-In Credit Applied:</span>
+                                      <span>-${order.tradeInDiscount.toFixed(2)}</span>
+                                    </div>
+                                  )}
+                                  <div className="billing-line">
                                     <span>Shipping Delivery:</span>
                                     <span>$4.99</span>
                                   </div>
@@ -352,7 +365,28 @@ function OrderPage() {
 
                             {/* Products breakdown */}
                             <div className="details-products-section">
-                              <h5>Products Purchased</h5>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                                <h5 style={{ margin: 0 }}>Products Purchased</h5>
+                                <button
+                                  type="button"
+                                  onClick={() => navigate("/trading?tab=eligible")}
+                                  style={{
+                                    background: "#ecfdf5",
+                                    color: "#059669",
+                                    border: "1px solid #a7f3d0",
+                                    borderRadius: "8px",
+                                    padding: "4px 10px",
+                                    fontSize: "12px",
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "4px"
+                                  }}
+                                >
+                                  🔄 Trade-In / List Items for Exchange
+                                </button>
+                              </div>
                               <div className="products-mini-cards-list">
                                 {order.products.map((item, idx) => (
                                   <div

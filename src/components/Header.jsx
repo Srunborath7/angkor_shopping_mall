@@ -13,7 +13,8 @@ import {
   Sparkles,
   Home,
   Grid,
-  ChevronRight
+  ChevronRight,
+  Repeat
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
@@ -124,6 +125,12 @@ function Header() {
             onClick={() => navigate("/recommendations")}
           >
             AI Recommendations <Sparkles size={12} className="sparkle-icon" />
+          </span>
+          <span
+            className={`nav-item ${currentPath === "/trading" ? "active" : ""}`}
+            onClick={() => navigate("/trading")}
+          >
+            Trade & Exchange
           </span>
           <span
             className={`nav-item ${currentPath === "/orders" ? "active" : ""}`}
@@ -288,6 +295,20 @@ function Header() {
                 <div className="nav-item-left">
                   <Sparkles size={18} className="text-green-icon" />
                   <span>AI Recommendations</span>
+                </div>
+                <ChevronRight size={16} className="arrow-dim" />
+              </div>
+
+              <div
+                className={`mobile-nav-item ${currentPath === "/trading" ? "active" : ""}`}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  navigate("/trading");
+                }}
+              >
+                <div className="nav-item-left">
+                  <Repeat size={18} />
+                  <span>Trade & Exchange</span>
                 </div>
                 <ChevronRight size={16} className="arrow-dim" />
               </div>

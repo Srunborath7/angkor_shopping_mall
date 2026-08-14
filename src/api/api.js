@@ -143,7 +143,11 @@ export const api = async (
         method,
     };
     if (data !== null && data !== undefined) {
-        configObj.data = data;
+        if (typeof method === "string" && method.toUpperCase() === "GET") {
+            configObj.params = data;
+        } else {
+            configObj.data = data;
+        }
     }
     return apiClient(configObj);
 };
