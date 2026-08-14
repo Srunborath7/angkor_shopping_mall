@@ -392,6 +392,9 @@ function ProductDetailPage() {
       if (!id) return;
       setLoading(true);
       setError(null);
+      // Record 'view' interaction for recommendations
+      trackInteractionApi(id, "view").catch(() => {});
+
       try {
         const res = await getProductByIdApi(id);
         const rawData = res?.data?.data || res?.data || res;

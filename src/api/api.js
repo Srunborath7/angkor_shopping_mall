@@ -14,7 +14,22 @@ const apiClient = axios.create({
 // Request interceptor to inject accessToken
 apiClient.interceptors.request.use(
     (axiosConfig) => {
-        const token = store.getState()?.auth?.token;
+        let token = store.getState()?.auth?.token;
+        if (!token) {
+            try {
+                const rootPersist = localStorage.getItem("persist:root");
+                if (rootPersist) {
+                    const parsed = JSON.parse(rootPersist);
+                    if (parsed.auth) {
+                        const authObj = JSON.parse(parsed.auth);
+                        token = authObj.token;
+                    }
+                }
+                if (!token) {
+                    token = localStorage.getItem("token") || localStorage.getItem("accessToken");
+                }
+            } catch (e) {}
+        }
         if (token) {
             axiosConfig.headers.Authorization = `Bearer ${token}`;
         }
