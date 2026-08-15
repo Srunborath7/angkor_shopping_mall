@@ -441,6 +441,10 @@
 
 /* Responsive Rules */
 @media (max-width: 1024px) {
+  .shop-page-layout {
+    padding-bottom: 75px;
+  }
+
   .shop-breadcrumbs-section {
     padding: 14px 20px;
   }
@@ -475,7 +479,8 @@
   }
 
   .shop-products-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
   }
 
   .shop-topbar-search {
@@ -493,16 +498,24 @@
   .sidebar-header-row {
     grid-column: span 1;
   }
+
+  .shop-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
 }
 
 @media (max-width: 576px) {
+  /* 2 in a row on mobile */
   .shop-products-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
 
   .shop-topbar-row {
     flex-direction: column;
     align-items: stretch;
+    gap: 10px;
   }
 
   .sorting-select-box select {
@@ -522,5 +535,12 @@
     min-width: 32px;
     height: 32px;
     font-size: 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .shop-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
   }
 }

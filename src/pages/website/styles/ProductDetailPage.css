@@ -978,3 +978,43 @@
   cursor: not-allowed;
   box-shadow: none;
 }
+
+/* Responsive Grid for iPad & Mobile */
+@media (max-width: 1024px) {
+  .product-detail-layout {
+    padding-bottom: 75px;
+  }
+  .related-products-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .related-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .related-details-box {
+    padding: 10px;
+  }
+  .related-title {
+    font-size: 13px;
+  }
+  .related-price {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .related-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .related-details-box {
+    padding: 8px;
+  }
+  .related-title {
+    font-size: 12px;
+  }
+}

@@ -20,6 +20,7 @@ import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import { clearAuth } from "../store/authSlice";
 import CartDrawer from "./CartDrawer";
+import MobileBottomNav from "./MobileBottomNav";
 import "./Header.css";
 import logo from "../assets/logo.jpg";
 
@@ -96,8 +97,9 @@ function Header() {
   const currentPath = location.pathname;
 
   return (
-    <header className="home-header">
-      <div className="header-container">
+    <>
+      <header className="home-header">
+        <div className="header-container">
         {/* Logo Section */}
         <div className="home-logo-brand" onClick={() => navigate("/")}>
           <span className="home-logo-icon">
@@ -371,10 +373,14 @@ function Header() {
           </div>
         </>
       )}
+      </header>
 
       {/* Render shared Cart slide-out Drawer */}
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
-    </header>
+
+      {/* Render modern Mobile & iPad Bottom Navigation Bar */}
+      <MobileBottomNav />
+    </>
   );
 }
 

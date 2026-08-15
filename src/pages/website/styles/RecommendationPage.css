@@ -840,6 +840,12 @@
   }
 }
 
+@media (max-width: 1024px) {
+  .rec-page-layout {
+    padding-bottom: 75px;
+  }
+}
+
 @media (max-width: 860px) {
   .rec-hero-heading {
     font-size: 32px;
@@ -854,28 +860,123 @@
     display: none;
   }
   .recommendation-products-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .recommendation-products-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+    gap: 12px;
+  }
+  .rec-info-box {
+    padding: 12px;
+  }
+  .rec-item-title {
+    font-size: 13px;
+    height: 36px;
+    margin-bottom: 6px;
+  }
+  .rec-reason-pill {
+    font-size: 10px;
+    padding: 3px 6px;
+    margin-bottom: 8px;
+  }
+  .rec-rating-sales-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .rec-card-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .rec-add-cart-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 7px 8px;
+    font-size: 11.5px;
   }
 }
 
 @media (max-width: 540px) {
   .rec-hero-heading {
-    font-size: 26px;
+    font-size: 24px;
   }
   .rec-hero-banner {
-    padding: 36px 16px 30px 16px;
+    padding: 28px 16px 24px 16px;
   }
   .rec-main-wrapper {
-    padding: 20px 14px 48px 14px;
+    padding: 16px 12px 60px 12px;
   }
+  /* Ensure 2 items per row on mobile */
   .recommendation-products-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }
   .rec-section-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+  }
+  .rec-filter-tabs {
+    gap: 6px;
+    overflow-x: auto;
+    width: 100%;
+    padding-bottom: 4px;
+  }
+  .rec-tab-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .rec-image-box {
+    height: 140px;
+  }
+  .rec-generic-badge,
+  .rec-rank-badge {
+    font-size: 9px;
+    padding: 2px 6px;
+    top: 8px;
+    left: 8px;
+  }
+  .rec-discount-tag {
+    font-size: 9.5px;
+    padding: 2px 5px;
+    top: 8px;
+    right: 8px;
+  }
+  .rec-wishlist-btn {
+    width: 28px;
+    height: 28px;
+    bottom: 8px;
+    right: 8px;
+  }
+  .rec-price-amount {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 380px) {
+  .recommendation-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+  .rec-info-box {
+    padding: 8px;
+  }
+  .rec-item-title {
+    font-size: 11.5px;
+    height: 30px;
+  }
+  .rec-price-amount {
+    font-size: 13px;
+  }
+  .rec-add-cart-btn {
+    font-size: 10px;
+    padding: 5px 4px;
   }
 }
