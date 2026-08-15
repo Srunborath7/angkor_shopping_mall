@@ -90,9 +90,6 @@ function MobileBottomNav() {
             <span className="nav-item-label">Order</span>
           </button>
         </nav>
-
-        {/* Bottom swipe/home indicator bar */}
-        <div className="nav-home-indicator" />
       </div>
     </div>
   );

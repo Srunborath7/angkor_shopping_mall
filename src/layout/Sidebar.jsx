@@ -1,3 +1,4 @@
+import React, { useEffect, useRef } from "react";
 import {
   FaTachometerAlt,
   FaBox,
@@ -19,6 +20,47 @@ import { X } from "lucide-react";
 import "./style/Sidebar.css";
 
 function Sidebar({ open, setOpen }) {
+  const sidebarRef = useRef(null);
+  const menuRef = useRef(null);
+
+  // Lock body scroll on mobile when sidebar drawer is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  // Isolate mouse wheel scroll so scrolling in sidebar NEVER scrolls the admin page behind it
+  useEffect(() => {
+    const sidebarEl = sidebarRef.current;
+    const menuEl = menuRef.current;
+    if (!sidebarEl || !menuEl) return;
+
+    const handleWheel = (e) => {
+      // Check if menu can be scrolled
+      const { scrollTop, scrollHeight, clientHeight } = menuEl;
+      const isScrollable = scrollHeight > clientHeight;
+
+      if (isScrollable) {
+        // Manually apply scroll delta to menu
+        menuEl.scrollTop += e.deltaY;
+      }
+      // Stop the scroll from propagating to window/admin page
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    sidebarEl.addEventListener("wheel", handleWheel, { passive: false });
+    return () => {
+      sidebarEl.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
+
   const menus = [
     {
       name: "Dashboard",
@@ -95,7 +137,7 @@ function Sidebar({ open, setOpen }) {
           onClick={() => setOpen(false)}
         />
       )}
-      <aside className={`sidebar ${open ? "show" : ""}`}>
+      <aside ref={sidebarRef} className={`sidebar ${open ? "show" : ""}`}>
         <div className="sidebar-header">
           <div className="brand">
             <div className="brand-icon">
@@ -114,7 +156,7 @@ function Sidebar({ open, setOpen }) {
             <X size={22} strokeWidth={3} />
           </button>
         </div>
-        <ul className="sidebar-menu">
+        <ul ref={menuRef} className="sidebar-menu">
           {menus.map((item, index) => (
             <li key={index}>
               <NavLink

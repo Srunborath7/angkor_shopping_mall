@@ -23,6 +23,8 @@ import SupplierPage from "./pages/Admin/SupplierPage";
 import PurchasePage from "./pages/Admin/PurchasePage";
 import AdminOrderPage from "./pages/Admin/OrderPage";
 import FlashSalePage from "./pages/Admin/FlashSalePage";
+import SettingsPage from "./pages/Admin/SettingsPage";
+import ChatBot from "./components/ChatBot";
 
 function App() {
   return (
@@ -52,9 +54,12 @@ function App() {
             <Route path="suppliers" element={<SupplierPage />} />
             <Route path="purchases" element={<PurchasePage />} />
             <Route path="orders" element={<AdminOrderPage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Route>
       </Routes>
+      {/* Global AI ChatBot Assistant on all pages */}
+      <ChatBot />
     </BrowserRouter>
   );
 }
