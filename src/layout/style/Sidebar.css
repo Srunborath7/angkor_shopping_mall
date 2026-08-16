@@ -1,4 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* ==========================================================================
+   Angkor Shopping Mall - Ultra-Modern Admin Sidebar
+   ========================================================================== */
 
 .sidebar {
   position: fixed;
@@ -7,26 +11,35 @@
   width: 270px;
   height: 100vh;
   max-height: 100vh;
-  background: linear-gradient(180deg, #1c7e48 0%, #145c35 100%);
-  padding: 22px 16px 16px 16px;
+  background: linear-gradient(180deg, #063c22 0%, #044e2c 50%, #022817 100%);
   display: flex;
   flex-direction: column;
   z-index: 1000;
-  box-shadow: 5px 0 30px rgba(0, 0, 0, 0.15);
-  transition: transform 0.35s ease;
+  box-shadow: 4px 0 25px rgba(0, 0, 0, 0.22);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   box-sizing: border-box;
-  overscroll-behavior: contain;
-  overscroll-behavior-y: contain;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+
+  /* Prevent any scroll chaining to window / main admin page */
+  overscroll-behavior: contain !important;
+  overscroll-behavior-y: contain !important;
   -webkit-overflow-scrolling: touch;
 }
+
+/* ==========================================================================
+   Sidebar Brand Header
+   ========================================================================== */
 
 .sidebar-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  padding: 20px 18px 16px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.12);
 }
 
 .brand {
@@ -37,155 +50,281 @@
 }
 
 .brand-icon {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 12px;
-  background: white;
-  color: #1c7e48;
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
   flex-shrink: 0;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.25);
 }
 
 .brand-icon img {
-  width: 38px;
-  height: 38px;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border-radius: 10px;
 }
 
-.brand h2 {
+.brand-text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand-text-block h2 {
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
   margin: 0;
   line-height: 1.2;
+  color: #ffffff;
+  letter-spacing: -0.2px;
 }
 
-.brand span {
-  font-size: 11.5px;
-  opacity: 0.85;
+.brand-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #86efac;
+}
+
+.live-status-dot {
+  width: 6px;
+  height: 6px;
+  background: #22c55e;
+  border-radius: 50%;
+  box-shadow: 0 0 6px #22c55e;
 }
 
 .close-sidebar {
-  top: 20px;
-  right: 12px;
-  position: absolute;
   display: none;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   color: white;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.12);
   transition: all 0.2s ease;
 }
 
 .close-sidebar:hover {
-  background: rgba(255, 255, 255, 0.35);
-  transform: scale(1.05);
+  background: rgba(239, 68, 68, 0.6);
+  color: #ffffff;
 }
 
-/* Sidebar Menu with Flexible Smooth Scrollbar */
-.sidebar-menu {
-  list-style: none;
-  padding: 0 4px 10px 0;
-  margin: 0;
+/* ==========================================================================
+   Sidebar Scrollable Menu
+   ========================================================================== */
+
+.sidebar-menu-wrapper {
   flex: 1;
-  min-height: 0; /* Essential for flex child scrolling */
+  min-height: 0; /* Required for flex scroll */
   overflow-y: auto;
   overflow-x: hidden;
+  padding: 12px 10px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+
+  /* Strict scroll containment */
+  overscroll-behavior: contain !important;
+  overscroll-behavior-y: contain !important;
 }
 
-/* Custom Scrollbar for Webkit */
-.sidebar-menu::-webkit-scrollbar {
-  width: 5px;
+/* Elegant Scrollbar */
+.sidebar-menu-wrapper::-webkit-scrollbar {
+  width: 4px;
 }
 
-.sidebar-menu::-webkit-scrollbar-track {
+.sidebar-menu-wrapper::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.sidebar-menu::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.25);
-  border-radius: 6px;
+.sidebar-menu-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
 }
 
-.sidebar-menu::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.45);
+.sidebar-menu-wrapper:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.32);
 }
 
-.sidebar-menu li {
-  margin-bottom: 5px;
+.sidebar-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sidebar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sidebar-section-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: rgba(255, 255, 255, 0.42);
+  padding: 0 12px;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+}
+
+.sidebar-section-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sidebar-item {
+  width: 100%;
 }
 
 .menu-link {
   display: flex;
   align-items: center;
-  gap: 13px;
-  padding: 11px 14px;
-  color: #f1f5f9;
+  gap: 12px;
+  padding: 9.5px 14px;
+  color: rgba(255, 255, 255, 0.85);
   text-decoration: none;
-  border-radius: 12px;
-  font-size: 14px;
+  border-radius: 10px;
+  font-size: 13.5px;
   font-weight: 500;
-  transition: all 0.22s ease;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 .menu-icon {
-  font-size: 17px;
-  width: 22px;
+  font-size: 16px;
+  width: 20px;
   display: flex;
   justify-content: center;
   align-items: center;
   flex-shrink: 0;
+  opacity: 0.85;
+  transition: transform 0.18s ease;
+}
+
+.menu-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .menu-link:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
-  transform: translateX(4px);
+  transform: translateX(3px);
 }
 
+.menu-link:hover .menu-icon {
+  transform: scale(1.1);
+  opacity: 1;
+}
+
+/* Active State with Rich White Pill */
 .menu-link.active {
   background: #ffffff;
-  color: #166534;
-  font-weight: 600;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+  color: #047857;
+  font-weight: 700;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.18);
+  transform: translateX(2px);
 }
 
 .menu-link.active .menu-icon {
-  color: #166534;
+  color: #059669;
+  opacity: 1;
 }
 
+/* Badges */
+.menu-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+}
+
+.unread-badge {
+  background: #ef4444;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.5);
+  animation: pulseBadge 2s infinite ease-in-out;
+}
+
+.hot-badge {
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  color: #ffffff;
+}
+
+@keyframes pulseBadge {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+/* ==========================================================================
+   Sidebar Footer
+   ========================================================================== */
+
 .sidebar-footer {
-  color: white;
-  font-size: 11.5px;
-  opacity: 0.75;
-  text-align: center;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-  margin-top: 4px;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.15);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   flex-shrink: 0;
+}
+
+.footer-support-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #6ee7b7;
+  font-weight: 600;
+}
+
+.sparkle-icon {
+  color: #fbbf24;
 }
 
 .sidebar-footer p {
   margin: 0;
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.45);
 }
 
+/* Overlay for Mobile */
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
   z-index: 999;
 }
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
 
 @media (max-width: 992px) {
   .sidebar {
@@ -198,25 +337,5 @@
 
   .close-sidebar {
     display: flex;
-  }
-
-  .brand {
-    gap: 8px;
-  }
-
-  .brand-icon img {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-  }
-
-  .brand h2 {
-    font-size: 14px;
-    margin: 0;
-  }
-
-  .brand span {
-    font-size: 11.5px;
-    opacity: 0.8;
   }
 }

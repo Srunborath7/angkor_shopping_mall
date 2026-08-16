@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import {
@@ -14,11 +14,18 @@ import {
   Home,
   Grid,
   ChevronRight,
-  Repeat
+  Repeat,
+  Bell,
+  Headphones,
+  MessageSquare
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import { clearAuth } from "../store/authSlice";
+import {
+  getMySupportMessagesApi,
+  trackSupportMessagesApi
+} from "../services/supportMessageService";
 import CartDrawer from "./CartDrawer";
 import MobileBottomNav from "./MobileBottomNav";
 import "./Header.css";
@@ -38,6 +45,10 @@ function Header() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [userNotifOpen, setUserNotifOpen] = useState(false);
+  const [userReplies, setUserReplies] = useState([]);
+  const [userUnreadRepliesCount, setUserUnreadRepliesCount] = useState(0);
+  const notifRef = useRef(null);
 
   // Read Cart & Wishlist counters from localStorage (reactive to event updates)
   const [cartCount, setCartCount] = useState(() => {
@@ -52,6 +63,89 @@ function Header() {
       return 0;
     }
   });
+
+  // Fetch admin replies & customer notifications
+  const fetchUserReplies = async () => {
+    try {
+      let tickets = [];
+      const storedIds = JSON.parse(localStorage.getItem("angkor_guest_ticket_ids") || "[]");
+
+      if (isLoggedIn) {
+        try {
+          const res = await getMySupportMessagesApi();
+          const list = res?.data || res || [];
+          if (Array.isArray(list)) tickets = [...list];
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      if (storedIds.length > 0) {
+        try {
+          const trackRes = await trackSupportMessagesApi({ ids: storedIds });
+          const trackList = trackRes?.data || trackRes || [];
+          if (Array.isArray(trackList)) {
+            const existingIds = new Set(tickets.map((t) => t.id));
+            for (const t of trackList) {
+              if (!existingIds.has(t.id)) {
+                tickets.push(t);
+                existingIds.add(t.id);
+              }
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      const readReplyIds = JSON.parse(localStorage.getItem("angkor_read_reply_ids") || "[]");
+      const replied = tickets.filter((t) => t.admin_reply);
+      setUserReplies(replied);
+
+      // Only count replies that the user has NOT read yet
+      const unreadCount = replied.filter((t) => !readReplyIds.includes(t.id) && t.status === "replied").length;
+      setUserUnreadRepliesCount(unreadCount);
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  // Mark all replies as read when opening notification dropdown
+  const handleToggleNotifDropdown = () => {
+    const nextState = !userNotifOpen;
+    setUserNotifOpen(nextState);
+    if (nextState && userReplies.length > 0) {
+      const readReplyIds = JSON.parse(localStorage.getItem("angkor_read_reply_ids") || "[]");
+      const allIds = userReplies.map((t) => t.id);
+      const updated = Array.from(new Set([...readReplyIds, ...allIds]));
+      localStorage.setItem("angkor_read_reply_ids", JSON.stringify(updated));
+      setUserUnreadRepliesCount(0);
+      window.dispatchEvent(new Event("support-replies-read"));
+    }
+  };
+
+  useEffect(() => {
+    fetchUserReplies();
+    const interval = setInterval(fetchUserReplies, 10000);
+    const handleRepliesRead = () => fetchUserReplies();
+    window.addEventListener("support-replies-read", handleRepliesRead);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("support-replies-read", handleRepliesRead);
+    };
+  }, [isLoggedIn]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setUserNotifOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Listen to custom window events for synchronized count updates
   useEffect(() => {
@@ -142,8 +236,86 @@ function Header() {
           </span>
         </nav>
 
-        {/* Nav Actions (Wishlist, Cart, Profile) */}
+        {/* Nav Actions (Wishlist, Cart, Notifications, Profile) */}
         <div className="header-actions">
+          {/* User Notification Bell for Support & Admin Replies */}
+          <div className="icon-wrapper notif-icon-wrapper" ref={notifRef}>
+            <div
+              className="notif-trigger-btn"
+              onClick={handleToggleNotifDropdown}
+              title="Support Inquiries & Admin Replies"
+              style={{ cursor: "pointer", display: "flex", alignItems: "center" }}
+            >
+              <Bell size={20} className={userUnreadRepliesCount > 0 ? "bell-active" : ""} />
+              {userUnreadRepliesCount > 0 && (
+                <span className="action-badge bg-red notif-pulse-badge">{userUnreadRepliesCount}</span>
+              )}
+            </div>
+
+            {/* Customer Notifications Dropdown */}
+            {userNotifOpen && (
+              <div className="user-notif-dropdown">
+                <div className="user-notif-header">
+                  <div className="user-notif-title">
+                    <MessageSquare size={16} />
+                    <span>Support Messages</span>
+                  </div>
+                  {userUnreadRepliesCount > 0 && (
+                    <span className="user-notif-pill">{userUnreadRepliesCount} Reply</span>
+                  )}
+                </div>
+
+                <div className="user-notif-list">
+                  {userReplies.length === 0 ? (
+                    <div className="user-notif-empty">
+                      <Headphones size={26} className="text-muted" />
+                      <span>No support messages yet. Need help? Message admin anytime!</span>
+                    </div>
+                  ) : (
+                    userReplies.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`user-notif-item ${item.status === "replied" ? "unread-reply" : ""}`}
+                        onClick={() => {
+                          setUserNotifOpen(false);
+                          window.dispatchEvent(new Event("open-chatbot-tickets"));
+                        }}
+                      >
+                        <div className="user-notif-avatar">
+                          <Headphones size={15} />
+                        </div>
+                        <div className="user-notif-content">
+                          <div className="user-notif-row">
+                            <strong className="user-notif-sender">Admin Replied: {item.subject}</strong>
+                            <span className="user-notif-time">
+                              {item.replied_at
+                                ? new Date(item.replied_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                                : "Just now"}
+                            </span>
+                          </div>
+                          <p className="user-notif-snippet">{item.admin_reply}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div className="user-notif-footer">
+                  <button
+                    type="button"
+                    className="btn-open-chat-support"
+                    onClick={() => {
+                      setUserNotifOpen(false);
+                      window.dispatchEvent(new Event("open-chatbot-tickets"));
+                    }}
+                  >
+                    <Headphones size={13} /> Open in Support Assistant
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div
             className="icon-wrapper"
             onClick={() => navigate("/wishlist")}
