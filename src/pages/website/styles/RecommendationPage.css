@@ -980,3 +980,172 @@
     padding: 5px 4px;
   }
 }
+
+/* ==========================================================================
+   RECOMMENDATION PAGE DARK MODE STYLES
+   ========================================================================== */
+
+[data-theme="dark"] .recommendation-page-layout {
+  background-color: #070a12;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .rec-breadcrumbs-bar {
+  background-color: #090d16;
+  border-bottom-color: #1e293b;
+}
+
+[data-theme="dark"] .rec-crumb-link {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .rec-crumb-link:hover {
+  color: #34d399;
+}
+
+[data-theme="dark"] .rec-crumb-active {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .rec-filter-toolbar {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .rec-tab-btn {
+  background: #090d16;
+  border-color: #1e293b;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .rec-tab-btn:hover {
+  background: #1e293b;
+  color: #34d399;
+  border-color: #34d399;
+}
+
+[data-theme="dark"] .rec-tab-btn.active {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="dark"] .rec-refresh-btn {
+  background: #090d16;
+  border-color: #1e293b;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .rec-refresh-btn:hover {
+  background: #1e293b;
+  color: #34d399;
+  border-color: #34d399;
+}
+
+[data-theme="dark"] .rec-section-header {
+  border-bottom-color: #1e293b;
+}
+
+[data-theme="dark"] .section-title-wrap h2 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .rec-section-header p {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .source-indicator-pill {
+  background: #090d16;
+  border-color: #1e293b;
+  color: #34d399;
+}
+
+[data-theme="dark"] .rec-guest-cta-banner {
+  background: linear-gradient(135deg, #064e3b 0%, #042f2e 100%);
+  border-color: #10b981;
+}
+
+[data-theme="dark"] .cta-text-content h3 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .cta-text-content p {
+  color: #a7f3d0;
+}
+
+/* Product Cards */
+[data-theme="dark"] .rec-product-card {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .rec-product-card:hover {
+  background-color: #151f38;
+  border-color: #10b981;
+  box-shadow: 0 16px 32px -6px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .rec-image-box {
+  background-color: #090d16;
+}
+
+[data-theme="dark"] .rec-image-box img {
+  background-color: #090d16;
+}
+
+[data-theme="dark"] .rec-wishlist-btn {
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid #1e293b;
+}
+
+[data-theme="dark"] .rec-wishlist-btn:hover {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .rec-category-tag {
+  color: #64748b;
+}
+
+[data-theme="dark"] .rec-item-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .rec-reason-pill {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="dark"] .rec-rating-score {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .rec-reviews-count {
+  color: #64748b;
+}
+
+[data-theme="dark"] .rec-sales-tag {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+[data-theme="dark"] .rec-price-amount {
+  color: #34d399;
+}
+
+[data-theme="dark"] .rec-strike-price {
+  color: #64748b;
+}
+
+[data-theme="dark"] .rec-add-cart-btn {
+  background: #059669;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .rec-add-cart-btn:hover:not(:disabled) {
+  background: #10b981;
+}

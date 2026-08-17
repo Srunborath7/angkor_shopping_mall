@@ -1,0 +1,403 @@
+/* Settings Modal Styles */
+
+.settings-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: settingsFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes settingsFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.settings-modal-dialog {
+  background: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  overflow: hidden;
+  animation: settingsScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes settingsScaleUp {
+  from {
+    transform: scale(0.94) translateY(10px);
+  }
+  to {
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Modal Header */
+.settings-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #fafafa;
+}
+
+.settings-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-header-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1c7e48, #3b82f6);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(28, 126, 72, 0.25);
+}
+
+.settings-title-group h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.settings-title-group p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.settings-close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.settings-close-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+  transform: scale(1.05);
+}
+
+/* Modal Body */
+.settings-modal-body {
+  padding: 20px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.settings-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-section-header .section-icon {
+  flex-shrink: 0;
+}
+
+.settings-section-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.settings-section-header small {
+  display: block;
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+/* Cards Grid */
+.settings-cards-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-cards-grid.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.settings-cards-grid.grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.settings-card {
+  position: relative;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.settings-card:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.settings-card.active {
+  background: #f0fdf4;
+  border-color: #1c7e48;
+  box-shadow: 0 4px 16px rgba(28, 126, 72, 0.15);
+}
+
+.card-flag-badge {
+  font-size: 26px;
+  line-height: 1;
+}
+
+.card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.card-info strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.card-info span {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.card-check-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1c7e48;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Theme Specific Cards */
+.theme-icon-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.system-icon {
+  background: #e0e7ff;
+  color: #4f46e5;
+}
+
+.light-icon {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.dark-icon {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+/* AI Assistant Callout */
+.settings-ai-banner {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.08), rgba(6, 182, 212, 0.08));
+  border: 1px solid rgba(79, 70, 229, 0.2);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.ai-banner-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ai-banner-sparkle {
+  color: #6366f1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ai-banner-left strong {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #312e81;
+}
+
+.ai-banner-left p {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: #4338ca;
+  line-height: 1.4;
+}
+
+/* Modal Footer */
+.settings-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 22px;
+  background: #fafafa;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-reset-settings {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-reset-settings:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.btn-save-settings {
+  background: #1c7e48;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(28, 126, 72, 0.25);
+}
+
+.btn-save-settings:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Dark Theme Overrides for Settings Modal
+   ========================================================================== */
+
+[data-theme="dark"] .settings-modal-dialog {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .settings-modal-header,
+[data-theme="dark"] .settings-modal-footer {
+  background: #090d16;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .settings-title-group h3,
+[data-theme="dark"] .settings-section-header h4,
+[data-theme="dark"] .card-info strong {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .settings-title-group p,
+[data-theme="dark"] .settings-section-header small,
+[data-theme="dark"] .card-info span {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .settings-card {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .settings-card:hover {
+  background: #243048;
+  border-color: #475569;
+}
+
+[data-theme="dark"] .settings-card.active {
+  background: #064e3b;
+  border-color: #10b981;
+}
+
+[data-theme="dark"] .settings-close-btn {
+  background: #1e293b;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .settings-close-btn:hover {
+  background: #334155;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .settings-ai-banner {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+[data-theme="dark"] .ai-banner-left strong {
+  color: #818cf8;
+}
+
+[data-theme="dark"] .ai-banner-left p {
+  color: #c7d2fe;
+}
+
+@media (max-width: 540px) {
+  .settings-cards-grid.grid-3 {
+    grid-template-columns: 1fr;
+  }
+}

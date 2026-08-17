@@ -544,3 +544,85 @@
     gap: 8px;
   }
 }
+
+/* ==========================================================================
+   SHOP PAGE DARK MODE STYLES
+   ========================================================================== */
+
+[data-theme="dark"] .shop-workspace-container {
+  background-color: #070a12;
+}
+
+[data-theme="dark"] .shop-breadcrumbs-section {
+  background-color: #090d16;
+  border-bottom-color: #1e293b;
+}
+
+[data-theme="dark"] .breadcrumb-current {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .shop-sidebar-aside,
+[data-theme="dark"] .shop-topbar-row {
+  background-color: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .sidebar-title,
+[data-theme="dark"] .sidebar-filter-group h4 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .sidebar-filter-group,
+[data-theme="dark"] .sidebar-header-row {
+  border-bottom-color: #1e293b;
+}
+
+[data-theme="dark"] .category-filter-btn {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .category-filter-btn:hover {
+  background-color: #1e293b;
+  color: #34d399;
+}
+
+[data-theme="dark"] .category-filter-btn.active {
+  background-color: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+}
+
+[data-theme="dark"] .rating-filter-btn {
+  background-color: #090d16;
+  border-color: #1e293b;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .rating-filter-btn:hover {
+  background-color: #1e293b;
+}
+
+[data-theme="dark"] .rating-filter-btn.active {
+  background-color: #064e3b;
+  border-color: #10b981;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .sorting-select-box select {
+  background-color: #090d16;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .pagination-btn,
+[data-theme="dark"] .pagination-page-btn {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .pagination-page-btn.active {
+  background-color: #1c7e48;
+  border-color: #1c7e48;
+  color: #ffffff;
+}

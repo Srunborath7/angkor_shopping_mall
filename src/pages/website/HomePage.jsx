@@ -28,6 +28,7 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
 import AISearchInput from "../../components/AISearchInput";
+import { useTranslation } from "../../context/LanguageContext";
 import { productsPagedApi, getBestSellersApi } from "../../services/productsService";
 import { categoriesApi } from "../../services/categoriesService";
 import { addToCartApi } from "../../services/cartService";
@@ -157,6 +158,7 @@ function normalizeProduct(raw, index = 0) {
 function HomePage() {
   const navigate = useNavigate();
   const auth = useSelector((state) => state.auth);
+  const { t, language } = useTranslation();
   const isLoggedIn = !!auth.token;
 
   // Real API State
@@ -420,18 +422,20 @@ function HomePage() {
             </div>
 
             <h1 className="hero-main-title">
-              Shop Smart,<br />
-              <span className="gradient-text">Live Extraordinarily</span>
+              {language === "km" ? (
+                <>ទិញទំនិញឆ្លាតវៃ,<br /><span className="gradient-text">រស់នៅប្រកបដោយភាពស៊ីវិល័យ</span></>
+              ) : (
+                <>Shop Smart,<br /><span className="gradient-text">Live Extraordinarily</span></>
+              )}
             </h1>
 
             <p className="hero-description">
-              Explore thousands of premium products backed by AI-curated recommendations,
-              instant ABA KHQR checkout, and express delivery across Cambodia.
+              {t("home.heroSubtitle", "Explore thousands of premium products backed by AI-curated recommendations, instant ABA KHQR checkout, and express delivery across Cambodia.")}
             </p>
 
             <div className="hero-search-wrapper-container" style={{ margin: "1.5rem 0", maxWidth: "600px" }}>
               <AISearchInput
-                placeholder="Search products, brands, categories with AI..."
+                placeholder={t("nav.searchPlaceholder", "Search products, brands, categories with AI...")}
                 initialValue={searchQuery}
                 onSearchSubmit={(q) => {
                   if (q.trim()) {
@@ -445,26 +449,32 @@ function HomePage() {
             </div>
 
             <div className="hero-quick-tags">
-              <span className="tags-label">Popular:</span>
-              <button type="button" onClick={() => navigate("/shop", { state: { initialCategory: "Electronics" } })}>Electronics</button>
-              <button type="button" onClick={() => navigate("/shop", { state: { initialCategory: "Fashion" } })}>Fashion</button>
-              <button type="button" onClick={() => navigate("/shop", { state: { initialCategory: "Sports" } })}>Sports</button>
+              <span className="tags-label">{language === "km" ? "ពេញនិយម៖" : "Popular:"}</span>
+              <button type="button" onClick={() => navigate("/shop", { state: { initialCategory: "Electronics" } })}>
+                {language === "km" ? "គ្រឿងអេឡិចត្រូនិក" : "Electronics"}
+              </button>
+              <button type="button" onClick={() => navigate("/shop", { state: { initialCategory: "Fashion" } })}>
+                {language === "km" ? "ម៉ូដ & សម្លៀកបំពាក់" : "Fashion"}
+              </button>
+              <button type="button" onClick={() => navigate("/shop", { state: { initialCategory: "Sports" } })}>
+                {language === "km" ? "កីឡា" : "Sports"}
+              </button>
             </div>
 
             <div className="hero-stats-row">
               <div className="hero-stat">
                 <span className="stat-number">50K+</span>
-                <span className="stat-label">Active Products</span>
+                <span className="stat-label">{language === "km" ? "ផលិតផលសកម្ម" : "Active Products"}</span>
               </div>
               <div className="hero-stat-divider"></div>
               <div className="hero-stat">
                 <span className="stat-number">120K+</span>
-                <span className="stat-label">Happy Clients</span>
+                <span className="stat-label">{language === "km" ? "អតិថិជនពេញចិត្ត" : "Happy Clients"}</span>
               </div>
               <div className="hero-stat-divider"></div>
               <div className="hero-stat">
                 <span className="stat-number">99.8%</span>
-                <span className="stat-label">Satisfaction Rate</span>
+                <span className="stat-label">{language === "km" ? "អត្រាពេញចិត្ត" : "Satisfaction Rate"}</span>
               </div>
             </div>
           </div>
@@ -479,8 +489,8 @@ function HomePage() {
               <div className="floating-badge text-card">
                 <Sparkles size={18} className="text-badge-icon" />
                 <div>
-                  <span className="badge-title">AI Engine Active</span>
-                  <span className="badge-sub font-light">Personalized deal discovery</span>
+                  <span className="badge-title">{language === "km" ? "ដំណើរការដោយ AI" : "AI Engine Active"}</span>
+                  <span className="badge-sub font-light">{language === "km" ? "ស្វែងរកទំនិញឆ្លាតវៃ" : "Personalized deal discovery"}</span>
                 </div>
               </div>
             </div>
@@ -494,29 +504,29 @@ function HomePage() {
           <div className="perk-item">
             <div className="perk-icon-box"><Truck size={24} /></div>
             <div>
-              <h4>Express Shipping</h4>
-              <p>Same-day delivery in Phnom Penh & nationwide</p>
+              <h4>{t("home.feature2Title", "Express Shipping")}</h4>
+              <p>{t("home.feature2Desc", "Same-day delivery in Phnom Penh & nationwide")}</p>
             </div>
           </div>
           <div className="perk-item">
             <div className="perk-icon-box"><ShieldCheck size={24} /></div>
             <div>
-              <h4>100% Authentic</h4>
-              <p>Direct from official authorized brands</p>
+              <h4>{t("home.feature1Title", "100% Authentic")}</h4>
+              <p>{t("home.feature1Desc", "Direct from official authorized brands")}</p>
             </div>
           </div>
           <div className="perk-item">
             <div className="perk-icon-box"><CreditCard size={24} /></div>
             <div>
-              <h4>Instant KHQR Pay</h4>
-              <p>Seamless checkout with ABA & Mobile Banking</p>
+              <h4>{t("home.feature3Title", "Instant KHQR Pay")}</h4>
+              <p>{t("home.feature3Desc", "Seamless checkout with ABA & Mobile Banking")}</p>
             </div>
           </div>
           <div className="perk-item">
             <div className="perk-icon-box"><Headphones size={24} /></div>
             <div>
-              <h4>24/7 Live Support</h4>
-              <p>Dedicated customer helpline & Telegram bot</p>
+              <h4>{t("home.feature4Title", "24/7 Live Support")}</h4>
+              <p>{t("home.feature4Desc", "Dedicated customer helpline & Telegram bot")}</p>
             </div>
           </div>
         </div>
@@ -526,11 +536,11 @@ function HomePage() {
       <section className="home-section categories-section">
         <div className="section-header-row">
           <div>
-            <h2>Explore Categories</h2>
-            <p>Find what you're looking for by browsing our curated collections</p>
+            <h2>{t("home.featuredCategories", "Explore Categories")}</h2>
+            <p>{language === "km" ? "ស្វែងរកផលិតផលដែលអ្នកពេញចិត្តតាមបណ្តាប្រភេទផ្សេងៗ" : "Find what you're looking for by browsing our curated collections"}</p>
           </div>
           <button className="view-all-btn" onClick={() => navigate("/shop")}>
-            View All <ChevronRight size={16} />
+            {t("common.viewAll", "View All")} <ChevronRight size={16} />
           </button>
         </div>
 
@@ -555,10 +565,10 @@ function HomePage() {
           <div className="header-left">
             <div className="flash-title-row">
               <Flame size={26} className="clock-flash-icon" />
-              <h2>Flash Sale Deals</h2>
+              <h2>{t("home.flashDeals", "Flash Sale Deals")}</h2>
               <span className="live-api-badge"><Sparkles size={12} /> Live API</span>
             </div>
-            <p>Limited-time discounts updated directly from our inventory</p>
+            <p>{language === "km" ? "ការបញ្ចុះតម្លៃពិសេសមានកំណត់ ធ្វើបច្ចុប្បន្នភាពផ្ទាល់ពីស្តុក" : "Limited-time discounts updated directly from our inventory"}</p>
           </div>
 
           <div className="countdown-timer">

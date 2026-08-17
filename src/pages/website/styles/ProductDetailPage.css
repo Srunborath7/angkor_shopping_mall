@@ -1018,3 +1018,75 @@
     font-size: 12px;
   }
 }
+
+/* ==========================================================================
+   PRODUCT DETAIL PAGE DARK MODE STYLES
+   ========================================================================== */
+
+[data-theme="dark"] .product-detail-page {
+  background-color: #070a12;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .product-main-container,
+[data-theme="dark"] .product-tabs-container,
+[data-theme="dark"] .related-products-section {
+  background-color: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .product-title-h1,
+[data-theme="dark"] .spec-item-value,
+[data-theme="dark"] .section-title-h2 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .product-desc-text,
+[data-theme="dark"] .spec-item-label {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .main-image-viewport {
+  background-color: #090d16;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .thumb-btn {
+  background-color: #090d16;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .thumb-btn.active {
+  border-color: #10b981;
+}
+
+[data-theme="dark"] .product-tab-btn {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .product-tab-btn.active {
+  color: #34d399;
+  border-bottom-color: #34d399;
+}
+
+[data-theme="dark"] .spec-item-row {
+  border-bottom-color: #1e293b;
+}
+
+[data-theme="dark"] .related-product-card {
+  background-color: #090d16;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .related-product-card:hover {
+  background-color: #151f38;
+  border-color: #10b981;
+}
+
+[data-theme="dark"] .related-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .related-price {
+  color: #34d399;
+}

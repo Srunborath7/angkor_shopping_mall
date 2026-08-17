@@ -1510,3 +1510,117 @@
     border-radius: 8px;
   }
 }
+
+/* ==========================================================================
+   HOMEPAGE DARK THEME LUXURY STYLING
+   ========================================================================== */
+
+[data-theme="dark"] .home-layout {
+  background-color: #070a12;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .flash-sale-section {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .flash-sale-header h2 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .flash-sale-header p {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .countdown-timer {
+  background: #070a12;
+  border: 1px solid #1e293b;
+}
+
+[data-theme="dark"] .perks-container {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .perk-item h4 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .perk-item p {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .category-card-item {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .category-card-item:hover {
+  background: #151f38;
+  border-color: #10b981;
+}
+
+[data-theme="dark"] .category-card-item h3 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .trending-tab-btn {
+  background: #0f172a;
+  border-color: #1e293b;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .trending-tab-btn:hover {
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .trending-tab-btn.active {
+  background: #059669;
+  border-color: #059669;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .product-card-item {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .product-card-item:hover {
+  background: #151f38;
+  border-color: #10b981;
+}
+
+[data-theme="dark"] .product-image-box,
+[data-theme="dark"] .product-image-box img {
+  background: #090d16;
+}
+
+[data-theme="dark"] .product-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .product-brand {
+  color: #64748b;
+}
+
+[data-theme="dark"] .sale-price {
+  color: #34d399;
+}
+
+[data-theme="dark"] .original-price {
+  color: #64748b;
+}
+
+[data-theme="dark"] .newsletter-section {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .newsletter-input {
+  background: #070a12;
+  border-color: #1e293b;
+  color: #f8fafc;
+}

@@ -45,7 +45,7 @@ import {
 } from "../services/supportMessageService";
 import "./ChatBot.css";
 
-const DEFAULT_QUICK_CHIPS = [
+const DEFAULT_QUICK_CHIPS_EN = [
   { label: "⚡ Flash Sales", query: "What are today's flash sales and deals?" },
   { label: "📱 Phones under $500", query: "Show me smartphones under $500" },
   { label: "💻 Laptops & PC", query: "Find top performance laptops" },
@@ -55,7 +55,17 @@ const DEFAULT_QUICK_CHIPS = [
   { label: "💳 Payment Methods", query: "What payment methods are supported?" }
 ];
 
-const INITIAL_MESSAGES = [
+const DEFAULT_QUICK_CHIPS_KM = [
+  { label: "⚡ Flash Sales បញ្ចុះតម្លៃ", query: "តើថ្ងៃនេះមានប្រូម៉ូសិនពិសេស ឬ Flash Sale អ្វីខ្លះ?" },
+  { label: "📱 ទូរស័ព្ទក្រោម $500", query: "សូមបង្ហាញទូរស័ព្ទដៃទំនើបតម្លៃក្រោម 500 ដុល្លារ" },
+  { label: "💻 កុំព្យូទ័រ & Laptops", query: "ស្វែងរកកុំព្យូទ័រយួរដៃ Laptop គុណភាពខ្ពស់" },
+  { label: "🔄 ប្តូរសេរីទូរស័ព្ទ (Trade-In)", query: "តើការប្តូរសេរីទូរស័ព្ទ (Trade-In) ដំណើរការដូចម្តេច?" },
+  { label: "✉️ ផ្ញើសារទៅ Admin", query: "ខ្ញុំចង់ទាក់ទង Admin និងផ្នែកបម្រើអតិថិជន" },
+  { label: "📦 តាមដានការបញ្ជាទិញ", query: "តើទំនិញដែលខ្ញុំបានកម្ម៉ង់នៅឯណា?" },
+  { label: "💳 វិធីទូទាត់ប្រាក់", query: "តើហាងទទួលការទូទាត់តាមវិធីណាខ្លះ (ABA, KHQR, វីសា)?" }
+];
+
+const INITIAL_MESSAGES_EN = [
   {
     id: 1,
     sender: "bot",
@@ -67,12 +77,22 @@ const INITIAL_MESSAGES = [
       { label: "✉️ Message Admin", actionType: "contact_admin", icon: Headphones },
       { label: "🔄 Trade-In Hub", path: "/trading", icon: Repeat },
       { label: "✨ AI Recommendations", path: "/recommendations", icon: Sparkles }
-    ],
-    suggestedPrompts: [
-      "What are today's flash sales?",
-      "Find smartphones under $500",
-      "How to contact store admin?",
-      "Where is my order?"
+    ]
+  }
+];
+
+const INITIAL_MESSAGES_KM = [
+  {
+    id: 1,
+    sender: "bot",
+    text: "👋 សួស្តី! សូមស្វាគមន៍មកកាន់ **Angkor Shopping Mall**! ខ្ញុំជា **ជំនួយការឆ្លាតវៃ AI (Smart AI Assistant)** របស់អ្នក។\n\nតើខ្ញុំអាចជួយអ្វីដល់លោកអ្នកបានថ្ងៃនេះ? លោកអ្នកអាចស្វែងរកទំនិញ មើលការបញ្ចុះតម្លៃ Flash Sale តាមដានការបញ្ជាទិញ ឬផ្ញើសារផ្ទាល់ទៅកាន់ Admin របស់ហាងយើងខ្ញុំ។",
+    time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    actions: [
+      { label: "⚡ Flash Sales បញ្ចុះតម្លៃ", path: "/shop?flashSale=true", icon: Flame },
+      { label: "🛍️ ទិញទំនិញទាំងអស់", path: "/shop", icon: ShoppingBag },
+      { label: "✉️ ផ្ញើសារទៅ Admin", actionType: "contact_admin", icon: Headphones },
+      { label: "🔄 សេវាកម្មប្តូរសេរី (Trade-In)", path: "/trading", icon: Repeat },
+      { label: "✨ ផលិតផលណែនាំដោយ AI", path: "/recommendations", icon: Sparkles }
     ]
   }
 ];
@@ -102,24 +122,36 @@ function ChatBot() {
   });
   const [sendingSupport, setSendingSupport] = useState(false);
 
+  const [preferredVoiceLang, setPreferredVoiceLang] = useState(() => {
+    return localStorage.getItem("angkor_preferred_voice_lang") || "km";
+  });
+
   const [messages, setMessages] = useState(() => {
     try {
       const saved = sessionStorage.getItem("angkor_ai_chat_history");
-      return saved ? JSON.parse(saved) : INITIAL_MESSAGES;
+      const initialLang = localStorage.getItem("angkor_preferred_voice_lang") || "km";
+      return saved ? JSON.parse(saved) : (initialLang === "km" ? INITIAL_MESSAGES_KM : INITIAL_MESSAGES_EN);
     } catch {
-      return INITIAL_MESSAGES;
+      return INITIAL_MESSAGES_KM;
     }
   });
 
   const [inputVal, setInputVal] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [chips, setChips] = useState(DEFAULT_QUICK_CHIPS);
+  const [chips, setChips] = useState(() => {
+    const initialLang = localStorage.getItem("angkor_preferred_voice_lang") || "km";
+    return initialLang === "km" ? DEFAULT_QUICK_CHIPS_KM : DEFAULT_QUICK_CHIPS_EN;
+  });
   const [isListening, setIsListening] = useState(false);
-  const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
+  const [isVoiceEnabled, setIsVoiceEnabled] = useState(() => {
+    const saved = localStorage.getItem("angkor_voice_enabled");
+    return saved !== null ? saved === "true" : true;
+  });
   const [addingCartId, setAddingCartId] = useState(null);
 
   const messagesEndRef = useRef(null);
   const recognitionRef = useRef(null);
+  const currentAudioRef = useRef(null);
 
   // Update contact form when user logs in
   useEffect(() => {
@@ -139,7 +171,8 @@ function ChatBot() {
     const productId = match ? match[1] : null;
     return {
       page: location.pathname,
-      productId: productId
+      productId: productId,
+      lang: preferredVoiceLang
     };
   };
 
@@ -219,9 +252,19 @@ function ChatBot() {
       tickets.sort((a, b) => new Date(b.created_at || b.createdAt) - new Date(a.created_at || a.createdAt));
       setMyTickets(tickets);
 
-      // Calculate new admin replies count
-      const replied = tickets.filter((t) => t.status === "replied" && t.admin_reply).length;
-      setNewRepliesCount(replied);
+      // Calculate unread admin replies count (filtered by already-read IDs)
+      const readReplyIds = JSON.parse(localStorage.getItem("angkor_read_reply_ids") || "[]");
+      if (activeTab === "tickets") {
+        const allRepliedIds = tickets.filter((t) => t.status === "replied" || t.admin_reply).map((t) => t.id);
+        const updated = Array.from(new Set([...readReplyIds, ...allRepliedIds]));
+        localStorage.setItem("angkor_read_reply_ids", JSON.stringify(updated));
+        setNewRepliesCount(0);
+      } else {
+        const unread = tickets.filter(
+          (t) => (t.status === "replied" || t.admin_reply) && !readReplyIds.includes(t.id)
+        ).length;
+        setNewRepliesCount(unread);
+      }
     } catch (err) {
       console.error("Tickets fetch error:", err);
     } finally {
@@ -235,6 +278,19 @@ function ChatBot() {
     const interval = setInterval(fetchUserTickets, 10000);
     return () => clearInterval(interval);
   }, [isLoggedIn, activeTab]);
+
+  // Listen to support-replies-read event across components
+  useEffect(() => {
+    const handleRepliesRead = () => {
+      const readReplyIds = JSON.parse(localStorage.getItem("angkor_read_reply_ids") || "[]");
+      const unread = myTickets.filter(
+        (t) => (t.status === "replied" || t.admin_reply) && !readReplyIds.includes(t.id)
+      ).length;
+      setNewRepliesCount(unread);
+    };
+    window.addEventListener("support-replies-read", handleRepliesRead);
+    return () => window.removeEventListener("support-replies-read", handleRepliesRead);
+  }, [myTickets]);
 
   // Listen to open-chatbot-tickets trigger from Header notification dropdown
   useEffect(() => {
@@ -255,14 +311,14 @@ function ChatBot() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Initialize Speech Recognition if supported
+  // Initialize Speech Recognition matching selected language
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (SpeechRecognition) {
       const recognition = new SpeechRecognition();
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = "en-US";
+      recognition.lang = preferredVoiceLang === "km" ? "km-KH" : "en-US";
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -288,17 +344,22 @@ function ChatBot() {
 
       recognitionRef.current = recognition;
     }
-  }, []);
-
-  const [preferredVoiceLang, setPreferredVoiceLang] = useState(() => {
-    return localStorage.getItem("angkor_preferred_voice_lang") || "km";
-  });
+  }, [preferredVoiceLang]);
 
   const [speakingMsgId, setSpeakingMsgId] = useState(null);
   const [speakingLang, setSpeakingLang] = useState(null);
 
   // Stop currently playing voice
   const stopSpeaking = () => {
+    if (currentAudioRef.current) {
+      try {
+        currentAudioRef.current.pause();
+        currentAudioRef.current.src = "";
+      } catch (e) {
+        // ignore
+      }
+      currentAudioRef.current = null;
+    }
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
@@ -306,52 +367,48 @@ function ChatBot() {
     setSpeakingLang(null);
   };
 
-  // Dual-Language Speech Synthesis (Khmer and English)
-  const speakTextDual = (id, text, lang = "en") => {
+  // Web Speech API fallback runner (Used primarily for English or devices with native Khmer voice)
+  const playWebSpeech = (id, text, langCode) => {
     if (!window.speechSynthesis) {
-      toast.error("Speech synthesis is not supported in this browser.");
-      return;
-    }
-
-    if (speakingMsgId === id && speakingLang === lang) {
-      stopSpeaking();
+      setSpeakingMsgId(null);
+      setSpeakingLang(null);
       return;
     }
 
     try {
       window.speechSynthesis.cancel();
-      setSpeakingMsgId(id);
-      setSpeakingLang(lang);
-
-      let clean = text
-        .replace(/[*#_`~]/g, "")
-        .replace(/https?:\/\/\S+/g, "")
-        .replace(/[\n\r]+/g, " ");
-
-      const utterance = new SpeechSynthesisUtterance(clean.slice(0, 350));
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = langCode;
       utterance.rate = 0.95;
       utterance.pitch = 1.0;
 
       const voices = window.speechSynthesis.getVoices();
-
-      if (lang === "km") {
-        utterance.lang = "km-KH";
+      if (langCode.startsWith("km")) {
         const khVoice = voices.find(
           (v) =>
             v.lang.includes("km") ||
             v.lang.includes("kh") ||
             v.name.toLowerCase().includes("khmer")
         );
-        if (khVoice) utterance.voice = khVoice;
+        if (khVoice) {
+          utterance.voice = khVoice;
+        } else {
+          // If no Khmer voice is installed in the browser/OS, do NOT allow
+          // an English voice to read Khmer text (which would sound like English gibberish)
+          console.warn("No native Khmer speech voice found in browser Web Speech API.");
+          setSpeakingMsgId(null);
+          setSpeakingLang(null);
+          return;
+        }
       } else {
-        utterance.lang = "en-US";
         const enVoice = voices.find(
           (v) =>
             v.lang.startsWith("en") &&
             (v.name.includes("Natural") ||
               v.name.includes("Google") ||
               v.name.includes("Samantha") ||
-              v.name.includes("David"))
+              v.name.includes("David") ||
+              v.name.includes("Jenny"))
         );
         if (enVoice) utterance.voice = enVoice;
       }
@@ -368,36 +425,134 @@ function ChatBot() {
 
       window.speechSynthesis.speak(utterance);
     } catch (e) {
-      console.warn("Speech error:", e);
+      console.warn("Web Speech error:", e);
       setSpeakingMsgId(null);
       setSpeakingLang(null);
     }
   };
 
+  // Dual-Engine Speech Synthesis (Natural Khmer Audio Stream + Web Speech Fallback)
+  const speakTextDual = (id, text, lang = "km") => {
+    if (speakingMsgId === id && speakingLang === lang) {
+      stopSpeaking();
+      return;
+    }
+
+    stopSpeaking();
+
+    if (!text) return;
+
+    setSpeakingMsgId(id);
+    setSpeakingLang(lang);
+
+    let clean = text
+      .replace(/[*#_`~]/g, "")
+      .replace(/https?:\/\/\S+/g, "")
+      .replace(/[\n\r]+/g, " ")
+      .trim();
+
+    if (!clean) {
+      setSpeakingMsgId(null);
+      setSpeakingLang(null);
+      return;
+    }
+
+    // Voice snippet for clear pronunciation
+    const voiceSnippet = clean.slice(0, 260);
+
+    if (lang === "km") {
+      // Natural Khmer audio endpoints (Vite proxy + direct fallback with no-referrer)
+      const encoded = encodeURIComponent(voiceSnippet);
+      const sources = [
+        `/tts-proxy?ie=UTF-8&tl=km&client=tw-ob&q=${encoded}`,
+        `https://translate.google.com/translate_tts?ie=UTF-8&tl=km&client=tw-ob&q=${encoded}`,
+        `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=km&q=${encoded}`,
+        `https://translate.google.com.kh/translate_tts?ie=UTF-8&tl=km&client=tw-ob&q=${encoded}`
+      ];
+
+      let sourceIndex = 0;
+
+      const tryPlaySource = () => {
+        if (sourceIndex >= sources.length) {
+          // If all online audio streams fail, attempt Web Speech only if native Khmer voice exists
+          playWebSpeech(id, voiceSnippet, "km-KH");
+          return;
+        }
+
+        const url = sources[sourceIndex];
+        sourceIndex += 1;
+
+        const audio = document.createElement("audio");
+        audio.referrerPolicy = "no-referrer";
+        audio.src = url;
+        currentAudioRef.current = audio;
+
+        audio.onended = () => {
+          setSpeakingMsgId(null);
+          setSpeakingLang(null);
+          currentAudioRef.current = null;
+        };
+
+        audio.onerror = () => {
+          tryPlaySource();
+        };
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => {
+            console.warn(`Audio stream failed for source ${sourceIndex}:`, err);
+            tryPlaySource();
+          });
+        }
+      };
+
+      tryPlaySource();
+    } else {
+      playWebSpeech(id, voiceSnippet, "en-US");
+    }
+  };
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      stopSpeaking();
+    };
+  }, []);
+
   // Switch tab and automatically clear unread replies count
   const handleSwitchTab = (tab) => {
     setActiveTab(tab);
-    if (tab === "tickets" && myTickets.length > 0) {
+    if (tab === "tickets") {
       const readReplyIds = JSON.parse(localStorage.getItem("angkor_read_reply_ids") || "[]");
-      const allIds = myTickets.map((t) => t.id);
-      const updated = Array.from(new Set([...readReplyIds, ...allIds]));
+      const allRepliedIds = myTickets.filter((t) => t.status === "replied" || t.admin_reply).map((t) => t.id);
+      const updated = Array.from(new Set([...readReplyIds, ...allRepliedIds]));
       localStorage.setItem("angkor_read_reply_ids", JSON.stringify(updated));
       setNewRepliesCount(0);
       window.dispatchEvent(new Event("support-replies-read"));
     }
   };
 
-  // Switch voice language with immediate sound feedback in that language
+  // Switch voice language with immediate Khmer spoken greeting for Cambodians
   const handleSelectVoiceLanguage = (nextLang) => {
     setPreferredVoiceLang(nextLang);
     localStorage.setItem("angkor_preferred_voice_lang", nextLang);
+    localStorage.setItem("angkor_language", nextLang);
     setIsVoiceEnabled(true);
 
+    // Dispatch global website language change
+    window.dispatchEvent(new CustomEvent("angkor-language-change", { detail: nextLang }));
+
+    if (recognitionRef.current) {
+      recognitionRef.current.lang = nextLang === "km" ? "km-KH" : "en-US";
+    }
+
+    setChips(nextLang === "km" ? DEFAULT_QUICK_CHIPS_KM : DEFAULT_QUICK_CHIPS_EN);
+
     if (nextLang === "km") {
-      toast.success("🇰🇭 បានជ្រើសរើសសំឡេងខ្មែរ (Khmer Voice)");
+      toast.success("🇰🇭 បានជ្រើសរើសសំឡេងខ្មែរ (Khmer AI Voice Active)");
       speakTextDual(
         "lang_switch_km",
-        "សូមស្វាគមន៍មកកាន់ Angkor Shopping Mall! តើខ្ញុំអាចជួយអ្វីដល់លោកអ្នកបានថ្ងៃនេះ?",
+        "សូមស្វាគមន៍មកកាន់ Angkor Shopping Mall! ខ្ញុំអាចជួយបងប្អូនជាភាសាខ្មែរបាន។ តើលោកអ្នកចង់ស្វែងរកអ្វីដែរ?",
         "km"
       );
     } else {
@@ -410,17 +565,34 @@ function ChatBot() {
     }
   };
 
+  // Sync with global website language change event
+  useEffect(() => {
+    const handleGlobalLangChange = (e) => {
+      const lang = e.detail;
+      if (lang && (lang === "km" || lang === "en") && lang !== preferredVoiceLang) {
+        setPreferredVoiceLang(lang);
+        setChips(lang === "km" ? DEFAULT_QUICK_CHIPS_KM : DEFAULT_QUICK_CHIPS_EN);
+        if (recognitionRef.current) {
+          recognitionRef.current.lang = lang === "km" ? "km-KH" : "en-US";
+        }
+      }
+    };
+    window.addEventListener("angkor-language-change", handleGlobalLangChange);
+    return () => window.removeEventListener("angkor-language-change", handleGlobalLangChange);
+  }, [preferredVoiceLang]);
+
   // Toggle voice playback mute/unmute
   const handleToggleVoicePlayback = () => {
     const next = !isVoiceEnabled;
     setIsVoiceEnabled(next);
+    localStorage.setItem("angkor_voice_enabled", String(next));
     if (!next) {
       stopSpeaking();
       toast("🔇 Voice output muted", { icon: "🔇" });
     } else {
-      toast.success("🔊 Voice output enabled");
+      toast.success(preferredVoiceLang === "km" ? "🔊 បានបើកសំឡេង AI" : "🔊 Voice output enabled");
       if (preferredVoiceLang === "km") {
-        speakTextDual("voice_on_km", "បានបើកសំឡេង AI ជាភាសាខ្មែរ។", "km");
+        speakTextDual("voice_on_km", "បានបើកសំឡេង AI ជំនួយការជាភាសាខ្មែរ។", "km");
       } else {
         speakTextDual("voice_on_en", "AI Voice output is now enabled in English.", "en");
       }
@@ -438,6 +610,7 @@ function ChatBot() {
       setIsListening(false);
     } else {
       try {
+        recognitionRef.current.lang = preferredVoiceLang === "km" ? "km-KH" : "en-US";
         recognitionRef.current.start();
       } catch (e) {
         recognitionRef.current.stop();
@@ -446,9 +619,10 @@ function ChatBot() {
   };
 
   const handleClearHistory = () => {
-    setMessages(INITIAL_MESSAGES);
+    const initial = preferredVoiceLang === "km" ? INITIAL_MESSAGES_KM : INITIAL_MESSAGES_EN;
+    setMessages(initial);
     sessionStorage.removeItem("angkor_ai_chat_history");
-    toast.success("Chat history cleared");
+    toast.success(preferredVoiceLang === "km" ? "បានសម្អាតប្រវត្តិសន្ទនា" : "Chat history cleared");
   };
 
   const handleActionClick = (act) => {
@@ -538,15 +712,21 @@ function ChatBot() {
       const res = await sendChatMessageApi(text, context);
       const data = res?.data || {};
 
+      const defaultReplyText = preferredVoiceLang === "km"
+        ? "ខ្ញុំនៅទីនេះដើម្បីជួយលោកអ្នកទិញទំនិញ! សូមប្រាប់ខ្ញុំនូវអ្វីដែលលោកអ្នកត្រូវការ។"
+        : "I'm here to help you shop! Let me know what you need.";
+
       const botReply = {
         id: Date.now() + 1,
         sender: "bot",
-        text: data.replyText || "I'm here to help you shop! Let me know what you need.",
+        text: data.replyText || defaultReplyText,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         actions: data.actions || [],
         products: data.products || [],
         orders: data.orders || []
       };
+
+      setMessages((prev) => [...prev, botReply]);
 
       if (isVoiceEnabled) {
         speakTextDual(botReply.id, botReply.text, preferredVoiceLang);
@@ -556,15 +736,27 @@ function ChatBot() {
       const fallbackReply = {
         id: Date.now() + 1,
         sender: "bot",
-        text: `🔍 I'm searching our store for "${text}". You can explore active deals, view product catalog, or contact admin below:`,
+        text: preferredVoiceLang === "km"
+          ? `🔍 ខ្ញុំកំពុងស្វែងរកទំនិញ "${text}" នៅក្នុងហាង។ លោកអ្នកអាចពិនិត្យមើលប្រូម៉ូសិនពិសេស ស្វែងរកទំនិញ ឬទាក់ទង Admin ខាងក្រោម៖`
+          : `🔍 I'm searching our store for "${text}". You can explore active deals, view product catalog, or contact admin below:`,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        actions: [
-          { label: "✉️ Message Admin", actionType: "contact_admin", icon: Headphones },
-          { label: "Browse Shop", path: `/shop?search=${encodeURIComponent(text)}`, icon: ShoppingBag },
-          { label: "Flash Sales", path: "/shop?flashSale=true", icon: Flame }
-        ]
+        actions: preferredVoiceLang === "km"
+          ? [
+              { label: "✉️ ផ្ញើសារទៅ Admin", actionType: "contact_admin", icon: Headphones },
+              { label: "🛍️ មើលទំនិញទាំងអស់", path: `/shop?search=${encodeURIComponent(text)}`, icon: ShoppingBag },
+              { label: "⚡ Flash Sales បញ្ចុះតម្លៃ", path: "/shop?flashSale=true", icon: Flame }
+            ]
+          : [
+              { label: "✉️ Message Admin", actionType: "contact_admin", icon: Headphones },
+              { label: "Browse Shop", path: `/shop?search=${encodeURIComponent(text)}`, icon: ShoppingBag },
+              { label: "Flash Sales", path: "/shop?flashSale=true", icon: Flame }
+            ]
       };
       setMessages((prev) => [...prev, fallbackReply]);
+
+      if (isVoiceEnabled) {
+        speakTextDual(fallbackReply.id, fallbackReply.text, preferredVoiceLang);
+      }
     } finally {
       setIsTyping(false);
     }
@@ -756,7 +948,11 @@ function ChatBot() {
             </div>
             <div className="chatbot-callout-content">
               <strong>Angkor AI Assistant</strong>
-              <span>👋 Ask me anything or message admin!</span>
+              <span>
+                {preferredVoiceLang === "km"
+                  ? "👋 សួស្តី! សួរអ្វីក៏បាន ឬផ្ញើសារទៅ Admin"
+                  : "👋 Ask me anything or message admin!"}
+              </span>
             </div>
             <button
               type="button"
@@ -772,24 +968,26 @@ function ChatBot() {
           </div>
         )}
 
-        {/* Floating Action Button */}
-        <button
-          type="button"
-          className={`chatbot-fab-btn ${isOpen ? "active" : ""}`}
-          onClick={() => {
-            setIsOpen(!isOpen);
-            setShowCallout(false);
-          }}
-          aria-label={isOpen ? "Close AI Chatbot" : "Open AI Chatbot"}
-          title="Angkor AI Shopping Assistant"
-        >
-          <div className="chatbot-fab-pulse" />
-          {isOpen ? <X size={24} /> : <Bot size={26} />}
-          {newRepliesCount > 0 && !isOpen && (
-            <span className="chatbot-fab-reply-pill">{newRepliesCount}</span>
-          )}
-          <span className="chatbot-online-dot" />
-        </button>
+        {/* Floating Action Button (Only shown when chat is closed) */}
+        {!isOpen && (
+          <button
+            type="button"
+            className="chatbot-fab-btn"
+            onClick={() => {
+              setIsOpen(true);
+              setShowCallout(false);
+            }}
+            aria-label="Open AI Chatbot"
+            title="Angkor AI Shopping Assistant"
+          >
+            <div className="chatbot-fab-pulse" />
+            <Bot size={26} />
+            {newRepliesCount > 0 && (
+              <span className="chatbot-fab-reply-pill">{newRepliesCount}</span>
+            )}
+            <span className="chatbot-online-dot" />
+          </button>
+        )}
       </div>
 
       {/* Main Interactive Chatbot Window */}
@@ -802,53 +1000,35 @@ function ChatBot() {
         >
           {/* Header */}
           <div className="chatbot-header">
+            <div className="chatbot-header-glow-bg" />
+            
             <div className="chatbot-header-info">
-              <div className="chatbot-avatar-container">
-                <Bot size={22} />
+              <div className="chatbot-avatar-wrapper">
+                <div className="chatbot-avatar-container">
+                  <Bot size={19} className="chatbot-bot-icon" />
+                </div>
+                <span className="chatbot-header-pulse-dot" />
               </div>
               <div className="chatbot-header-text">
                 <div className="chatbot-header-title-row">
-                  <h3>Angkor AI Assistant</h3>
-                  <span className="chatbot-badge-smart">OpenAI 2.0</span>
+                  <h3 className="chatbot-header-title">Angkor AI</h3>
+                  <span className="chatbot-badge-smart">
+                    <Sparkles size={10} className="chatbot-sparkle-icon" />
+                    Smart 2.0
+                  </span>
                 </div>
                 <div className="chatbot-status-row">
                   <span className="chatbot-live-dot" />
-                  <span>Smart Assistant • Active 24/7</span>
+                  <span className="chatbot-status-text">
+                    {preferredVoiceLang === "km"
+                      ? "សកម្ម ២៤/៧ • ឆ្លើយតបរហ័ស"
+                      : "Online 24/7 • Instant Reply"}
+                  </span>
                 </div>
               </div>
             </div>
+
             <div className="chatbot-header-actions">
-              {/* Message Admin Direct Button */}
-              <button
-                type="button"
-                className={`chatbot-header-btn ${showContactModal ? "active-tool" : ""}`}
-                onClick={() => setShowContactModal(!showContactModal)}
-                title="Message Admin / Customer Support"
-                aria-label="Message admin"
-              >
-                <Headphones size={16} />
-              </button>
-
-              {/* Language Selector for Voice with Spoken Sound Feedback */}
-              <div className="chatbot-lang-segmented-control" title="Choose AI Voice Language (Khmer / English)">
-                <button
-                  type="button"
-                  className={`btn-lang-segment ${preferredVoiceLang === "km" ? "active" : ""}`}
-                  onClick={() => handleSelectVoiceLanguage("km")}
-                  aria-label="Khmer Voice"
-                >
-                  🇰🇭 ខ្មែរ
-                </button>
-                <button
-                  type="button"
-                  className={`btn-lang-segment ${preferredVoiceLang === "en" ? "active" : ""}`}
-                  onClick={() => handleSelectVoiceLanguage("en")}
-                  aria-label="English Voice"
-                >
-                  🇺🇸 ENG
-                </button>
-              </div>
-
               {/* Voice playback toggle */}
               <button
                 type="button"
@@ -857,18 +1037,7 @@ function ChatBot() {
                 title={isVoiceEnabled ? "Mute Bot Voice" : "Enable Bot Voice"}
                 aria-label="Toggle voice"
               >
-                {isVoiceEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-              </button>
-
-              {/* Expand / Minimize toggle */}
-              <button
-                type="button"
-                className="chatbot-header-btn"
-                onClick={() => setIsExpanded(!isExpanded)}
-                title={isExpanded ? "Standard View" : "Expand Window"}
-                aria-label="Resize"
-              >
-                {isExpanded ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                {isVoiceEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
               </button>
 
               {/* Clear History */}
@@ -879,7 +1048,18 @@ function ChatBot() {
                 title="Clear Chat History"
                 aria-label="Clear chat"
               >
-                <Trash2 size={16} />
+                <Trash2 size={15} />
+              </button>
+
+              {/* Expand / Minimize toggle */}
+              <button
+                type="button"
+                className="chatbot-header-btn chatbot-expand-btn"
+                onClick={() => setIsExpanded(!isExpanded)}
+                title={isExpanded ? "Standard View" : "Expand Window"}
+                aria-label="Resize"
+              >
+                {isExpanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
               </button>
 
               {/* Close */}
@@ -890,37 +1070,56 @@ function ChatBot() {
                 title="Close Chat"
                 aria-label="Close"
               >
-                <X size={18} />
+                <X size={17} />
               </button>
             </div>
           </div>
 
-          {/* Sub Navigation Bar for Chat vs My Tickets */}
+          {/* Sub Navigation & Language Strip */}
           <div className="chatbot-tab-nav">
-            <button
-              type="button"
-              className={`chatbot-tab-btn ${activeTab === "chat" ? "active" : ""}`}
-              onClick={() => handleSwitchTab("chat")}
-            >
-              <Sparkles size={13} /> AI Assistant
-            </button>
-            <button
-              type="button"
-              className={`chatbot-tab-btn ${activeTab === "tickets" ? "active" : ""}`}
-              onClick={() => handleSwitchTab("tickets")}
-            >
-              <Headphones size={13} /> Admin Messages
-              {newRepliesCount > 0 && (
-                <span className="chatbot-tab-reply-count">{newRepliesCount}</span>
-              )}
-            </button>
-            <button
-              type="button"
-              className="chatbot-tab-btn highlight"
-              onClick={() => setShowContactModal(true)}
-            >
-              <Mail size={13} /> + Contact Admin
-            </button>
+            <div className="chatbot-tab-group">
+              <button
+                type="button"
+                className={`chatbot-tab-btn ${activeTab === "chat" ? "active" : ""}`}
+                onClick={() => handleSwitchTab("chat")}
+              >
+                <Sparkles size={12} />
+                <span>{preferredVoiceLang === "km" ? "ជំនួយការ AI" : "AI Assistant"}</span>
+              </button>
+              <button
+                type="button"
+                className={`chatbot-tab-btn ${activeTab === "tickets" ? "active" : ""}`}
+                onClick={() => handleSwitchTab("tickets")}
+              >
+                <Headphones size={12} />
+                <span>{preferredVoiceLang === "km" ? "សារពី Admin" : "Admin Messages"}</span>
+                {newRepliesCount > 0 && (
+                  <span className="chatbot-tab-reply-count">{newRepliesCount}</span>
+                )}
+              </button>
+            </div>
+
+            {/* Language Capsule Switcher */}
+            <div className="chatbot-lang-segmented-control" title="Change Language / ប្តូរភាសា">
+              <button
+                type="button"
+                className={`btn-lang-segment ${preferredVoiceLang === "km" ? "active" : ""}`}
+                onClick={() => handleSelectVoiceLanguage("km")}
+                aria-label="Khmer Language"
+              >
+                <span className="lang-flag">🇰🇭</span>
+                <span className="lang-text">KH</span>
+              </button>
+              <button
+                type="button"
+                className={`btn-lang-segment ${preferredVoiceLang === "en" ? "active" : ""}`}
+                onClick={() => handleSelectVoiceLanguage("en")}
+                aria-label="English Language"
+              >
+                <span className="lang-flag">🇺🇸</span>
+                <span className="lang-text">EN</span>
+              </button>
+            </div>
           </div>
 
           {/* Tab 1: AI Chat Assistant */}
@@ -978,8 +1177,13 @@ function ChatBot() {
                             onClick={() => speakTextDual(msg.id, msg.text, "km")}
                             title="ស្តាប់ជាភាសាខ្មែរ (Listen in Khmer)"
                           >
-                            <Volume2 size={11} />
-                            <span>🇰🇭 ស្តាប់ (Khmer)</span>
+                            <Volume2 size={12} />
+                            <span>🇰🇭 ស្តាប់</span>
+                            {speakingMsgId === msg.id && speakingLang === "km" && (
+                              <span className="btn-voice-wave-mini">
+                                <span /><span /><span />
+                              </span>
+                            )}
                           </button>
                           <button
                             type="button"
@@ -987,8 +1191,13 @@ function ChatBot() {
                             onClick={() => speakTextDual(msg.id, msg.text, "en")}
                             title="Listen in English"
                           >
-                            <Volume2 size={11} />
-                            <span>🇺🇸 Listen (EN)</span>
+                            <Volume2 size={12} />
+                            <span>🇺🇸 Listen</span>
+                            {speakingMsgId === msg.id && speakingLang === "en" && (
+                              <span className="btn-voice-wave-mini">
+                                <span /><span /><span />
+                              </span>
+                            )}
                           </button>
                         </div>
                       )}
@@ -1057,13 +1266,69 @@ function ChatBot() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Chat Input Bar */}
+              {/* Live Status Bar when User is Speaking (Khmer / English Speech-to-Text) */}
+              {isListening && (
+                <div className="chatbot-voice-active-bar listening">
+                  <div className="chatbot-voice-status-info">
+                    <Mic size={14} className="text-red-500 animate-pulse" />
+                    <span>
+                      {preferredVoiceLang === "km"
+                        ? "🎙️ កំពុងស្តាប់ជាភាសាខ្មែរ... សូមនិយាយសំណួររបស់អ្នក"
+                        : "🎙️ Listening in English... Speak your question"}
+                    </span>
+                    <div className="chatbot-voice-wave">
+                      <span /><span /><span /><span /><span />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="chatbot-voice-stop-btn"
+                    onClick={handleToggleVoiceMic}
+                    title="Stop Voice Input"
+                  >
+                    <MicOff size={12} /> {preferredVoiceLang === "km" ? "បញ្ឈប់" : "Stop"}
+                  </button>
+                </div>
+              )}
+
+              {/* Live Status Bar when AI is Speaking (Khmer / English Text-to-Speech Output) */}
+              {speakingMsgId && !isListening && (
+                <div className="chatbot-voice-active-bar">
+                  <div className="chatbot-voice-status-info">
+                    <Volume2 size={14} className="text-emerald-600 animate-pulse" />
+                    <span>
+                      {speakingLang === "km"
+                        ? "🔊 AI កំពុងនិយាយជាភាសាខ្មែរ..."
+                        : "🔊 AI is speaking in English..."}
+                    </span>
+                    <div className="chatbot-voice-wave">
+                      <span /><span /><span /><span /><span />
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="chatbot-voice-stop-btn"
+                    onClick={stopSpeaking}
+                    title="Stop Voice Output"
+                  >
+                    <VolumeX size={12} /> {preferredVoiceLang === "km" ? "បញ្ឈប់សំឡេង" : "Stop Voice"}
+                  </button>
+                </div>
+              )}
+
+              {/* Chat Input Bar with Input Voice (Mic) & Output Voice (Speaker) Controls */}
               <div className="chatbot-input-bar">
                 <button
                   type="button"
                   className={`chatbot-mic-btn ${isListening ? "listening" : ""}`}
                   onClick={handleToggleVoiceMic}
-                  title={isListening ? "Stop Listening" : "Voice Input (Speech-to-Text)"}
+                  title={
+                    isListening
+                      ? "Stop Listening"
+                      : preferredVoiceLang === "km"
+                      ? "និយាយជាភាសាខ្មែរ (Voice Input Khmer)"
+                      : "Voice Input (Speech-to-Text)"
+                  }
                   aria-label="Voice input"
                 >
                   {isListening ? <MicOff size={17} /> : <Mic size={17} />}
@@ -1072,13 +1337,27 @@ function ChatBot() {
                 <input
                   type="text"
                   className="chatbot-input-field"
-                  placeholder="Ask anything (e.g. phones under $500, contact admin, order #)..."
+                  placeholder={
+                    preferredVoiceLang === "km"
+                      ? "សួរអ្វីក៏បាន (ឧ. ទូរស័ព្ទក្រោម $500, ផ្ញើសារទៅ Admin, កាតបញ្ជាទិញ)..."
+                      : "Ask anything (e.g. phones under $500, contact admin, order #)..."
+                  }
                   value={inputVal}
                   onChange={(e) => setInputVal(e.target.value)}
                   onKeyDown={handleKeyDown}
                   aria-label="Type your message"
                   disabled={isTyping}
                 />
+
+                <button
+                  type="button"
+                  className={`chatbot-voice-quick-toggle ${isVoiceEnabled ? "active" : ""}`}
+                  onClick={handleToggleVoicePlayback}
+                  title={isVoiceEnabled ? "Turn off AI Voice Output" : "Turn on AI Voice Output"}
+                  aria-label="Toggle AI Voice Output"
+                >
+                  {isVoiceEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+                </button>
 
                 <button
                   type="button"
@@ -1097,32 +1376,46 @@ function ChatBot() {
           {activeTab === "tickets" && (
             <div className="chatbot-tickets-view">
               <div className="chatbot-tickets-header">
-                <h4>My Support Messages</h4>
-                <button
-                  type="button"
-                  className="btn-refresh-tickets"
-                  onClick={fetchUserTickets}
-                  disabled={loadingTickets}
-                >
-                  <RefreshCw size={13} /> Refresh
-                </button>
+                <h4>{preferredVoiceLang === "km" ? "សារពី Admin & ជំនួយ" : "Support Messages"}</h4>
+                <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                  <button
+                    type="button"
+                    className="btn-new-ticket"
+                    onClick={() => setShowContactModal(true)}
+                  >
+                    <Mail size={12} /> {preferredVoiceLang === "km" ? "+ សារថ្មី" : "+ New Message"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-refresh-tickets"
+                    onClick={fetchUserTickets}
+                    disabled={loadingTickets}
+                    title="Refresh"
+                  >
+                    <RefreshCw size={12} className={loadingTickets ? "animate-spin" : ""} />
+                  </button>
+                </div>
               </div>
 
               {loadingTickets && myTickets.length === 0 ? (
                 <div className="chatbot-tickets-empty">
                   <RefreshCw size={24} className="animate-spin text-muted" />
-                  <span>Loading your messages...</span>
+                  <span>{preferredVoiceLang === "km" ? "កំពុងទាញយកសារ..." : "Loading your messages..."}</span>
                 </div>
               ) : myTickets.length === 0 ? (
                 <div className="chatbot-tickets-empty">
                   <Mail size={32} />
-                  <p>You haven't sent any support inquiries yet.</p>
+                  <p>
+                    {preferredVoiceLang === "km"
+                      ? "លោកអ្នកមិនទាន់មានសារសាកសួរទៅកាន់ Admin នៅឡើយទេ។"
+                      : "You haven't sent any support inquiries yet."}
+                  </p>
                   <button
                     type="button"
                     className="chatbot-action-btn"
                     onClick={() => setShowContactModal(true)}
                   >
-                    Send Message to Admin
+                    <Mail size={13} /> {preferredVoiceLang === "km" ? "ផ្ញើសារទៅ Admin ឥឡូវនេះ" : "Send Message to Admin"}
                   </button>
                 </div>
               ) : (
@@ -1140,7 +1433,7 @@ function ChatBot() {
                       </div>
                       <p className="ticket-card-msg">{t.message}</p>
                       <small className="ticket-card-time">
-                        Sent on {new Date(t.created_at || t.createdAt).toLocaleDateString([], {
+                        {new Date(t.created_at || t.createdAt).toLocaleDateString([], {
                           month: "short",
                           day: "numeric",
                           hour: "2-digit",
@@ -1199,7 +1492,7 @@ function ChatBot() {
                                 setShowContactModal(true);
                               }}
                             >
-                              Reply Back / Follow up
+                              {preferredVoiceLang === "km" ? "ឆ្លើយតបបន្ត / Follow up" : "Reply Back / Follow up"}
                             </button>
                           </div>
                         </div>
@@ -1218,12 +1511,13 @@ function ChatBot() {
                 <div className="contact-modal-header">
                   <div className="contact-modal-title">
                     <Headphones size={18} />
-                    <span>Message Store Admin</span>
+                    <span>{preferredVoiceLang === "km" ? "ផ្ញើសារទៅកាន់ Store Admin" : "Message Store Admin"}</span>
                   </div>
                   <button
                     type="button"
                     className="contact-modal-close"
                     onClick={() => setShowContactModal(false)}
+                    aria-label="Close modal"
                   >
                     <X size={16} />
                   </button>
@@ -1231,11 +1525,11 @@ function ChatBot() {
 
                 <form onSubmit={handleSubmitSupport} className="contact-modal-form">
                   <div className="contact-form-group">
-                    <label>Your Name *</label>
+                    <label>{preferredVoiceLang === "km" ? "ឈ្មោះរបស់អ្នក *" : "Your Name *"}</label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Sokha Chan"
+                      placeholder={preferredVoiceLang === "km" ? "ឧ. ចាន់ សុខា" : "e.g. Sokha Chan"}
                       value={contactForm.sender_name}
                       onChange={(e) => setContactForm({ ...contactForm, sender_name: e.target.value })}
                     />
@@ -1243,7 +1537,7 @@ function ChatBot() {
 
                   <div className="contact-form-row">
                     <div className="contact-form-group">
-                      <label>Email Address</label>
+                      <label>{preferredVoiceLang === "km" ? "អ៊ីមែល (Email)" : "Email Address"}</label>
                       <input
                         type="email"
                         placeholder="you@email.com"
@@ -1252,7 +1546,7 @@ function ChatBot() {
                       />
                     </div>
                     <div className="contact-form-group">
-                      <label>Phone / Telegram</label>
+                      <label>{preferredVoiceLang === "km" ? "លេខទូរស័ព្ទ / Telegram" : "Phone / Telegram"}</label>
                       <input
                         type="text"
                         placeholder="+855 12 345 678"
@@ -1263,26 +1557,42 @@ function ChatBot() {
                   </div>
 
                   <div className="contact-form-group">
-                    <label>Inquiry Topic *</label>
+                    <label>{preferredVoiceLang === "km" ? "ប្រធានបទសាកសួរ *" : "Inquiry Topic *"}</label>
                     <select
                       value={contactForm.subject}
                       onChange={(e) => setContactForm({ ...contactForm, subject: e.target.value })}
                     >
-                      <option value="Product Inquiry">📱 Product & Specs Question</option>
-                      <option value="Order & Delivery Tracking">📦 Order & Delivery Tracking</option>
-                      <option value="Device Trade-In Valuation">🔄 Device Trade-In / Swap</option>
-                      <option value="Warranty & Replacement">🛡️ Warranty & Replacement</option>
-                      <option value="Payment & Invoicing">💳 Payment & Checkout Help</option>
-                      <option value="General Support">💬 Other General Question</option>
+                      <option value="Product Inquiry">
+                        {preferredVoiceLang === "km" ? "📱 សាកសួរព័ត៌មាន និងតម្លៃផលិតផល" : "📱 Product & Specs Question"}
+                      </option>
+                      <option value="Order & Delivery Tracking">
+                        {preferredVoiceLang === "km" ? "📦 តាមដានការដឹកជញ្ជូន និងបញ្ជាទិញ" : "📦 Order & Delivery Tracking"}
+                      </option>
+                      <option value="Device Trade-In Valuation">
+                        {preferredVoiceLang === "km" ? "🔄 សេវាកម្មប្តូរសេរីទូរស័ព្ទ (Trade-In)" : "🔄 Device Trade-In / Swap"}
+                      </option>
+                      <option value="Warranty & Replacement">
+                        {preferredVoiceLang === "km" ? "🛡️ ការធានា និងការប្តូរទំនិញ" : "🛡️ Warranty & Replacement"}
+                      </option>
+                      <option value="Payment & Invoicing">
+                        {preferredVoiceLang === "km" ? "💳 ជំនួយការទូទាត់ប្រាក់ (ABA, KHQR, Visa)" : "💳 Payment & Checkout Help"}
+                      </option>
+                      <option value="General Support">
+                        {preferredVoiceLang === "km" ? "💬 សំណួរទូទៅផ្សេងៗ" : "💬 Other General Question"}
+                      </option>
                     </select>
                   </div>
 
                   <div className="contact-form-group">
-                    <label>Your Message / Question *</label>
+                    <label>{preferredVoiceLang === "km" ? "ខ្លឹមសារសារ ឬសំណួររបស់អ្នក *" : "Your Message / Question *"}</label>
                     <textarea
                       required
                       rows={4}
-                      placeholder="Type your message to store administrators in detail..."
+                      placeholder={
+                        preferredVoiceLang === "km"
+                          ? "សូមរៀបរាប់ព័ត៌មានលម្អិតដែលលោកអ្នកចង់សាកសួរទៅកាន់ Admin..."
+                          : "Type your message to store administrators in detail..."
+                      }
                       value={contactForm.message}
                       onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
                     />
@@ -1294,14 +1604,21 @@ function ChatBot() {
                       className="btn-cancel-contact"
                       onClick={() => setShowContactModal(false)}
                     >
-                      Cancel
+                      {preferredVoiceLang === "km" ? "បោះបង់" : "Cancel"}
                     </button>
                     <button
                       type="submit"
                       className="btn-submit-contact"
                       disabled={sendingSupport || !contactForm.message.trim()}
                     >
-                      <Send size={14} /> {sendingSupport ? "Sending..." : "Send Message to Admin"}
+                      <Send size={14} />{" "}
+                      {sendingSupport
+                        ? preferredVoiceLang === "km"
+                          ? "កំពុងផ្ញើ..."
+                          : "Sending..."
+                        : preferredVoiceLang === "km"
+                        ? "ផ្ញើសារទៅ Admin"
+                        : "Send Message to Admin"}
                     </button>
                   </div>
                 </form>

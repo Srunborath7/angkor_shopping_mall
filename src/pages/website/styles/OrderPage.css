@@ -849,3 +849,67 @@
     align-self: flex-end;
   }
 }
+
+/* ==========================================================================
+   ORDERS PAGE DARK MODE STYLES
+   ========================================================================== */
+
+[data-theme="dark"] .orders-page-layout,
+[data-theme="dark"] .orders-unauth-layout {
+  background-color: #070a12;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .profile-sidebar-aside,
+[data-theme="dark"] .orders-main-content,
+[data-theme="dark"] .order-accordion-card,
+[data-theme="dark"] .order-stat-card,
+[data-theme="dark"] .unauth-card {
+  background-color: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .profile-user-name,
+[data-theme="dark"] .profile-section-title h2,
+[data-theme="dark"] .stat-card-val,
+[data-theme="dark"] .unauth-card h2 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .profile-user-role,
+[data-theme="dark"] .profile-user-email,
+[data-theme="dark"] .stat-card-label {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .profile-nav-link {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .profile-nav-link:hover,
+[data-theme="dark"] .profile-nav-link.active {
+  background-color: #1e293b;
+  color: #34d399;
+}
+
+[data-theme="dark"] .order-accordion-header {
+  background-color: #0f172a;
+}
+
+[data-theme="dark"] .order-detail-expanded {
+  background-color: #090d16;
+  border-top-color: #1e293b;
+}
+
+[data-theme="dark"] .product-mini-card {
+  background-color: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .mini-card-name {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .mini-card-total-cost {
+  color: #34d399;
+}

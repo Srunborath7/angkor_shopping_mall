@@ -538,15 +538,15 @@ function WebsiteTradingPage() {
 
           {/* Listings Grid */}
           {loading ? (
-            <div style={{ textAlign: "center", padding: "60px", color: "#64748b" }}>
+            <div className="trading-loading-box">
               <Repeat size={36} className="spin" style={{ marginBottom: 12 }} />
               <p>Loading available trade listings...</p>
             </div>
           ) : tradeProducts.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "60px", background: "#ffffff", maxWidth: 600, margin: "20px auto", borderRadius: 16, border: "1px solid #e2e8f0" }}>
-              <ArrowRightLeft size={48} color="#94a3b8" style={{ marginBottom: 16 }} />
-              <h3 style={{ margin: "0 0 8px", color: "#0f172a" }}>No Trade Listings Found</h3>
-              <p style={{ color: "#64748b", margin: "0 0 20px" }}>Be the first customer to list a trade item or adjust your search filters.</p>
+            <div className="trading-empty-card">
+              <ArrowRightLeft size={48} className="trading-empty-icon" />
+              <h3>No Trade Listings Found</h3>
+              <p>Be the first customer to list a trade item or adjust your search filters.</p>
               <button className="btn-hero-primary" onClick={handleOpenCustomCreate}>
                 <PlusCircle size={16} /> List Your Item Now
               </button>
@@ -631,15 +631,15 @@ function WebsiteTradingPage() {
           </div>
 
           {loadingEligible ? (
-            <div style={{ textAlign: "center", padding: "60px" }}>
+            <div className="trading-loading-box">
               <Repeat size={32} className="spin" />
               <p>Fetching your past purchases...</p>
             </div>
           ) : eligibleItems.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "60px", background: "#ffffff", borderRadius: 16, border: "1px solid #e2e8f0" }}>
-              <ShoppingBag size={48} color="#94a3b8" style={{ marginBottom: 16 }} />
+            <div className="trading-empty-card">
+              <ShoppingBag size={48} className="trading-empty-icon" />
               <h3>No Eligible Past Purchases Found</h3>
-              <p style={{ color: "#64748b", maxWidth: 450, margin: "0 auto 20px" }}>
+              <p>
                 Once you complete and receive an order on AngkorMall, your purchased items will show up here for instant 1-click trade-in!
               </p>
               <button className="btn-hero-primary" onClick={() => navigate("/shop")}>
@@ -659,20 +659,20 @@ function WebsiteTradingPage() {
                   <div className="eligible-item-details">
                     <h4 className="eligible-item-title">{item.product_name}</h4>
                     <div className="eligible-item-meta">
-                      Purchased on {new Date(item.order_date).toLocaleDateString()} | Price: <strong>${parseFloat(item.purchase_price || 0).toFixed(2)}</strong>
+                      Qty: {item.quantity} | Order #{item.order_id}
                     </div>
-
                     <div className="eligible-item-actions">
-                      {item.is_already_listed ? (
-                        <span className="already-listed-badge">
-                          <CheckCircle2 size={13} color="#059669" /> Listed for Trade
-                        </span>
+                      <span className="already-listed-badge">
+                        <ShieldCheck size={13} /> Store Verified Purchase
+                      </span>
+                      {item.is_listed ? (
+                        <span className="already-listed-badge">Already Listed</span>
                       ) : (
                         <button
                           className="btn-list-eligible"
-                          onClick={() => handleStartEligibleListing(item)}
+                          onClick={() => handleOpenEligibleCreate(item)}
                         >
-                          <ArrowRightLeft size={13} /> List for Trade
+                          <PlusCircle size={14} /> 1-Click Trade
                         </button>
                       )}
                     </div>
@@ -686,65 +686,53 @@ function WebsiteTradingPage() {
 
       {/* ================= TAB 3: MY TRADE LISTINGS ================= */}
       {activeTab === "my-trades" && (
-        <section className="eligible-items-section">
-          <div className="eligible-info-banner">
-            <div className="eligible-info-text">
+        <section className="my-trades-section">
+          <div className="my-trades-header-row">
+            <div>
               <h3>My Active Trade Listings</h3>
-              <p>Manage your active listings and update exchange terms or prices.</p>
+              <p>Manage items you've posted for peer-to-peer exchange or store trade-in.</p>
             </div>
             <button className="btn-hero-primary" onClick={handleOpenCustomCreate}>
-              <PlusCircle size={16} /> Add New Listing
+              <PlusCircle size={16} /> New Trade Listing
             </button>
           </div>
 
           {loadingMyTrades ? (
-            <div style={{ textAlign: "center", padding: "60px" }}>
+            <div className="trading-loading-box">
               <Repeat size={32} className="spin" />
+              <p>Loading your active trade listings...</p>
             </div>
           ) : myListings.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "60px", background: "#ffffff", borderRadius: 16, border: "1px solid #e2e8f0" }}>
-              <Tag size={48} color="#94a3b8" style={{ marginBottom: 16 }} />
-              <h3>You Have No Active Listings</h3>
-              <p style={{ color: "#64748b", margin: "0 0 20px" }}>List an item or trade-in a past order to start exchanging.</p>
+            <div className="trading-empty-card">
+              <Tag size={48} className="trading-empty-icon" />
+              <h3>You Have No Active Trade Listings</h3>
+              <p>List your pre-owned items to start receiving exchange offers.</p>
               <button className="btn-hero-primary" onClick={handleOpenCustomCreate}>
-                <PlusCircle size={16} /> Create Listing
+                <PlusCircle size={16} /> List An Item Now
               </button>
             </div>
           ) : (
             <div className="trading-products-grid">
-              {myListings.map((item) => (
-                <div key={item.id} className="trade-card">
-                  <div className="trade-card-media">
+              {myListings.map((prod) => (
+                <div key={prod.id} className="trade-card">
+                  <div className="trade-card-media" onClick={() => handleOpenDetail(prod)}>
                     <img
-                      src={item.image_url || item.images?.[0]?.image_url || NO_IMG}
-                      alt={item.title}
+                      src={prod.image_url || prod.images?.[0]?.image_url || NO_IMG}
+                      alt={prod.title}
                       onError={(e) => (e.target.src = NO_IMG)}
                     />
-                    {item.is_store_verified && (
-                      <span className="trade-verified-badge">
-                        <ShieldCheck size={13} /> Store Verified
-                      </span>
-                    )}
-                    <span className={`trade-condition-tag ${item.condition || "good"}`}>
-                      {formatCondition(item.condition).split(" ")[0]}
+                    <span className={`trade-status-overlay ${prod.status}`}>
+                      {prod.status}
                     </span>
                   </div>
-
                   <div className="trade-card-body">
-                    <div className="trade-card-category">{item.category?.name || "General"}</div>
-                    <h3 className="trade-card-title">{item.title}</h3>
-
+                    <h3 className="trade-card-title">{prod.title}</h3>
                     <div className="trade-card-price-row">
                       <span className="trade-value-label">Est. Value</span>
-                      <span className="trade-value-amount">${parseFloat(item.estimated_value || 0).toFixed(2)}</span>
+                      <span className="trade-value-amount">${parseFloat(prod.estimated_value || 0).toFixed(2)}</span>
                     </div>
-
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "auto", paddingTop: 10, borderTop: "1px solid #f1f5f9" }}>
-                      <span className={`trade-status-overlay ${item.status || "available"}`} style={{ position: "static" }}>
-                        {item.status}
-                      </span>
+                    <div className="trade-card-footer">
                       <button
-                        className="btn-danger"
                         style={{ padding: "6px 12px", fontSize: 12, borderRadius: 8 }}
                         onClick={() => handleDeleteMyListing(item)}
                       >
@@ -990,8 +978,7 @@ function WebsiteTradingPage() {
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
                 <button
                   type="button"
-                  className="btn-hero-secondary"
-                  style={{ color: "#334155", borderColor: "#cbd5e1" }}
+                  className="btn-modal-cancel"
                   onClick={() => setIsOfferModalOpen(false)}
                 >
                   Cancel
@@ -1130,8 +1117,7 @@ function WebsiteTradingPage() {
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 }}>
               <button
                 type="button"
-                className="btn-hero-secondary"
-                style={{ color: "#334155", borderColor: "#cbd5e1" }}
+                className="btn-modal-cancel"
                 onClick={() => setIsCreateModalOpen(false)}
               >
                 Cancel

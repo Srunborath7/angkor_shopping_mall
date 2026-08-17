@@ -17,17 +17,21 @@ import {
   Repeat,
   Bell,
   Headphones,
-  MessageSquare
+  MessageSquare,
+  Globe,
+  Settings
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import { clearAuth } from "../store/authSlice";
+import { useTranslation } from "../context/LanguageContext";
 import {
   getMySupportMessagesApi,
   trackSupportMessagesApi
 } from "../services/supportMessageService";
 import CartDrawer from "./CartDrawer";
 import MobileBottomNav from "./MobileBottomNav";
+import SettingsModal from "./SettingsModal";
 import "./Header.css";
 import logo from "../assets/logo.jpg";
 
@@ -35,6 +39,7 @@ function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const { t, language, setLanguage } = useTranslation();
   const auth = useSelector((state) => state.auth);
 
   const isLoggedIn = !!auth.token;
@@ -45,6 +50,7 @@ function Header() {
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [userNotifOpen, setUserNotifOpen] = useState(false);
   const [userReplies, setUserReplies] = useState([]);
   const [userUnreadRepliesCount, setUserUnreadRepliesCount] = useState(0);
@@ -208,35 +214,35 @@ function Header() {
             className={`nav-item ${currentPath === "/" ? "active" : ""}`}
             onClick={() => navigate("/")}
           >
-            Home
+            {t("nav.home", "Home")}
           </span>
           <span
             className={`nav-item ${currentPath === "/shop" ? "active" : ""}`}
             onClick={() => navigate("/shop")}
           >
-            Shop
+            {t("nav.shop", "Shop")}
           </span>
           <span
             className={`nav-item ai-badge-nav ${currentPath === "/recommendations" ? "active" : ""}`}
             onClick={() => navigate("/recommendations")}
           >
-            AI Recommendations <Sparkles size={12} className="sparkle-icon" />
+            {t("nav.aiRecommendations", "AI Recommendations")} <Sparkles size={12} className="sparkle-icon" />
           </span>
           <span
             className={`nav-item ${currentPath === "/trading" ? "active" : ""}`}
             onClick={() => navigate("/trading")}
           >
-            Trade & Exchange
+            {t("nav.tradeIn", "Trade & Exchange")}
           </span>
           <span
             className={`nav-item ${currentPath === "/orders" ? "active" : ""}`}
             onClick={() => navigate("/orders")}
           >
-            Orders
+            {t("nav.orders", "Orders")}
           </span>
         </nav>
 
-        {/* Nav Actions (Wishlist, Cart, Notifications, Profile) */}
+        {/* Nav Actions (Wishlist, Cart, Settings, Notifications, Profile) */}
         <div className="header-actions">
           {/* User Notification Bell for Support & Admin Replies */}
           <div className="icon-wrapper notif-icon-wrapper" ref={notifRef}>
@@ -258,10 +264,10 @@ function Header() {
                 <div className="user-notif-header">
                   <div className="user-notif-title">
                     <MessageSquare size={16} />
-                    <span>Support Messages</span>
+                    <span>{t("nav.support", "Support Messages")}</span>
                   </div>
                   {userUnreadRepliesCount > 0 && (
-                    <span className="user-notif-pill">{userUnreadRepliesCount} Reply</span>
+                    <span className="user-notif-pill">{userUnreadRepliesCount}</span>
                   )}
                 </div>
 
@@ -269,7 +275,7 @@ function Header() {
                   {userReplies.length === 0 ? (
                     <div className="user-notif-empty">
                       <Headphones size={26} className="text-muted" />
-                      <span>No support messages yet. Need help? Message admin anytime!</span>
+                      <span>{language === "km" ? "មិនទាន់មានសារសាកសួរនៅឡើយទេ។" : "No support messages yet. Need help? Message admin anytime!"}</span>
                     </div>
                   ) : (
                     userReplies.map((item) => (
@@ -286,7 +292,7 @@ function Header() {
                         </div>
                         <div className="user-notif-content">
                           <div className="user-notif-row">
-                            <strong className="user-notif-sender">Admin Replied: {item.subject}</strong>
+                            <strong className="user-notif-sender">Admin: {item.subject}</strong>
                             <span className="user-notif-time">
                               {item.replied_at
                                 ? new Date(item.replied_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
@@ -309,7 +315,7 @@ function Header() {
                       window.dispatchEvent(new Event("open-chatbot-tickets"));
                     }}
                   >
-                    <Headphones size={13} /> Open in Support Assistant
+                    <Headphones size={13} /> {language === "km" ? "បើកផ្ទាំងសារ Admin" : "Open in Support Assistant"}
                   </button>
                 </div>
               </div>
@@ -329,9 +335,20 @@ function Header() {
           <div
             className="icon-wrapper"
             onClick={() => setIsCartOpen(true)}
+            title="View Shopping Cart"
           >
             <ShoppingBag size={20} />
             {cartCount > 0 && <span className="action-badge bg-green">{cartCount}</span>}
+          </div>
+
+          {/* Quick Settings Icon Button */}
+          <div
+            className="icon-wrapper header-settings-trigger"
+            onClick={() => setIsSettingsOpen(true)}
+            title={language === "km" ? "ការកំណត់គេហទំព័រ (ភាសា & ស្បែកពណ៌)" : "Website Settings (Language & Theme)"}
+            style={{ cursor: "pointer" }}
+          >
+            <Settings size={20} />
           </div>
 
           {/* Profile Dropdown */}
@@ -350,7 +367,7 @@ function Header() {
             ) : (
               <button className="login-trigger-btn" onClick={() => navigate("/auth/login")}>
                 <User size={16} />
-                <span className="mobile-hide-username">Sign In</span>
+                <span className="mobile-hide-username">{t("nav.login", "Sign In")}</span>
               </button>
             )}
 
@@ -371,13 +388,25 @@ function Header() {
                     }}
                   >
                     <LayoutDashboard size={16} />
-                    <span>Admin Dashboard</span>
+                    <span>{t("nav.dashboard", "Admin Dashboard")}</span>
                   </button>
                 )}
 
+                {/* Settings Item in Profile Dropdown */}
+                <button
+                  className="dropdown-item"
+                  onClick={() => {
+                    setProfileDropdownOpen(false);
+                    setIsSettingsOpen(true);
+                  }}
+                >
+                  <Settings size={16} />
+                  <span>{language === "km" ? "ការកំណត់គេហទំព័រ" : "Website Settings"}</span>
+                </button>
+
                 <button className="dropdown-item logout-item" onClick={handleLogout}>
                   <LogOut size={16} />
-                  <span>Logout</span>
+                  <span>{t("nav.logout", "Logout")}</span>
                 </button>
               </div>
             )}
@@ -394,7 +423,7 @@ function Header() {
         </div>
       </div>
 
-      {/* Mobile Backdrop & Professional Animated Drawer */}
+      {/* Mobile Backdrop & Drawer */}
       {mobileMenuOpen && (
         <>
           <div
@@ -416,6 +445,42 @@ function Header() {
               </div>
             )}
 
+            {/* Mobile Language & Settings Strip */}
+            <div className="mobile-lang-strip">
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span className="mobile-lang-title">
+                  <Globe size={15} /> {t("header.switchLang", "Language")}
+                </span>
+                <button
+                  type="button"
+                  className="btn-quick-settings"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsSettingsOpen(true);
+                  }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "#1c7e48", fontWeight: 700, background: "none", border: "none", cursor: "pointer" }}
+                >
+                  <Settings size={12} /> {language === "km" ? "ការកំណត់" : "Settings"}
+                </button>
+              </div>
+              <div className="mobile-lang-btn-group">
+                <button
+                  type="button"
+                  className={`mobile-lang-choice ${language === "km" ? "active" : ""}`}
+                  onClick={() => setLanguage("km")}
+                >
+                  🇰🇭 ភាសាខ្មែរ
+                </button>
+                <button
+                  type="button"
+                  className={`mobile-lang-choice ${language === "en" ? "active" : ""}`}
+                  onClick={() => setLanguage("en")}
+                >
+                  🇺🇸 English
+                </button>
+              </div>
+            </div>
+
             <div className="mobile-nav-links-list">
               <div
                 className={`mobile-nav-item ${currentPath === "/" ? "active" : ""}`}
@@ -426,7 +491,7 @@ function Header() {
               >
                 <div className="nav-item-left">
                   <Home size={18} />
-                  <span>Home</span>
+                  <span>{t("nav.home", "Home")}</span>
                 </div>
                 <ChevronRight size={16} className="arrow-dim" />
               </div>
@@ -440,21 +505,7 @@ function Header() {
               >
                 <div className="nav-item-left">
                   <ShoppingBag size={18} />
-                  <span>Shop Catalog</span>
-                </div>
-                <ChevronRight size={16} className="arrow-dim" />
-              </div>
-
-              <div
-                className="mobile-nav-item"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate("/shop");
-                }}
-              >
-                <div className="nav-item-left">
-                  <Grid size={18} />
-                  <span>Categories</span>
+                  <span>{t("nav.shop", "Shop Catalog")}</span>
                 </div>
                 <ChevronRight size={16} className="arrow-dim" />
               </div>
@@ -468,7 +519,7 @@ function Header() {
               >
                 <div className="nav-item-left">
                   <Sparkles size={18} className="text-green-icon" />
-                  <span>AI Recommendations</span>
+                  <span>{t("nav.aiRecommendations", "AI Recommendations")}</span>
                 </div>
                 <ChevronRight size={16} className="arrow-dim" />
               </div>
@@ -482,7 +533,7 @@ function Header() {
               >
                 <div className="nav-item-left">
                   <Repeat size={18} />
-                  <span>Trade & Exchange</span>
+                  <span>{t("nav.tradeIn", "Trade & Exchange")}</span>
                 </div>
                 <ChevronRight size={16} className="arrow-dim" />
               </div>
@@ -496,7 +547,22 @@ function Header() {
               >
                 <div className="nav-item-left">
                   <ShoppingBag size={18} />
-                  <span>My Orders</span>
+                  <span>{t("nav.orders", "My Orders")}</span>
+                </div>
+                <ChevronRight size={16} className="arrow-dim" />
+              </div>
+
+              {/* Website Settings Item in Mobile Drawer */}
+              <div
+                className="mobile-nav-item"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setIsSettingsOpen(true);
+                }}
+              >
+                <div className="nav-item-left">
+                  <Settings size={18} />
+                  <span>{language === "km" ? "ការកំណត់គេហទំព័រ (Settings)" : "Website Settings"}</span>
                 </div>
                 <ChevronRight size={16} className="arrow-dim" />
               </div>
@@ -511,7 +577,7 @@ function Header() {
                 >
                   <div className="nav-item-left">
                     <LayoutDashboard size={18} />
-                    <span>Admin Dashboard</span>
+                    <span>{t("nav.dashboard", "Admin Dashboard")}</span>
                   </div>
                   <ChevronRight size={16} />
                 </div>
@@ -528,7 +594,7 @@ function Header() {
                     handleLogout();
                   }}
                 >
-                  <LogOut size={16} /> Logout Account
+                  <LogOut size={16} /> {t("nav.logout", "Logout Account")}
                 </button>
               ) : (
                 <button
@@ -538,7 +604,7 @@ function Header() {
                     navigate("/auth/login");
                   }}
                 >
-                  <User size={16} /> Sign In / Register
+                  <User size={16} /> {t("nav.login", "Sign In / Register")}
                 </button>
               )}
             </div>
@@ -552,6 +618,9 @@ function Header() {
 
       {/* Render modern Mobile & iPad Bottom Navigation Bar */}
       <MobileBottomNav />
+
+      {/* Render Website Settings Modal (Language & System/Dark/Light Theme) */}
+      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </>
   );
 }

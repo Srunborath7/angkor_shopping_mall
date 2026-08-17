@@ -8,12 +8,14 @@ import {
   Repeat,
   Clock
 } from "lucide-react";
+import { useTranslation } from "../context/LanguageContext";
 import "./MobileBottomNav.css";
 
 function MobileBottomNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const auth = useSelector((state) => state.auth);
+  const { t } = useTranslation();
   const isLoggedIn = !!auth.token;
 
   const currentPath = location.pathname;
@@ -35,7 +37,7 @@ function MobileBottomNav() {
             <div className="nav-icon-bubble">
               <Home size={22} className="nav-icon" />
             </div>
-            <span className="nav-item-label">Home</span>
+            <span className="nav-item-label">{t("nav.home", "Home")}</span>
           </button>
 
           {/* 2. Shopping */}
@@ -48,7 +50,7 @@ function MobileBottomNav() {
             <div className="nav-icon-bubble">
               <ShoppingBag size={22} className="nav-icon" />
             </div>
-            <span className="nav-item-label">Shopping</span>
+            <span className="nav-item-label">{t("nav.shop", "Shop")}</span>
           </button>
 
           {/* 3. AI */}
@@ -56,12 +58,12 @@ function MobileBottomNav() {
             type="button"
             className={`bottom-nav-item ${currentPath === "/recommendations" ? "active" : ""}`}
             onClick={() => navigate("/recommendations")}
-            aria-label="AI"
+            aria-label="AI Picks"
           >
             <div className="nav-icon-bubble">
               <Sparkles size={22} className="nav-icon" />
             </div>
-            <span className="nav-item-label">AI</span>
+            <span className="nav-item-label">{t("nav.aiRecommendations", "AI")}</span>
           </button>
 
           {/* 4. Trade */}
@@ -74,7 +76,7 @@ function MobileBottomNav() {
             <div className="nav-icon-bubble">
               <Repeat size={22} className="nav-icon" />
             </div>
-            <span className="nav-item-label">Trade</span>
+            <span className="nav-item-label">{t("nav.tradeIn", "Trade")}</span>
           </button>
 
           {/* 5. Order */}
@@ -82,12 +84,12 @@ function MobileBottomNav() {
             type="button"
             className={`bottom-nav-item ${currentPath === "/orders" ? "active" : ""}`}
             onClick={() => navigate(isLoggedIn ? "/orders" : "/auth/login")}
-            aria-label="Order"
+            aria-label="Orders"
           >
             <div className="nav-icon-bubble">
               <Clock size={22} className="nav-icon" />
             </div>
-            <span className="nav-item-label">Order</span>
+            <span className="nav-item-label">{t("nav.orders", "Orders")}</span>
           </button>
         </nav>
       </div>

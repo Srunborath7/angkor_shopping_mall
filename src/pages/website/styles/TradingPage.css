@@ -703,3 +703,366 @@
     font-size: 12px;
   }
 }
+
+/* ==========================================================================
+   TRADING PAGE DARK MODE STYLES
+   ========================================================================== */
+
+[data-theme="dark"] .website-trading-page {
+  background-color: #070a12;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .trading-tabs-bar {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .trading-tab-btn {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .trading-tab-btn:hover {
+  color: #f8fafc;
+  background: #1e293b;
+}
+
+[data-theme="dark"] .trading-tab-btn.active {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="dark"] .trading-search-box {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .trading-search-box input {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .trading-select-ctrl {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .trade-card {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .trade-card:hover {
+  background-color: #151f38;
+  border-color: #10b981;
+  box-shadow: 0 16px 32px -6px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .trade-card-media {
+  background-color: #090d16;
+}
+
+[data-theme="dark"] .trade-card-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .trade-value-amount {
+  color: #34d399;
+}
+
+[data-theme="dark"] .trade-preference-box {
+  background: #090d16;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .trade-preference-text {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .trade-seller-info {
+  color: #64748b;
+}
+
+[data-theme="dark"] .btn-make-offer {
+  background: #059669;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .btn-make-offer:hover {
+  background: #10b981;
+}
+
+[data-theme="dark"] .eligible-info-banner {
+  background: linear-gradient(135deg, #064e3b 0%, #042f2e 100%);
+  border-color: #10b981;
+}
+
+[data-theme="dark"] .eligible-item-card {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .eligible-item-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .trade-modal-dialog {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .trade-modal-header {
+  background: #090d16;
+  border-bottom-color: #1e293b;
+}
+
+[data-theme="dark"] .trade-modal-header h3 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .trade-input-group label {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .trade-input-group input,
+[data-theme="dark"] .trade-input-group select,
+[data-theme="dark"] .trade-input-group textarea {
+  background-color: #090d16;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .trade-input-group input:focus,
+[data-theme="dark"] .trade-input-group select:focus,
+[data-theme="dark"] .trade-input-group textarea:focus {
+  border-color: #10b981;
+}
+
+/* Empty State Cards */
+.trading-empty-card {
+  text-align: center;
+  padding: 60px 24px;
+  background: #ffffff;
+  max-width: 580px;
+  margin: 30px auto;
+  border-radius: 20px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.trading-empty-card h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 14px 0 8px;
+}
+
+.trading-empty-card p {
+  color: #64748b;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 24px;
+  max-width: 420px;
+}
+
+.trading-empty-icon {
+  color: #94a3b8;
+  opacity: 0.8;
+}
+
+.trading-loading-box {
+  text-align: center;
+  padding: 60px 20px;
+  color: #64748b;
+}
+
+/* Offers Section */
+.trade-offer-group-card {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+}
+
+.trade-offer-group-title {
+  margin: 0 0 18px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trade-offer-item-card {
+  background: #f8fafc;
+  padding: 14px 16px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.trade-offer-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.trade-offer-item-header strong {
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.trade-offer-status {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.trade-offer-status.accepted {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.trade-offer-status.pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.trade-offer-status.rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.trade-offer-desc {
+  font-size: 13.5px;
+  color: #334155;
+  margin-bottom: 4px;
+}
+
+.trade-offer-cash {
+  font-size: 13px;
+  font-weight: 700;
+  color: #059669;
+  margin-bottom: 4px;
+}
+
+.trade-offer-msg {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: #64748b;
+  font-style: italic;
+  background: rgba(0, 0, 0, 0.02);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.trade-empty-text {
+  color: #94a3b8;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Dark Mode Overrides for Empty State and Offers */
+[data-theme="dark"] .trading-empty-card {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .trading-empty-card h3 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .trading-empty-card p {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .trading-empty-icon {
+  color: #64748b;
+}
+
+[data-theme="dark"] .trade-offer-group-card {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .trade-offer-group-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .trade-offer-item-card {
+  background: #090d16;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .trade-offer-item-header strong {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .trade-offer-desc {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .trade-offer-cash {
+  color: #34d399;
+}
+
+[data-theme="dark"] .trade-offer-msg {
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.btn-modal-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-modal-cancel:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+[data-theme="dark"] .btn-modal-cancel {
+  background: #1e293b;
+  border-color: #334155;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .btn-modal-cancel:hover {
+  background: #334155;
+}
+
+[data-theme="dark"] .btn-hero-secondary {
+  background: #0f172a;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .btn-hero-secondary:hover {
+  background: #1e293b;
+  color: #f8fafc;
+}
