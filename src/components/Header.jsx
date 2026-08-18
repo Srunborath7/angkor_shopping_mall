@@ -200,417 +200,404 @@ function Header() {
     <>
       <header className="home-header">
         <div className="header-container">
-        {/* Logo Section */}
-        <div className="home-logo-brand" onClick={() => navigate("/")}>
-          <span className="home-logo-icon">
-            <img src={logo} alt="AngkorMall Logo" />
-          </span>
-          <span className="auth-logo-text">AngkorMall</span>
-        </div>
+          {/* Logo Section */}
+          <div className="home-logo-brand" onClick={() => navigate("/")}>
+            <span className="home-logo-icon">
+              <img src={logo} alt="AngkorMall Logo" />
+            </span>
+            <span className="auth-logo-text">AngkorMall</span>
+          </div>
 
-        {/* Desktop Navigation */}
-        <nav className="desktop-nav">
-          <span
-            className={`nav-item ${currentPath === "/" ? "active" : ""}`}
-            onClick={() => navigate("/")}
-          >
-            {t("nav.home", "Home")}
-          </span>
-          <span
-            className={`nav-item ${currentPath === "/shop" ? "active" : ""}`}
-            onClick={() => navigate("/shop")}
-          >
-            {t("nav.shop", "Shop")}
-          </span>
-          <span
-            className={`nav-item ai-badge-nav ${currentPath === "/recommendations" ? "active" : ""}`}
-            onClick={() => navigate("/recommendations")}
-          >
-            {t("nav.aiRecommendations", "AI Recommendations")} <Sparkles size={12} className="sparkle-icon" />
-          </span>
-          <span
-            className={`nav-item ${currentPath === "/trading" ? "active" : ""}`}
-            onClick={() => navigate("/trading")}
-          >
-            {t("nav.tradeIn", "Trade & Exchange")}
-          </span>
-          <span
-            className={`nav-item ${currentPath === "/orders" ? "active" : ""}`}
-            onClick={() => navigate("/orders")}
-          >
-            {t("nav.orders", "Orders")}
-          </span>
-        </nav>
-
-        {/* Nav Actions (Wishlist, Cart, Settings, Notifications, Profile) */}
-        <div className="header-actions">
-          {/* User Notification Bell for Support & Admin Replies */}
-          <div className="icon-wrapper notif-icon-wrapper" ref={notifRef}>
-            <div
-              className="notif-trigger-btn"
-              onClick={handleToggleNotifDropdown}
-              title="Support Inquiries & Admin Replies"
-              style={{ cursor: "pointer", display: "flex", alignItems: "center" }}
+          {/* Desktop Navigation */}
+          <nav className="desktop-nav">
+            <span
+              className={`nav-item ${currentPath === "/" ? "active" : ""}`}
+              onClick={() => navigate("/")}
             >
-              <Bell size={20} className={userUnreadRepliesCount > 0 ? "bell-active" : ""} />
-              {userUnreadRepliesCount > 0 && (
-                <span className="action-badge bg-red notif-pulse-badge">{userUnreadRepliesCount}</span>
+              {t("nav.home", "Home")}
+            </span>
+            <span
+              className={`nav-item ${currentPath === "/shop" ? "active" : ""}`}
+              onClick={() => navigate("/shop")}
+            >
+              {t("nav.shop", "Shop")}
+            </span>
+            <span
+              className={`nav-item ai-badge-nav ${currentPath === "/recommendations" ? "active" : ""}`}
+              onClick={() => navigate("/recommendations")}
+            >
+              {t("nav.aiRecommendations", "AI Recommendations")} <Sparkles size={12} className="sparkle-icon" />
+            </span>
+            <span
+              className={`nav-item ${currentPath === "/trading" ? "active" : ""}`}
+              onClick={() => navigate("/trading")}
+            >
+              {t("nav.tradeIn", "Trade & Exchange")}
+            </span>
+            <span
+              className={`nav-item ${currentPath === "/orders" ? "active" : ""}`}
+              onClick={() => navigate("/orders")}
+            >
+              {t("nav.orders", "Orders")}
+            </span>
+          </nav>
+
+          {/* Nav Actions (Wishlist, Cart, Settings, Notifications, Profile) */}
+          <div className="header-actions">
+            {/* User Notification Bell for Support & Admin Replies */}
+            <div className="icon-wrapper notif-icon-wrapper" ref={notifRef}>
+              <div
+                className="notif-trigger-btn"
+                onClick={handleToggleNotifDropdown}
+                title="Support Inquiries & Admin Replies"
+                style={{ cursor: "pointer", display: "flex", alignItems: "center" }}
+              >
+                <Bell size={20} className={userUnreadRepliesCount > 0 ? "bell-active" : ""} />
+                {userUnreadRepliesCount > 0 && (
+                  <span className="action-badge bg-red notif-pulse-badge">{userUnreadRepliesCount}</span>
+                )}
+              </div>
+
+              {/* Customer Notifications Dropdown */}
+              {userNotifOpen && (
+                <div className="user-notif-dropdown">
+                  <div className="user-notif-header">
+                    <div className="user-notif-title">
+                      <MessageSquare size={16} />
+                      <span>{t("nav.support", "Support Messages")}</span>
+                    </div>
+                    {userUnreadRepliesCount > 0 && (
+                      <span className="user-notif-pill">{userUnreadRepliesCount}</span>
+                    )}
+                  </div>
+
+                  <div className="user-notif-list">
+                    {userReplies.length === 0 ? (
+                      <div className="user-notif-empty">
+                        <Headphones size={26} className="text-muted" />
+                        <span>{language === "km" ? "មិនទាន់មានសារសាកសួរនៅឡើយទេ។" : "No support messages yet. Need help? Message admin anytime!"}</span>
+                      </div>
+                    ) : (
+                      userReplies.map((item) => (
+                        <div
+                          key={item.id}
+                          className={`user-notif-item ${item.status === "replied" ? "unread-reply" : ""}`}
+                          onClick={() => {
+                            setUserNotifOpen(false);
+                            window.dispatchEvent(new Event("open-chatbot-tickets"));
+                          }}
+                        >
+                          <div className="user-notif-avatar">
+                            <Headphones size={15} />
+                          </div>
+                          <div className="user-notif-content">
+                            <div className="user-notif-row">
+                              <strong className="user-notif-sender">Admin: {item.subject}</strong>
+                              <span className="user-notif-time">
+                                {item.replied_at
+                                  ? new Date(item.replied_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                                  : "Just now"}
+                              </span>
+                            </div>
+                            <p className="user-notif-snippet">{item.admin_reply}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="user-notif-footer">
+                    <button
+                      type="button"
+                      className="btn-open-chat-support"
+                      onClick={() => {
+                        setUserNotifOpen(false);
+                        window.dispatchEvent(new Event("open-chatbot-tickets"));
+                      }}
+                    >
+                      <Headphones size={13} /> {language === "km" ? "បើកផ្ទាំងសារ Admin" : "Open in Support Assistant"}
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
 
-            {/* Customer Notifications Dropdown */}
-            {userNotifOpen && (
-              <div className="user-notif-dropdown">
-                <div className="user-notif-header">
-                  <div className="user-notif-title">
-                    <MessageSquare size={16} />
-                    <span>{t("nav.support", "Support Messages")}</span>
-                  </div>
-                  {userUnreadRepliesCount > 0 && (
-                    <span className="user-notif-pill">{userUnreadRepliesCount}</span>
-                  )}
-                </div>
-
-                <div className="user-notif-list">
-                  {userReplies.length === 0 ? (
-                    <div className="user-notif-empty">
-                      <Headphones size={26} className="text-muted" />
-                      <span>{language === "km" ? "មិនទាន់មានសារសាកសួរនៅឡើយទេ។" : "No support messages yet. Need help? Message admin anytime!"}</span>
-                    </div>
-                  ) : (
-                    userReplies.map((item) => (
-                      <div
-                        key={item.id}
-                        className={`user-notif-item ${item.status === "replied" ? "unread-reply" : ""}`}
-                        onClick={() => {
-                          setUserNotifOpen(false);
-                          window.dispatchEvent(new Event("open-chatbot-tickets"));
-                        }}
-                      >
-                        <div className="user-notif-avatar">
-                          <Headphones size={15} />
-                        </div>
-                        <div className="user-notif-content">
-                          <div className="user-notif-row">
-                            <strong className="user-notif-sender">Admin: {item.subject}</strong>
-                            <span className="user-notif-time">
-                              {item.replied_at
-                                ? new Date(item.replied_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-                                : "Just now"}
-                            </span>
-                          </div>
-                          <p className="user-notif-snippet">{item.admin_reply}</p>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                <div className="user-notif-footer">
-                  <button
-                    type="button"
-                    className="btn-open-chat-support"
-                    onClick={() => {
-                      setUserNotifOpen(false);
-                      window.dispatchEvent(new Event("open-chatbot-tickets"));
-                    }}
-                  >
-                    <Headphones size={13} /> {language === "km" ? "បើកផ្ទាំងសារ Admin" : "Open in Support Assistant"}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div
-            className="icon-wrapper"
-            onClick={() => navigate("/wishlist")}
-            title="View My Wishlist"
-            style={{ cursor: "pointer" }}
-          >
-            <Heart size={20} className={wishlistCount > 0 ? "heart-active" : ""} />
-            {wishlistCount > 0 && <span className="action-badge bg-red">{wishlistCount}</span>}
-          </div>
-
-          <div
-            className="icon-wrapper"
-            onClick={() => setIsCartOpen(true)}
-            title="View Shopping Cart"
-          >
-            <ShoppingBag size={20} />
-            {cartCount > 0 && <span className="action-badge bg-green">{cartCount}</span>}
-          </div>
-
-          {/* Quick Settings Icon Button */}
-          <div
-            className="icon-wrapper header-settings-trigger"
-            onClick={() => setIsSettingsOpen(true)}
-            title={language === "km" ? "ការកំណត់គេហទំព័រ (ភាសា & ស្បែកពណ៌)" : "Website Settings (Language & Theme)"}
-            style={{ cursor: "pointer" }}
-          >
-            <Settings size={20} />
-          </div>
-
-          {/* Profile Dropdown */}
-          <div className="profile-menu-container">
-            {isLoggedIn ? (
-              <div
-                className="profile-logged-trigger"
-                onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-              >
-                <div className="avatar-circle">
-                  {user?.name ? user.name[0].toUpperCase() : <User size={16} />}
-                </div>
-                <span className="profile-username mobile-hide-username">{user?.name?.split(" ")[0]}</span>
-                <ChevronDown size={14} className={`arrow-icon mobile-hide-arrow ${profileDropdownOpen ? "open" : ""}`} />
-              </div>
-            ) : (
-              <button className="login-trigger-btn" onClick={() => navigate("/auth/login")}>
-                <User size={16} />
-                <span className="mobile-hide-username">{t("nav.login", "Sign In")}</span>
-              </button>
-            )}
-
-            {profileDropdownOpen && isLoggedIn && (
-              <div className="profile-dropdown-card">
-                <div className="dropdown-user-info">
-                  <span className="info-name">{user?.name || "Member User"}</span>
-                  <span className="info-email">{user?.email || ""}</span>
-                  <span className="info-role">{role ? role.toUpperCase() : "CUSTOMER"}</span>
-                </div>
-
-                {(role === "admin" || role === "sale") && (
-                  <button
-                    className="dropdown-item"
-                    onClick={() => {
-                      setProfileDropdownOpen(false);
-                      navigate("/admin/dashboard");
-                    }}
-                  >
-                    <LayoutDashboard size={16} />
-                    <span>{t("nav.dashboard", "Admin Dashboard")}</span>
-                  </button>
-                )}
-
-                {/* Settings Item in Profile Dropdown */}
-                <button
-                  className="dropdown-item"
-                  onClick={() => {
-                    setProfileDropdownOpen(false);
-                    setIsSettingsOpen(true);
-                  }}
-                >
-                  <Settings size={16} />
-                  <span>{language === "km" ? "ការកំណត់គេហទំព័រ" : "Website Settings"}</span>
-                </button>
-
-                <button className="dropdown-item logout-item" onClick={handleLogout}>
-                  <LogOut size={16} />
-                  <span>{t("nav.logout", "Logout")}</span>
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Mobile Menu Toggle */}
-          <button
-            className="mobile-menu-toggle"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle Mobile Navigation Menu"
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Backdrop & Drawer */}
-      {mobileMenuOpen && (
-        <>
-          <div
-            className="mobile-nav-backdrop"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-          <div className="mobile-nav-panel">
-            {/* User Account Brief Card inside Mobile Drawer */}
-            {isLoggedIn && (
-              <div className="mobile-user-card">
-                <div className="avatar-circle">
-                  {user?.name ? user.name[0].toUpperCase() : <User size={16} />}
-                </div>
-                <div className="mobile-user-info">
-                  <span className="info-name">{user?.name || "Member User"}</span>
-                  <span className="info-email">{user?.email || ""}</span>
-                  <span className="info-role-badge">{role ? role.toUpperCase() : "CUSTOMER"}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Mobile Language & Settings Strip */}
-            <div className="mobile-lang-strip">
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span className="mobile-lang-title">
-                  <Globe size={15} /> {t("header.switchLang", "Language")}
-                </span>
-                <button
-                  type="button"
-                  className="btn-quick-settings"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setIsSettingsOpen(true);
-                  }}
-                  style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "#1c7e48", fontWeight: 700, background: "none", border: "none", cursor: "pointer" }}
-                >
-                  <Settings size={12} /> {language === "km" ? "ការកំណត់" : "Settings"}
-                </button>
-              </div>
-              <div className="mobile-lang-btn-group">
-                <button
-                  type="button"
-                  className={`mobile-lang-choice ${language === "km" ? "active" : ""}`}
-                  onClick={() => setLanguage("km")}
-                >
-                  🇰🇭 ភាសាខ្មែរ
-                </button>
-                <button
-                  type="button"
-                  className={`mobile-lang-choice ${language === "en" ? "active" : ""}`}
-                  onClick={() => setLanguage("en")}
-                >
-                  🇺🇸 English
-                </button>
-              </div>
+            <div
+              className="icon-wrapper"
+              onClick={() => navigate("/wishlist")}
+              title="View My Wishlist"
+              style={{ cursor: "pointer" }}
+            >
+              <Heart size={20} className={wishlistCount > 0 ? "heart-active" : ""} />
+              {wishlistCount > 0 && <span className="action-badge bg-red">{wishlistCount}</span>}
             </div>
 
-            <div className="mobile-nav-links-list">
-              <div
-                className={`mobile-nav-item ${currentPath === "/" ? "active" : ""}`}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate("/");
-                }}
-              >
-                <div className="nav-item-left">
-                  <Home size={18} />
-                  <span>{t("nav.home", "Home")}</span>
-                </div>
-                <ChevronRight size={16} className="arrow-dim" />
-              </div>
+            <div
+              className="icon-wrapper"
+              onClick={() => setIsCartOpen(true)}
+              title="View Shopping Cart"
+            >
+              <ShoppingBag size={20} />
+              {cartCount > 0 && <span className="action-badge bg-green">{cartCount}</span>}
+            </div>
 
-              <div
-                className={`mobile-nav-item ${currentPath === "/shop" ? "active" : ""}`}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate("/shop");
-                }}
-              >
-                <div className="nav-item-left">
-                  <ShoppingBag size={18} />
-                  <span>{t("nav.shop", "Shop Catalog")}</span>
-                </div>
-                <ChevronRight size={16} className="arrow-dim" />
-              </div>
+            {/* Quick Settings Icon Button */}
+            <div
+              className="icon-wrapper header-settings-trigger"
+              onClick={() => setIsSettingsOpen(true)}
+              title={language === "km" ? "ការកំណត់គេហទំព័រ (ភាសា & ស្បែកពណ៌)" : "Website Settings (Language & Theme)"}
+              style={{ cursor: "pointer" }}
+            >
+              <Settings size={20} />
+            </div>
 
-              <div
-                className={`mobile-nav-item ai-badge-mobile ${currentPath === "/recommendations" ? "active" : ""}`}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate("/recommendations");
-                }}
-              >
-                <div className="nav-item-left">
-                  <Sparkles size={18} className="text-green-icon" />
-                  <span>{t("nav.aiRecommendations", "AI Recommendations")}</span>
-                </div>
-                <ChevronRight size={16} className="arrow-dim" />
-              </div>
-
-              <div
-                className={`mobile-nav-item ${currentPath === "/trading" ? "active" : ""}`}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate("/trading");
-                }}
-              >
-                <div className="nav-item-left">
-                  <Repeat size={18} />
-                  <span>{t("nav.tradeIn", "Trade & Exchange")}</span>
-                </div>
-                <ChevronRight size={16} className="arrow-dim" />
-              </div>
-
-              <div
-                className={`mobile-nav-item ${currentPath === "/orders" ? "active" : ""}`}
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  navigate("/orders");
-                }}
-              >
-                <div className="nav-item-left">
-                  <ShoppingBag size={18} />
-                  <span>{t("nav.orders", "My Orders")}</span>
-                </div>
-                <ChevronRight size={16} className="arrow-dim" />
-              </div>
-
-              {/* Website Settings Item in Mobile Drawer */}
-              <div
-                className="mobile-nav-item"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  setIsSettingsOpen(true);
-                }}
-              >
-                <div className="nav-item-left">
-                  <Settings size={18} />
-                  <span>{language === "km" ? "ការកំណត់គេហទំព័រ (Settings)" : "Website Settings"}</span>
-                </div>
-                <ChevronRight size={16} className="arrow-dim" />
-              </div>
-
-              {(role === "admin" || role === "sale") && (
+            {/* Profile Dropdown */}
+            <div className="profile-menu-container">
+              {isLoggedIn ? (
                 <div
-                  className="mobile-nav-item admin-link"
+                  className="profile-logged-trigger"
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                >
+                  <div className="avatar-circle">
+                    {user?.name ? user.name[0].toUpperCase() : <User size={16} />}
+                  </div>
+                  <span className="profile-username mobile-hide-username">{user?.name?.split(" ")[0]}</span>
+                  <ChevronDown size={14} className={`arrow-icon mobile-hide-arrow ${profileDropdownOpen ? "open" : ""}`} />
+                </div>
+              ) : (
+                <button className="login-trigger-btn" onClick={() => navigate("/auth/login")}>
+                  <User size={16} />
+                  <span className="mobile-hide-username">{t("nav.login", "Sign In")}</span>
+                </button>
+              )}
+
+              {profileDropdownOpen && isLoggedIn && (
+                <div className="profile-dropdown-card">
+                  <div className="dropdown-user-info">
+                    <span className="info-name">{user?.name || "Member User"}</span>
+                    <span className="info-email">{user?.email || ""}</span>
+                    <span className="info-role">{role ? role.toUpperCase() : "CUSTOMER"}</span>
+                  </div>
+
+                  {(role === "admin" || role === "sale") && (
+                    <button
+                      className="dropdown-item"
+                      onClick={() => {
+                        setProfileDropdownOpen(false);
+                        navigate("/admin/dashboard");
+                      }}
+                    >
+                      <LayoutDashboard size={16} />
+                      <span>{t("nav.dashboard", "Admin Dashboard")}</span>
+                    </button>
+                  )}
+                  <button className="dropdown-item logout-item" onClick={handleLogout}>
+                    <LogOut size={16} />
+                    <span>{t("nav.logout", "Logout")}</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Menu Toggle */}
+            <button
+              className="mobile-menu-toggle"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle Mobile Navigation Menu"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Backdrop & Drawer */}
+        {mobileMenuOpen && (
+          <>
+            <div
+              className="mobile-nav-backdrop"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <div className="mobile-nav-panel">
+              {/* User Account Brief Card inside Mobile Drawer */}
+              {isLoggedIn && (
+                <div className="mobile-user-card">
+                  <div className="avatar-circle">
+                    {user?.name ? user.name[0].toUpperCase() : <User size={16} />}
+                  </div>
+                  <div className="mobile-user-info">
+                    <span className="info-name">{user?.name || "Member User"}</span>
+                    <span className="info-email">{user?.email || ""}</span>
+                    <span className="info-role-badge">{role ? role.toUpperCase() : "CUSTOMER"}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Mobile Language & Settings Strip */}
+              <div className="mobile-lang-strip">
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span className="mobile-lang-title">
+                    <Globe size={15} /> {t("header.switchLang", "Language")}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn-quick-settings"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setIsSettingsOpen(true);
+                    }}
+                    style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "#1c7e48", fontWeight: 700, background: "none", border: "none", cursor: "pointer" }}
+                  >
+                    <Settings size={12} /> {language === "km" ? "ការកំណត់" : "Settings"}
+                  </button>
+                </div>
+                <div className="mobile-lang-btn-group">
+                  <button
+                    type="button"
+                    className={`mobile-lang-choice ${language === "km" ? "active" : ""}`}
+                    onClick={() => setLanguage("km")}
+                  >
+                    🇰🇭 ភាសាខ្មែរ
+                  </button>
+                  <button
+                    type="button"
+                    className={`mobile-lang-choice ${language === "en" ? "active" : ""}`}
+                    onClick={() => setLanguage("en")}
+                  >
+                    🇺🇸 English
+                  </button>
+                </div>
+              </div>
+
+              <div className="mobile-nav-links-list">
+                <div
+                  className={`mobile-nav-item ${currentPath === "/" ? "active" : ""}`}
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    navigate("/admin/dashboard");
+                    navigate("/");
                   }}
                 >
                   <div className="nav-item-left">
-                    <LayoutDashboard size={18} />
-                    <span>{t("nav.dashboard", "Admin Dashboard")}</span>
+                    <Home size={18} />
+                    <span>{t("nav.home", "Home")}</span>
                   </div>
-                  <ChevronRight size={16} />
+                  <ChevronRight size={16} className="arrow-dim" />
                 </div>
-              )}
-            </div>
 
-            {/* Bottom Actions inside Mobile Drawer */}
-            <div className="mobile-drawer-footer">
-              {isLoggedIn ? (
-                <button
-                  className="mobile-logout-btn"
+                <div
+                  className={`mobile-nav-item ${currentPath === "/shop" ? "active" : ""}`}
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    handleLogout();
+                    navigate("/shop");
                   }}
                 >
-                  <LogOut size={16} /> {t("nav.logout", "Logout Account")}
-                </button>
-              ) : (
-                <button
-                  className="mobile-login-btn"
+                  <div className="nav-item-left">
+                    <ShoppingBag size={18} />
+                    <span>{t("nav.shop", "Shop Catalog")}</span>
+                  </div>
+                  <ChevronRight size={16} className="arrow-dim" />
+                </div>
+
+                <div
+                  className={`mobile-nav-item ai-badge-mobile ${currentPath === "/recommendations" ? "active" : ""}`}
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    navigate("/auth/login");
+                    navigate("/recommendations");
                   }}
                 >
-                  <User size={16} /> {t("nav.login", "Sign In / Register")}
-                </button>
-              )}
+                  <div className="nav-item-left">
+                    <Sparkles size={18} className="text-green-icon" />
+                    <span>{t("nav.aiRecommendations", "AI Recommendations")}</span>
+                  </div>
+                  <ChevronRight size={16} className="arrow-dim" />
+                </div>
+
+                <div
+                  className={`mobile-nav-item ${currentPath === "/trading" ? "active" : ""}`}
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate("/trading");
+                  }}
+                >
+                  <div className="nav-item-left">
+                    <Repeat size={18} />
+                    <span>{t("nav.tradeIn", "Trade & Exchange")}</span>
+                  </div>
+                  <ChevronRight size={16} className="arrow-dim" />
+                </div>
+
+                <div
+                  className={`mobile-nav-item ${currentPath === "/orders" ? "active" : ""}`}
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate("/orders");
+                  }}
+                >
+                  <div className="nav-item-left">
+                    <ShoppingBag size={18} />
+                    <span>{t("nav.orders", "My Orders")}</span>
+                  </div>
+                  <ChevronRight size={16} className="arrow-dim" />
+                </div>
+
+                {/* Website Settings Item in Mobile Drawer */}
+                <div
+                  className="mobile-nav-item"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsSettingsOpen(true);
+                  }}
+                >
+                  <div className="nav-item-left">
+                    <Settings size={18} />
+                    <span>{language === "km" ? "ការកំណត់គេហទំព័រ (Settings)" : "Website Settings"}</span>
+                  </div>
+                  <ChevronRight size={16} className="arrow-dim" />
+                </div>
+
+                {(role === "admin" || role === "sale") && (
+                  <div
+                    className="mobile-nav-item admin-link"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate("/admin/dashboard");
+                    }}
+                  >
+                    <div className="nav-item-left">
+                      <LayoutDashboard size={18} />
+                      <span>{t("nav.dashboard", "Admin Dashboard")}</span>
+                    </div>
+                    <ChevronRight size={16} />
+                  </div>
+                )}
+              </div>
+
+              {/* Bottom Actions inside Mobile Drawer */}
+              <div className="mobile-drawer-footer">
+                {isLoggedIn ? (
+                  <button
+                    className="mobile-logout-btn"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      handleLogout();
+                    }}
+                  >
+                    <LogOut size={16} /> {t("nav.logout", "Logout Account")}
+                  </button>
+                ) : (
+                  <button
+                    className="mobile-login-btn"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate("/auth/login");
+                    }}
+                  >
+                    <User size={16} /> {t("nav.login", "Sign In / Register")}
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
       </header>
 
       {/* Render shared Cart slide-out Drawer */}
