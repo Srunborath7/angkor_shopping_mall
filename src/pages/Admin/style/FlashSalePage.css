@@ -23,6 +23,12 @@
   gap: 16px;
   border: 1px solid #e2e8f0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.flash-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
 }
 
 .stat-icon-box {
@@ -177,6 +183,53 @@
   background-color: #ffffff;
   color: #0f172a;
   padding: 8px 12px;
+}
+
+/* ==========================================================================
+   Dark Theme Overrides for Flash Sale Page & KPI Cards
+   ========================================================================== */
+
+[data-theme="dark"] .flash-stat-card {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .flash-stat-card h3 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .flash-stat-card p,
+[data-theme="dark"] .block-cat {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .flash-table-thumb {
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .deal-price {
+  color: #34d399;
+}
+
+[data-theme="dark"] .mini-track {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .status-pill-btn.inactive {
+  background: #1e293b;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .product-form select {
+  background-color: #070a12;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .product-form option {
+  background-color: #0f172a;
+  color: #f8fafc;
 }
 
 @media (max-width: 992px) {

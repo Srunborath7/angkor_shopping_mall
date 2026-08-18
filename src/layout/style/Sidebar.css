@@ -323,6 +323,41 @@
 }
 
 /* ==========================================================================
+   Dark Theme Overrides for Sidebar
+   ========================================================================== */
+
+[data-theme="dark"] .sidebar {
+  background: linear-gradient(180deg, #070a12 0%, #0b0f19 50%, #06080e 100%);
+  border-right: 1px solid #1e293b;
+  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .sidebar-header {
+  background: rgba(0, 0, 0, 0.35);
+  border-bottom-color: #1e293b;
+}
+
+[data-theme="dark"] .menu-link:hover {
+  background: #1e293b;
+  color: #34d399;
+}
+
+[data-theme="dark"] .menu-link.active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(16, 185, 129, 0.35);
+}
+
+[data-theme="dark"] .menu-link.active .menu-icon {
+  color: #ffffff;
+}
+
+[data-theme="dark"] .sidebar-footer {
+  background: rgba(0, 0, 0, 0.4);
+  border-top-color: #1e293b;
+}
+
+/* ==========================================================================
    Responsive Breakpoints
    ========================================================================== */
 

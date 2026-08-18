@@ -10,10 +10,23 @@ import {
   FaChevronDown,
   FaEnvelope,
   FaClock,
-  FaCheckDouble
+  FaCheckDouble,
+  FaCog
 } from "react-icons/fa";
-import { Sparkles, MessageSquare, ExternalLink } from "lucide-react";
+import {
+  Sparkles,
+  MessageSquare,
+  ExternalLink,
+  Sun,
+  Moon,
+  Laptop,
+  Globe,
+  Palette,
+  Check
+} from "lucide-react";
 import Swal from "sweetalert2";
+import { useTheme } from "../context/ThemeContext";
+import { useTranslation } from "../context/LanguageContext";
 import {
   getSupportStatsApi,
   getAdminSupportMessagesApi
@@ -22,12 +35,21 @@ import "./style/Navbar.css";
 
 function Navbar({ setOpen, user, logout }) {
   const navigate = useNavigate();
+  const { theme, setTheme, resolvedTheme, isDark } = useTheme();
+  const { language, setLanguage, isKhmer, t } = useTranslation();
+
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+
   const [unreadCount, setUnreadCount] = useState(0);
   const [recentInquiries, setRecentInquiries] = useState([]);
+
   const dropdownRef = useRef(null);
   const notifRef = useRef(null);
+  const themeRef = useRef(null);
+  const langRef = useRef(null);
 
   // Fetch real unread customer message count & recent notifications
   const fetchNotifications = async () => {
@@ -62,6 +84,12 @@ function Navbar({ setOpen, user, logout }) {
       if (notifRef.current && !notifRef.current.contains(event.target)) {
         setNotifOpen(false);
       }
+      if (themeRef.current && !themeRef.current.contains(event.target)) {
+        setThemeDropdownOpen(false);
+      }
+      if (langRef.current && !langRef.current.contains(event.target)) {
+        setLangDropdownOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -73,14 +101,14 @@ function Navbar({ setOpen, user, logout }) {
   const handleLogout = () => {
     setDropdownOpen(false);
     Swal.fire({
-      title: "Logout?",
-      text: "Are you sure you want to logout?",
+      title: isKhmer ? "ចាកចេញពីប្រព័ន្ធ?" : "Logout?",
+      text: isKhmer ? "តើអ្នកពិតជាចង់ចាកចេញពីផ្ទាំងគ្រប់គ្រង Admin មែនទេ?" : "Are you sure you want to logout from Admin Panel?",
       icon: "question",
       showCancelButton: true,
       confirmButtonColor: "#1c7e48",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, Logout",
-      cancelButtonText: "Cancel",
+      confirmButtonText: isKhmer ? "បាទ/ចាស ចាកចេញ" : "Yes, Logout",
+      cancelButtonText: isKhmer ? "បោះបង់" : "Cancel",
       reverseButtons: true,
     }).then((result) => {
       if (result.isConfirmed) {
@@ -94,6 +122,24 @@ function Navbar({ setOpen, user, logout }) {
     navigate("/admin/messages");
   };
 
+  // Quick toggle theme between Light & Dark
+  const handleQuickThemeToggle = (e) => {
+    e.stopPropagation();
+    if (theme === "dark") {
+      setTheme("light");
+    } else if (theme === "light") {
+      setTheme("dark");
+    } else {
+      setTheme(resolvedTheme === "dark" ? "light" : "dark");
+    }
+  };
+
+  // Quick toggle language
+  const handleQuickLangToggle = (e) => {
+    e.stopPropagation();
+    setLanguage(language === "km" ? "en" : "km");
+  };
+
   return (
     <header className="navbar container px-4">
       <button className="menu-button" onClick={() => setOpen(true)} aria-label="Open Sidebar">
@@ -102,10 +148,153 @@ function Navbar({ setOpen, user, logout }) {
 
       <div className="search-box">
         <FaSearch />
-        <input type="text" placeholder="Search products, orders, customers..." />
+        <input
+          type="text"
+          placeholder={isKhmer ? "ស្វែងរកផលិតផល ការបញ្ជាទិញ អតិថិជន..." : "Search products, orders, customers..."}
+        />
       </div>
 
       <div className="navbar-right">
+        {/* Language Switcher Dropdown / Quick Toggle */}
+        <div className="nav-control-wrapper" ref={langRef}>
+          <button
+            type="button"
+            className="navbar-lang-pill-btn"
+            onClick={() => setLangDropdownOpen(!langDropdownOpen)}
+            title={isKhmer ? "ប្តូរភាសា / Change Language" : "Change Language"}
+          >
+            <span className="lang-flag">{language === "km" ? "🇰🇭" : "🇺🇸"}</span>
+            <span className="lang-code">{language === "km" ? "ខ្មែរ" : "EN"}</span>
+            <FaChevronDown size={10} className={`control-chevron ${langDropdownOpen ? "open" : ""}`} />
+          </button>
+
+          {langDropdownOpen && (
+            <div className="nav-dropdown-menu lang-dropdown-card">
+              <div className="dropdown-menu-header">
+                <Globe size={14} />
+                <span>{isKhmer ? "ជ្រើសរើសភាសា" : "Select Language"}</span>
+              </div>
+              <button
+                type="button"
+                className={`dropdown-menu-item ${language === "km" ? "active" : ""}`}
+                onClick={() => {
+                  setLanguage("km");
+                  setLangDropdownOpen(false);
+                }}
+              >
+                <div className="menu-item-left">
+                  <span className="item-flag">🇰🇭</span>
+                  <div className="item-labels">
+                    <strong>ភាសាខ្មែរ (Khmer)</strong>
+                    <small>Native Khmer display</small>
+                  </div>
+                </div>
+                {language === "km" && <Check size={14} className="item-check" />}
+              </button>
+
+              <button
+                type="button"
+                className={`dropdown-menu-item ${language === "en" ? "active" : ""}`}
+                onClick={() => {
+                  setLanguage("en");
+                  setLangDropdownOpen(false);
+                }}
+              >
+                <div className="menu-item-left">
+                  <span className="item-flag">🇺🇸</span>
+                  <div className="item-labels">
+                    <strong>English (US)</strong>
+                    <small>International English</small>
+                  </div>
+                </div>
+                {language === "en" && <Check size={14} className="item-check" />}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Theme Switcher Dropdown */}
+        <div className="nav-control-wrapper" ref={themeRef}>
+          <button
+            type="button"
+            className={`navbar-theme-btn ${isDark ? "is-dark" : "is-light"}`}
+            onClick={() => setThemeDropdownOpen(!themeDropdownOpen)}
+            title={isKhmer ? `ស្បែកពណ៌ (${theme}) - ចុចដើម្បីប្តូរ` : `Theme: ${theme} - Click to switch`}
+            aria-label="Theme mode"
+          >
+            {theme === "dark" ? (
+              <Moon size={17} className="theme-nav-icon dark" />
+            ) : theme === "light" ? (
+              <Sun size={17} className="theme-nav-icon light" />
+            ) : (
+              <Laptop size={17} className="theme-nav-icon system" />
+            )}
+          </button>
+
+          {themeDropdownOpen && (
+            <div className="nav-dropdown-menu theme-dropdown-card">
+              <div className="dropdown-menu-header">
+                <Palette size={14} />
+                <span>{isKhmer ? "ស្បែកពណ៌ (Theme Mode)" : "Theme Mode"}</span>
+              </div>
+
+              <button
+                type="button"
+                className={`dropdown-menu-item ${theme === "light" ? "active" : ""}`}
+                onClick={() => {
+                  setTheme("light");
+                  setThemeDropdownOpen(false);
+                }}
+              >
+                <div className="menu-item-left">
+                  <span className="item-theme-icon light"><Sun size={15} /></span>
+                  <div className="item-labels">
+                    <strong>{isKhmer ? "ពន្លឺ (Light)" : "Light Mode"}</strong>
+                    <small>{isKhmer ? "ផ្ទៃសភ្លឺច្បាស់" : "Bright clean UI"}</small>
+                  </div>
+                </div>
+                {theme === "light" && <Check size={14} className="item-check" />}
+              </button>
+
+              <button
+                type="button"
+                className={`dropdown-menu-item ${theme === "dark" ? "active" : ""}`}
+                onClick={() => {
+                  setTheme("dark");
+                  setThemeDropdownOpen(false);
+                }}
+              >
+                <div className="menu-item-left">
+                  <span className="item-theme-icon dark"><Moon size={15} /></span>
+                  <div className="item-labels">
+                    <strong>{isKhmer ? "ងងឹត (Dark)" : "Dark Mode"}</strong>
+                    <small>{isKhmer ? "ផ្ទៃខ្មៅប្រណិត" : "Luxury dark UI"}</small>
+                  </div>
+                </div>
+                {theme === "dark" && <Check size={14} className="item-check" />}
+              </button>
+
+              <button
+                type="button"
+                className={`dropdown-menu-item ${theme === "system" ? "active" : ""}`}
+                onClick={() => {
+                  setTheme("system");
+                  setThemeDropdownOpen(false);
+                }}
+              >
+                <div className="menu-item-left">
+                  <span className="item-theme-icon system"><Laptop size={15} /></span>
+                  <div className="item-labels">
+                    <strong>{isKhmer ? "តាមឧបករណ៍ (System)" : "System Default"}</strong>
+                    <small>{isKhmer ? "ស្វ័យប្រវត្តិ" : "Auto match OS"}</small>
+                  </div>
+                </div>
+                {theme === "system" && <Check size={14} className="item-check" />}
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Live Notification Bell Wrapper */}
         <div className="notification-wrapper" ref={notifRef}>
           <button
@@ -124,16 +313,16 @@ function Navbar({ setOpen, user, logout }) {
               <div className="notif-dropdown-header">
                 <div className="notif-header-title">
                   <MessageSquare size={16} />
-                  <span>Customer Inquiries</span>
+                  <span>{isKhmer ? "សារពីអតិថិជន" : "Customer Inquiries"}</span>
                 </div>
-                {unreadCount > 0 && <span className="notif-unread-pill">{unreadCount} New</span>}
+                {unreadCount > 0 && <span className="notif-unread-pill">{unreadCount} {isKhmer ? "ថ្មី" : "New"}</span>}
               </div>
 
               <div className="notif-dropdown-list">
                 {recentInquiries.length === 0 ? (
                   <div className="notif-empty-state">
                     <FaCheckDouble size={22} className="text-muted" />
-                    <span>All caught up! No recent messages.</span>
+                    <span>{isKhmer ? "គ្មានសារថ្មីដែលមិនទាន់អាននោះទេ!" : "All caught up! No recent messages."}</span>
                   </div>
                 ) : (
                   recentInquiries.map((msg) => (
@@ -166,7 +355,7 @@ function Navbar({ setOpen, user, logout }) {
 
               <div className="notif-dropdown-footer">
                 <button type="button" className="btn-view-all-notifs" onClick={handleOpenMessages}>
-                  <span>View All Inquiries in Inbox</span>
+                  <span>{isKhmer ? "មើលសារទាំងអស់ក្នុងប្រអប់ទទួល" : "View All Inquiries in Inbox"}</span>
                   <ExternalLink size={13} />
                 </button>
               </div>
@@ -207,7 +396,18 @@ function Navbar({ setOpen, user, logout }) {
                 }}
               >
                 <FaStore className="dropdown-icon" />
-                <span>Go to E-commerce</span>
+                <span>{isKhmer ? "ទៅកាន់គេហទំព័រទិញទំនិញ" : "Go to E-commerce"}</span>
+              </button>
+
+              <button
+                className="dropdown-item"
+                onClick={() => {
+                  setDropdownOpen(false);
+                  navigate("/admin/settings");
+                }}
+              >
+                <FaCog className="dropdown-icon" />
+                <span>{isKhmer ? "ការកំណត់ Admin Settings" : "Admin Settings"}</span>
               </button>
 
               <button
@@ -218,20 +418,20 @@ function Navbar({ setOpen, user, logout }) {
                 }}
               >
                 <FaEnvelope className="dropdown-icon" />
-                <span>Customer Messages</span>
+                <span>{isKhmer ? "សារពីអតិថិជន" : "Customer Messages"}</span>
               </button>
 
               <button className="dropdown-item logout-item" onClick={handleLogout}>
                 <FaSignOutAlt className="dropdown-icon" />
-                <span>Logout</span>
+                <span>{isKhmer ? "ចាកចេញពីប្រព័ន្ធ" : "Logout"}</span>
               </button>
             </div>
           )}
         </div>
 
-        <button className="logout" onClick={handleLogout} title="Logout">
+        <button className="logout" onClick={handleLogout} title={isKhmer ? "ចាកចេញ" : "Logout"}>
           <FaSignOutAlt className="logout-icon" />
-          <span className="logout-text">Logout</span>
+          <span className="logout-text">{isKhmer ? "ចាកចេញ" : "Logout"}</span>
         </button>
       </div>
     </header>

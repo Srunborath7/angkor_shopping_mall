@@ -654,6 +654,179 @@
   cursor: not-allowed;
 }
 
+/* ==========================================================================
+   Dark Theme Overrides for Messages Page
+   ========================================================================== */
+
+[data-theme="dark"] .messages-title-block h1 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .messages-title-block p {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .inbox-container {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .inbox-list-pane {
+  background: #090d16;
+  border-right-color: #1e293b;
+}
+
+[data-theme="dark"] .inbox-search-bar {
+  background: #090d16;
+  border-bottom-color: #1e293b;
+}
+
+[data-theme="dark"] .search-input-wrap {
+  background: #070a12;
+  border: 1px solid #1e293b;
+}
+
+[data-theme="dark"] .search-input-wrap input {
+  background: transparent !important;
+  color: #f8fafc !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+[data-theme="dark"] .status-tabs {
+  background: #070a12;
+}
+
+[data-theme="dark"] .status-tab {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .status-tab.active {
+  background: #1e293b;
+  color: #34d399;
+}
+
+[data-theme="dark"] .message-item-card {
+  background: #090d16;
+  border-bottom-color: #1e293b;
+}
+
+[data-theme="dark"] .message-item-card:hover {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .message-item-card.selected {
+  background: #1e293b;
+  border-left-color: #10b981;
+}
+
+[data-theme="dark"] .message-item-card.unread {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+[data-theme="dark"] .item-name {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .item-subject {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .item-preview {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .inbox-detail-pane {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .detail-header {
+  background: #090d16;
+  border-bottom-color: #1e293b;
+}
+
+[data-theme="dark"] .detail-customer-meta h3 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .inquiry-bubble-card {
+  background: #070a12;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .inquiry-bubble-card h4 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .inquiry-text,
+[data-theme="dark"] .bubble-text {
+  color: #e2e8f0;
+}
+
+/* AI Assistant Card Dark Theme */
+[data-theme="dark"] .ai-assistant-card {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(6, 78, 59, 0.25) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 14px;
+}
+
+[data-theme="dark"] .ai-badge {
+  background: rgba(16, 185, 129, 0.25);
+  color: #34d399;
+}
+
+[data-theme="dark"] .ai-draft-content {
+  background: #070a12;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .btn-regen-draft {
+  background: #090d16;
+  border-color: #1e293b;
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .btn-regen-draft:hover {
+  background: #1e293b;
+  color: #93c5fd;
+}
+
+[data-theme="dark"] .replied-message-card {
+  background: rgba(37, 99, 235, 0.12);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+[data-theme="dark"] .replied-header {
+  color: #60a5fa;
+}
+
+[data-theme="dark"] .replied-content {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .reply-composer-card {
+  background: #090d16;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .reply-composer-card h4 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .reply-textarea {
+  background: #070a12;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .reply-textarea:focus {
+  border-color: #10b981;
+  background: #070a12;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .inbox-container {
@@ -665,3 +838,6 @@
     height: 380px;
   }
 }
+
+
+

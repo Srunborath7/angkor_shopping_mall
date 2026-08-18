@@ -222,43 +222,43 @@ function MessagesPage() {
 
       {/* Stats Cards */}
       <div className="messages-stats-grid">
-        <div className="stat-card">
-          <div className="stat-icon-wrap total">
-            <Inbox size={22} />
-          </div>
+        <div className="stat-card total-status">
           <div className="stat-info">
-            <span className="stat-value">{stats.total}</span>
-            <span className="stat-label">Total Messages</span>
+            <p>Total Messages</p>
+            <h1>{stats.total}</h1>
+          </div>
+          <div className="icon-box">
+            <Inbox size={20} />
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-icon-wrap unread">
-            <AlertCircle size={22} />
-          </div>
+        <div className="stat-card inactive-status">
           <div className="stat-info">
-            <span className="stat-value">{stats.unread}</span>
-            <span className="stat-label">Unread Inquiries</span>
+            <p>Unread Inquiries</p>
+            <h1>{stats.unread}</h1>
+          </div>
+          <div className="icon-box">
+            <AlertCircle size={20} />
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-icon-wrap progress">
-            <Clock size={22} />
-          </div>
+        <div className="stat-card stock-warning">
           <div className="stat-info">
-            <span className="stat-value">{stats.in_progress}</span>
-            <span className="stat-label">In Progress</span>
+            <p>In Progress</p>
+            <h1>{stats.in_progress}</h1>
+          </div>
+          <div className="icon-box">
+            <Clock size={20} />
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-icon-wrap replied">
-            <CheckCircle2 size={22} />
-          </div>
+        <div className="stat-card active-status">
           <div className="stat-info">
-            <span className="stat-value">{stats.replied}</span>
-            <span className="stat-label">Replied</span>
+            <p>Replied</p>
+            <h1>{stats.replied}</h1>
+          </div>
+          <div className="icon-box">
+            <CheckCircle2 size={20} />
           </div>
         </div>
       </div>

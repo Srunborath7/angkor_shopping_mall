@@ -654,6 +654,139 @@
   color: #0f172a;
 }
 
+/* ==========================================================================
+   Dark Theme Overrides for Dashboard
+   ========================================================================== */
+
+[data-theme="dark"] .dashboard-header-bar h1,
+[data-theme="dark"] .stat-value,
+[data-theme="dark"] .section-title,
+[data-theme="dark"] .product-name,
+[data-theme="dark"] .customer-name,
+[data-theme="dark"] .info-value,
+[data-theme="dark"] .panel-header-row h3,
+[data-theme="dark"] .prod-name,
+[data-theme="dark"] .cust-name,
+[data-theme="dark"] .amount-text,
+[data-theme="dark"] .stat-card-body h2 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .dashboard-card,
+[data-theme="dark"] .order-mobile-card,
+[data-theme="dark"] .panel,
+[data-theme="dark"] .chart-panel,
+[data-theme="dark"] .top-products-panel,
+[data-theme="dark"] .orders-table-panel {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .stat-card:hover {
+  border-color: #10b981;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .time-filter-dropdown,
+[data-theme="dark"] .sync-data-btn {
+  background: #090d16;
+  border-color: #1e293b;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .time-filter-dropdown select {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .time-filter-dropdown select option {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .top-product-item {
+  background: #090d16;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .top-product-item:hover {
+  background: #1e293b;
+  border-color: #34d399;
+}
+
+[data-theme="dark"] .order-filter-tabs {
+  background: #090d16;
+  border: 1px solid #1e293b;
+}
+
+[data-theme="dark"] .tab-btn {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .tab-btn.active {
+  background: #1e293b;
+  color: #34d399;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .desktop-table th {
+  background: #090d16;
+  border-bottom-color: #1e293b;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .desktop-table td {
+  border-bottom-color: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .desktop-table tbody tr:hover td {
+  background-color: #1e293b;
+}
+
+[data-theme="dark"] .chart-container {
+  border-bottom-color: #1e293b;
+}
+
+[data-theme="dark"] .bar-val {
+  color: #34d399;
+}
+
+[data-theme="dark"] .bar-label,
+[data-theme="dark"] .prod-cat,
+[data-theme="dark"] .cust-email,
+[data-theme="dark"] .date-text,
+[data-theme="dark"] .payment-cell,
+[data-theme="dark"] .stat-title,
+[data-theme="dark"] .stat-comparison,
+[data-theme="dark"] .dashboard-header-bar p,
+[data-theme="dark"] .section-subtitle,
+[data-theme="dark"] .panel-header-row p,
+[data-theme="dark"] .legend-item,
+[data-theme="dark"] .info-label,
+[data-theme="dark"] .stat-card-body small {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .prod-cell {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .prod-revenue {
+  color: #34d399;
+}
+
+[data-theme="dark"] .progress-track {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .kanban-card,
+[data-theme="dark"] .order-card {
+  background: #090d16;
+  border-color: #1e293b;
+}
+
 /* Responsive Breakpoints */
 @media (max-width: 1200px) {
   .stats-grid {

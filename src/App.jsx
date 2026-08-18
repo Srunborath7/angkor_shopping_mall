@@ -27,6 +27,7 @@ import AdminOrderPage from "./pages/Admin/OrderPage";
 import FlashSalePage from "./pages/Admin/FlashSalePage";
 import SettingsPage from "./pages/Admin/SettingsPage";
 import MessagesPage from "./pages/Admin/MessagesPage";
+import ReportsPage from "./pages/Admin/ReportsPage";
 import ChatBot from "./components/ChatBot";
 
 function App() {
@@ -60,6 +61,7 @@ function App() {
               <Route path="purchases" element={<PurchasePage />} />
               <Route path="orders" element={<AdminOrderPage />} />
               <Route path="messages" element={<MessagesPage />} />
+              <Route path="reports" element={<ReportsPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
           </Route>

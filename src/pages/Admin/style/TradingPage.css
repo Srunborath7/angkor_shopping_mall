@@ -170,6 +170,65 @@
   align-items: center;
 }
 
+/* ==========================================================================
+   Dark Theme Overrides for Trading Page
+   ========================================================================== */
+
+[data-theme="dark"] .trading-stat-card {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .trading-stat-card h3 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .trading-stat-card p {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .trading-filter-bar {
+  background: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .trading-filter-select {
+  background-color: #070a12;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .trading-filter-select option {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .store-verified-banner {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #059669;
+}
+
+[data-theme="dark"] .member-listing-pill {
+  background: #1e293b;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .trade-thumb,
+[data-theme="dark"] .trade-gallery-item {
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .offers-section {
+  border-top-color: #1e293b;
+}
+
+[data-theme="dark"] .offer-card {
+  background: #070a12;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
 @media (max-width: 992px) {
   .trading-stats-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -181,3 +240,4 @@
     grid-template-columns: 1fr;
   }
 }
+

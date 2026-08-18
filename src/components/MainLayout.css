@@ -1,78 +1,67 @@
-.layout{
-
-    display:flex;
-
-    min-height:100vh;
-
-    background:#f5f7fb;
-
+.layout {
+    display: flex;
+    min-height: 100vh;
+    background: #f5f7fb;
+    transition: background 0.3s ease;
 }
-.main-header{
-    position:fixed !important;
-    top:0;
-    left:270px;
-    width:calc(100% - 270px);
+
+.main-header {
+    position: fixed !important;
+    top: 0;
+    left: 270px;
+    width: calc(100% - 270px);
     display: flex;
     justify-content: center;
     z-index: 900;
     padding: 15px 25px 5px 25px;
-    background:#f5f7fb;
-    transition: .3s;
+    background: #f5f7fb;
+    transition: all 0.3s ease;
 }
-.main-content{
-    flex:1;
-    margin-left:270px;
-    width:calc(100% - 270px);
-    transition:.3s;
+
+.main-content {
+    flex: 1;
+    margin-left: 270px;
+    width: calc(100% - 270px);
+    transition: 0.3s;
     display: flex;
     flex-direction: column;
 }
 
-
-
-.page-content{
-
-    padding:25px;
+.page-content {
+    padding: 25px;
     margin-top: 95px;
     flex: 1;
-
 }
 
+/* ==========================================================================
+   Dark Theme Overrides for Admin Layout
+   ========================================================================== */
 
+[data-theme="dark"] .layout,
+body.dark-theme .layout {
+    background: #070a12;
+}
 
-
+[data-theme="dark"] .main-header,
+body.dark-theme .main-header {
+    background: #070a12;
+}
 
 /* Tablet + Mobile */
-
-@media(max-width:992px){
-
-    .main-header{
-        left:0;
-        width:100%;
+@media(max-width:992px) {
+    .main-header {
+        left: 0;
+        width: 100%;
         padding: 10px 15px 5px 15px;
     }
 
-    .main-content{
-
-
-        margin-left:0;
-
-
-        width:100%;
-
-
+    .main-content {
+        margin-left: 0;
+        width: 100%;
     }
 
-
-
-    .page-content{
-
-
-        padding:15px;
+    .page-content {
+        padding: 15px;
         margin-top: 85px;
-
-
     }
-
-
 }

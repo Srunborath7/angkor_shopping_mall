@@ -20,9 +20,20 @@ import {
   Sliders,
   DollarSign,
   Send,
-  X
+  X,
+  Sun,
+  Moon,
+  Laptop,
+  Palette,
+  Check,
+  Sparkles,
+  Eye,
+  Layers,
+  Volume2
 } from "lucide-react";
 import Swal from "sweetalert2";
+import { useTheme } from "../../context/ThemeContext";
+import { useTranslation } from "../../context/LanguageContext";
 import "./style/SettingsPage.css";
 
 // 1. Initial Permission Modules Configuration
@@ -76,6 +87,12 @@ const PERMISSION_MODULES = [
     actions: ["view", "edit", "ban"]
   },
   {
+    id: "reports",
+    name: "Reports & Business Intelligence",
+    desc: "Export financial statements, profit margins, sales trends",
+    actions: ["view", "export"]
+  },
+  {
     id: "settings",
     name: "System Settings & RBAC",
     desc: "Store config, payment keys, security, role permissions",
@@ -100,6 +117,7 @@ const DEFAULT_ROLES = [
       inventory: ["view", "adjust", "reorder"],
       suppliers: ["view", "create", "edit", "delete"],
       customers: ["view", "edit", "ban"],
+      reports: ["view", "export"],
       settings: ["view", "edit"]
     }
   },
@@ -118,6 +136,7 @@ const DEFAULT_ROLES = [
       inventory: ["view", "adjust", "reorder"],
       suppliers: ["view", "create"],
       customers: ["view", "edit"],
+      reports: ["view", "export"],
       settings: ["view"]
     }
   },
@@ -136,6 +155,7 @@ const DEFAULT_ROLES = [
       inventory: ["view"],
       suppliers: ["view"],
       customers: ["view"],
+      reports: ["view"],
       settings: []
     }
   },
@@ -154,6 +174,7 @@ const DEFAULT_ROLES = [
       inventory: ["view", "adjust", "reorder"],
       suppliers: ["view", "create"],
       customers: [],
+      reports: ["view"],
       settings: []
     }
   },
@@ -172,6 +193,7 @@ const DEFAULT_ROLES = [
       inventory: ["view"],
       suppliers: [],
       customers: ["view"],
+      reports: [],
       settings: []
     }
   }
@@ -188,6 +210,12 @@ const DEFAULT_STAFF = [
 
 // 4. Default Store & System Settings
 const DEFAULT_SYSTEM_SETTINGS = {
+  // Appearance & Display Defaults
+  defaultStoreLanguage: "km",
+  defaultStoreTheme: "system",
+  enableAiVoiceLocalization: true,
+  autoDetectUserLocale: true,
+
   // Store Profile
   storeName: "Angkor Shopping Mall",
   storeTagline: "Cambodia's Leading Tech & Lifestyle Destination",
@@ -227,7 +255,10 @@ const DEFAULT_SYSTEM_SETTINGS = {
 };
 
 function SettingsPage() {
-  const [activeTab, setActiveTab] = useState("roles_permissions");
+  const { theme, setTheme, resolvedTheme, isDark } = useTheme();
+  const { language, setLanguage, isKhmer, t } = useTranslation();
+
+  const [activeTab, setActiveTab] = useState("appearance_language");
 
   // State Management with LocalStorage Fallback
   const [roles, setRoles] = useState(() => {
@@ -278,8 +309,10 @@ function SettingsPage() {
 
       Swal.fire({
         icon: "success",
-        title: "Settings Saved!",
-        text: "System configurations, RBAC permissions, and staff credentials have been updated.",
+        title: isKhmer ? "បានរក្សាទុកជោគជ័យ!" : "Settings Saved!",
+        text: isKhmer
+          ? "ការកំណត់រូបរាង ភាសា សិទ្ធិបុគ្គលិក និងព័ត៌មានទូទៅត្រូវបានធ្វើបច្ចុប្បន្នភាព។"
+          : "Appearance, language, RBAC permissions, and store configurations have been updated.",
         timer: 2000,
         showConfirmButton: false,
         confirmButtonColor: "#166534"
@@ -291,15 +324,20 @@ function SettingsPage() {
 
   const handleResetDefaults = () => {
     Swal.fire({
-      title: "Reset to System Defaults?",
-      text: "This will restore all default roles, permissions, and system configurations.",
+      title: isKhmer ? "កំណត់ឡើងវិញដូចដើម?" : "Reset to System Defaults?",
+      text: isKhmer
+        ? "វានឹងស្ដារការកំណត់រូបរាង ភាសា តួនាទី និងប្រព័ន្ធទាំងអស់ទៅកាន់លំនាំដើមវិញ។"
+        : "This will restore all default appearances, roles, permissions, and system configurations.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#dc2626",
       cancelButtonColor: "#64748b",
-      confirmButtonText: "Yes, Reset"
+      confirmButtonText: isKhmer ? "បាទ/ចាស កំណត់ឡើងវិញ" : "Yes, Reset",
+      cancelButtonText: isKhmer ? "បោះបង់" : "Cancel"
     }).then((res) => {
       if (res.isConfirmed) {
+        setTheme("system");
+        setLanguage("km");
         setRoles(DEFAULT_ROLES);
         setStaff(DEFAULT_STAFF);
         setSettings(DEFAULT_SYSTEM_SETTINGS);
@@ -309,7 +347,11 @@ function SettingsPage() {
         localStorage.removeItem("angkor_admin_staff_v1");
         localStorage.removeItem("angkor_admin_settings_v1");
 
-        Swal.fire("Reset Completed", "Default configuration restored.", "success");
+        Swal.fire(
+          isKhmer ? "បានស្ដាររួចរាល់" : "Reset Completed",
+          isKhmer ? "ការកំណត់លំនាំដើមត្រូវបានស្ដារជោគជ័យ។" : "Default configuration restored.",
+          "success"
+        );
       }
     });
   };
@@ -317,7 +359,13 @@ function SettingsPage() {
   // Toggle single action permission
   const handleTogglePermission = (moduleId, action) => {
     if (selectedRoleId === "super_admin") {
-      Swal.fire("Notice", "Super Administrator holds permanent full system permissions.", "info");
+      Swal.fire(
+        isKhmer ? "ដំណឹង" : "Notice",
+        isKhmer
+          ? "Super Administrator មានសិទ្ធិពេញលេញលើគ្រប់ផ្នែកទាំងអស់នៃប្រព័ន្ធជាអចិន្ត្រៃយ៍។"
+          : "Super Administrator holds permanent full system permissions.",
+        "info"
+      );
       return;
     }
 
@@ -424,7 +472,6 @@ function SettingsPage() {
     const roleName = matchedRole ? matchedRole.name : "Custom Role";
 
     if (selectedStaff) {
-      // Edit
       setStaff((prev) =>
         prev.map((s) =>
           s.id === selectedStaff.id
@@ -434,7 +481,6 @@ function SettingsPage() {
       );
       Swal.fire("Staff Updated", "User permissions refreshed.", "success");
     } else {
-      // Create
       const newMember = {
         id: Date.now(),
         name: staffForm.name,
@@ -460,82 +506,472 @@ function SettingsPage() {
             <Sliders size={26} />
           </div>
           <div>
-            <h1>Admin Settings & RBAC Control</h1>
-            <p>Configure role-based access permissions, payment gateways, store profile, and security preferences.</p>
+            <h1>{isKhmer ? "ការកំណត់ប្រព័ន្ធ & សិទ្ធិគ្រប់គ្រង Admin" : "Admin Settings & RBAC Control"}</h1>
+            <p>
+              {isKhmer
+                ? "កំណត់រូបរាង ស្បែកពណ៌ ភាសា សិទ្ធិតួនាទីបុគ្គលិក ធនាគារទូទាត់ និងសុវត្ថិភាពទូទៅនៃប្រព័ន្ធ។"
+                : "Configure appearance theme, language, role-based access permissions, payment gateways, and security preferences."}
+            </p>
           </div>
         </div>
 
         <div className="settings-header-actions">
           <button type="button" className="btn-outline-secondary" onClick={handleResetDefaults}>
             <RotateCcw size={15} />
-            <span>Reset Defaults</span>
+            <span>{isKhmer ? "កំណត់ដើមឡើងវិញ" : "Reset Defaults"}</span>
           </button>
           <button type="button" className="btn-save-primary" onClick={handleSaveAll}>
             <Save size={16} />
-            <span>Save All Changes</span>
+            <span>{isKhmer ? "រក្សាទុកការផ្លាស់ប្តូរ" : "Save All Changes"}</span>
           </button>
         </div>
       </div>
 
       {/* Tabs Navigation */}
       <div className="settings-tabs-nav">
+        {/* Tab 1: Theme & Language */}
+        <button
+          type="button"
+          className={`settings-tab-btn ${activeTab === "appearance_language" ? "active" : ""}`}
+          onClick={() => setActiveTab("appearance_language")}
+        >
+          <Palette size={16} />
+          <span>{isKhmer ? "រូបរាង & ភាសា" : "Theme & Language"}</span>
+          <span className="tab-pill-badge">{language === "km" ? "🇰🇭 KM" : "🇺🇸 EN"}</span>
+        </button>
+
+        {/* Tab 2: Roles & Permissions */}
         <button
           type="button"
           className={`settings-tab-btn ${activeTab === "roles_permissions" ? "active" : ""}`}
           onClick={() => setActiveTab("roles_permissions")}
         >
           <Shield size={16} />
-          <span>Roles & RBAC Matrix</span>
+          <span>{isKhmer ? "តួនាទី & សិទ្ធិ (RBAC)" : "Roles & RBAC Matrix"}</span>
         </button>
 
+        {/* Tab 3: Staff Users */}
         <button
           type="button"
           className={`settings-tab-btn ${activeTab === "staff_users" ? "active" : ""}`}
           onClick={() => setActiveTab("staff_users")}
         >
           <Users size={16} />
-          <span>Staff Directory ({staff.length})</span>
+          <span>{isKhmer ? `បញ្ជីបុគ្គលិក (${staff.length})` : `Staff Directory (${staff.length})`}</span>
         </button>
 
+        {/* Tab 4: Store Profile */}
         <button
           type="button"
           className={`settings-tab-btn ${activeTab === "general" ? "active" : ""}`}
           onClick={() => setActiveTab("general")}
         >
           <Store size={16} />
-          <span>Store & Mall Profile</span>
+          <span>{isKhmer ? "ព័ត៌មានទូទៅហាង" : "Store & Mall Profile"}</span>
         </button>
 
+        {/* Tab 5: Payments */}
         <button
           type="button"
           className={`settings-tab-btn ${activeTab === "payments" ? "active" : ""}`}
           onClick={() => setActiveTab("payments")}
         >
           <CreditCard size={16} />
-          <span>Payment Gateways</span>
+          <span>{isKhmer ? "ធនាគារទូទាត់" : "Payment Gateways"}</span>
         </button>
 
+        {/* Tab 6: Shipping */}
         <button
           type="button"
           className={`settings-tab-btn ${activeTab === "shipping" ? "active" : ""}`}
           onClick={() => setActiveTab("shipping")}
         >
           <Truck size={16} />
-          <span>Delivery & Shipping</span>
+          <span>{isKhmer ? "ការដឹកជញ្ជូន" : "Delivery & Shipping"}</span>
         </button>
 
+        {/* Tab 7: Security */}
         <button
           type="button"
           className={`settings-tab-btn ${activeTab === "security" ? "active" : ""}`}
           onClick={() => setActiveTab("security")}
         >
           <Lock size={16} />
-          <span>Security & Alerts</span>
+          <span>{isKhmer ? "សុវត្ថិភាព & ការជូនដំណឹង" : "Security & Alerts"}</span>
         </button>
       </div>
 
       {/* =========================================================================
-          TAB 1: ROLES & PERMISSION RBAC MATRIX
+          TAB 1: APPEARANCE & LANGUAGE SETTINGS (DARK / LIGHT / SYSTEM & KHMER / EN)
+         ========================================================================= */}
+      {activeTab === "appearance_language" && (
+        <div className="appearance-settings-container">
+          {/* Section 1: Theme & Appearance Mode */}
+          <div className="settings-card appearance-card">
+            <div className="settings-card-header">
+              <div className="settings-card-header-left">
+                <h3>
+                  <Palette size={19} color="#166534" />
+                  <span>{isKhmer ? "ស្បែកពណ៌ និងរូបរាង (Theme & Appearance Mode)" : "Theme & Appearance Mode"}</span>
+                </h3>
+                <p>
+                  {isKhmer
+                    ? "ផ្លាស់ប្តូររូបរាងភ្លឺ ងងឹត ឬតាមប្រព័ន្ធកុំព្យូទ័រ/ទូរស័ព្ទសម្រាប់ផ្ទាំង Admin និងគេហទំព័រទាំងមូល។"
+                    : "Select your preferred visual mode for the admin suite and storefront. Instant real-time toggle."}
+                </p>
+              </div>
+              <div className="theme-current-pill">
+                <span className="dot-pulse" />
+                <span>
+                  {isKhmer ? "ស្បែកបច្ចុប្បន្ន៖ " : "Active Mode: "}
+                  <strong>{theme.toUpperCase()} ({resolvedTheme.toUpperCase()})</strong>
+                </span>
+              </div>
+            </div>
+
+            <div className="theme-selection-grid">
+              {/* Light Mode Card */}
+              <div
+                className={`theme-card-box light-mode-box ${theme === "light" ? "active" : ""}`}
+                onClick={() => setTheme("light")}
+              >
+                <div className="theme-card-visual light-visual">
+                  <div className="visual-window">
+                    <div className="visual-topbar light-topbar" />
+                    <div className="visual-content light-content">
+                      <div className="visual-sidebar light-sidebar" />
+                      <div className="visual-body">
+                        <div className="visual-card-item light-card-item" />
+                        <div className="visual-card-item light-card-item small" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="theme-card-info">
+                  <div className="theme-card-title-row">
+                    <div className="theme-icon-circle sun-icon">
+                      <Sun size={18} />
+                    </div>
+                    <div>
+                      <h4>{isKhmer ? "ពន្លឺ (Light Mode)" : "Light Mode"}</h4>
+                      <small>{isKhmer ? "ផ្ទៃសភ្លឺច្បាស់ ងាយស្រួលមើលពេលថ្ងៃ" : "Clean, crisp bright presentation"}</small>
+                    </div>
+                  </div>
+                  {theme === "light" && (
+                    <div className="theme-check-badge">
+                      <Check size={14} />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Dark Mode Card */}
+              <div
+                className={`theme-card-box dark-mode-box ${theme === "dark" ? "active" : ""}`}
+                onClick={() => setTheme("dark")}
+              >
+                <div className="theme-card-visual dark-visual">
+                  <div className="visual-window dark-window">
+                    <div className="visual-topbar dark-topbar" />
+                    <div className="visual-content dark-content">
+                      <div className="visual-sidebar dark-sidebar" />
+                      <div className="visual-body">
+                        <div className="visual-card-item dark-card-item" />
+                        <div className="visual-card-item dark-card-item small" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="theme-card-info">
+                  <div className="theme-card-title-row">
+                    <div className="theme-icon-circle moon-icon">
+                      <Moon size={18} />
+                    </div>
+                    <div>
+                      <h4>{isKhmer ? "ងងឹត (Dark Mode)" : "Dark Mode"}</h4>
+                      <small>{isKhmer ? "ផ្ទៃខ្មៅប្រណិត កាត់បន្ថយចំណាំងពន្លឺ" : "Deep luxury dark theme for reduced eye strain"}</small>
+                    </div>
+                  </div>
+                  {theme === "dark" && (
+                    <div className="theme-check-badge">
+                      <Check size={14} />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* System Default Card */}
+              <div
+                className={`theme-card-box system-mode-box ${theme === "system" ? "active" : ""}`}
+                onClick={() => setTheme("system")}
+              >
+                <div className="theme-card-visual system-visual">
+                  <div className="visual-window system-window">
+                    <div className="visual-topbar system-topbar" />
+                    <div className="visual-content system-content">
+                      <div className="visual-half light-half">
+                        <Sun size={14} />
+                      </div>
+                      <div className="visual-half dark-half">
+                        <Moon size={14} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="theme-card-info">
+                  <div className="theme-card-title-row">
+                    <div className="theme-icon-circle laptop-icon">
+                      <Laptop size={18} />
+                    </div>
+                    <div>
+                      <h4>{isKhmer ? "តាមឧបករណ៍ (System Auto)" : "System Default"}</h4>
+                      <small>{isKhmer ? "ផ្លាស់ប្តូរស្វ័យប្រវត្តិតាមការកំណត់ឧបករណ៍" : "Automatically syncs with device OS theme"}</small>
+                    </div>
+                  </div>
+                  {theme === "system" && (
+                    <div className="theme-check-badge">
+                      <Check size={14} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Language & Localization Selection */}
+          <div className="settings-card appearance-card">
+            <div className="settings-card-header">
+              <div className="settings-card-header-left">
+                <h3>
+                  <Globe size={19} color="#166534" />
+                  <span>{isKhmer ? "ការកំណត់ភាសា (Language & Localization)" : "Language & Localization Selection"}</span>
+                </h3>
+                <p>
+                  {isKhmer
+                    ? "ជ្រើសរើសភាសាចម្បងសម្រាប់គ្រប់គ្រងទិន្នន័យ របាយការណ៍ និងការបង្ហាញលើគេហទំព័រ។"
+                    : "Select your active language. Changes apply immediately across all modules, sidebar, tables, and AI assistant."}
+                </p>
+              </div>
+              <div className="theme-current-pill">
+                <span>
+                  {isKhmer ? "ភាសាសកម្ម៖ " : "Active Language: "}
+                  <strong>{language === "km" ? "🇰🇭 ភាសាខ្មែរ (Khmer)" : "🇺🇸 English (US)"}</strong>
+                </span>
+              </div>
+            </div>
+
+            <div className="lang-selection-grid">
+              {/* Khmer Option */}
+              <div
+                className={`lang-card-box ${language === "km" ? "active" : ""}`}
+                onClick={() => setLanguage("km")}
+              >
+                <div className="lang-flag-banner">
+                  <span className="lang-flag-emoji">🇰🇭</span>
+                  <span className="lang-code-pill">KM</span>
+                </div>
+                <div className="lang-card-details">
+                  <h4>ភាសាខ្មែរ (Khmer)</h4>
+                  <p>ប្រើប្រាស់ភាសាខ្មែរពេញលេញសម្រាប់ផ្ទាំង Admin ផលិតផល ការបញ្ជាទិញ និងសារជំនួយការ AI</p>
+                  <div className="lang-feature-tags">
+                    <span className="lang-tag">✓ ផ្ទាំងបញ្ជាជាភាសាខ្មែរ</span>
+                    <span className="lang-tag">✓ សំឡេង AI ខ្មែរ</span>
+                    <span className="lang-tag">✓ ទ្រង់ទ្រាយប្រាក់រៀល (KHR)</span>
+                  </div>
+                </div>
+                {language === "km" && (
+                  <div className="theme-check-badge">
+                    <Check size={15} />
+                  </div>
+                )}
+              </div>
+
+              {/* English Option */}
+              <div
+                className={`lang-card-box ${language === "en" ? "active" : ""}`}
+                onClick={() => setLanguage("en")}
+              >
+                <div className="lang-flag-banner">
+                  <span className="lang-flag-emoji">🇺🇸</span>
+                  <span className="lang-code-pill">EN</span>
+                </div>
+                <div className="lang-card-details">
+                  <h4>English (US)</h4>
+                  <p>Standard International English interface for back-office administration, inventory, and analytics.</p>
+                  <div className="lang-feature-tags">
+                    <span className="lang-tag">✓ Full English UI</span>
+                    <span className="lang-tag">✓ AI Voice in English</span>
+                    <span className="lang-tag">✓ USD ($) Standards</span>
+                  </div>
+                </div>
+                {language === "en" && (
+                  <div className="theme-check-badge">
+                    <Check size={15} />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Storefront Localization & AI Voice Preferences */}
+          <div className="settings-card appearance-card">
+            <div className="settings-card-header">
+              <div className="settings-card-header-left">
+                <h3>
+                  <Sliders size={18} color="#166534" />
+                  <span>{isKhmer ? "ការកំណត់លំនាំដើមសម្រាប់អតិថិជន និង AI" : "Storefront & AI Assistant Defaults"}</span>
+                </h3>
+                <p>
+                  {isKhmer
+                    ? "កំណត់ភាសា និងស្បែកពណ៌ដំបូងពេលដែលអតិថិជនថ្មីចូលទស្សនាគេហទំព័ររបស់អ្នក"
+                    : "Specify default preferences presented to first-time shoppers and guest visitors."}
+                </p>
+              </div>
+            </div>
+
+            <div className="settings-form-grid">
+              <div className="form-group-item">
+                <label className="form-label">{isKhmer ? "ភាសាដំបូងសម្រាប់អតិថិជនថ្មី" : "Default Storefront Language"}</label>
+                <select
+                  className="settings-select"
+                  value={settings.defaultStoreLanguage || "km"}
+                  onChange={(e) => setSettings({ ...settings, defaultStoreLanguage: e.target.value })}
+                >
+                  <option value="km">🇰🇭 ភាសាខ្មែរ (Khmer) - Recommended</option>
+                  <option value="en">🇺🇸 English (US)</option>
+                </select>
+                <span className="form-helper-text">
+                  {isKhmer ? "ភាសាដែលត្រូវបង្ហាញពេលអតិថិជនបើកគេហទំព័រលើកដំបូង" : "Default language shown to new visitors on first launch"}
+                </span>
+              </div>
+
+              <div className="form-group-item">
+                <label className="form-label">{isKhmer ? "ស្បែកពណ៌ដំបូងសម្រាប់អតិថិជនថ្មី" : "Default Storefront Theme"}</label>
+                <select
+                  className="settings-select"
+                  value={settings.defaultStoreTheme || "system"}
+                  onChange={(e) => setSettings({ ...settings, defaultStoreTheme: e.target.value })}
+                >
+                  <option value="system">💻 System Auto-Match (Recommended)</option>
+                  <option value="light">☀️ Light Theme Mode</option>
+                  <option value="dark">🌙 Dark Theme Mode</option>
+                </select>
+                <span className="form-helper-text">
+                  {isKhmer ? "ស្បែកពណ៌ដែលត្រូវបានជ្រើសរើសស្វ័យប្រវត្តសម្រាប់ភ្ញៀវ" : "Initial theme mode applied for non-logged-in shoppers"}
+                </span>
+              </div>
+
+              <div className="form-group-item">
+                <label className="form-label">{isKhmer ? "តំបន់ម៉ោងប្រព័ន្ធ (Timezone)" : "System Timezone"}</label>
+                <input
+                  type="text"
+                  className="settings-input"
+                  value="Asia/Phnom_Penh (GMT+7:00)"
+                  readOnly
+                  style={{ background: isDark ? "#1e293b" : "#f1f5f9", cursor: "not-allowed" }}
+                />
+              </div>
+
+              <div className="form-group-item">
+                <label className="form-label">{isKhmer ? "ការបង្ហាញរូបិយប័ណ្ណទ្វេរ (USD & KHR)" : "Dual Currency Display"}</label>
+                <select
+                  className="settings-select"
+                  value={settings.dualCurrencyDisplay ? "yes" : "no"}
+                  onChange={(e) => setSettings({ ...settings, dualCurrencyDisplay: e.target.value === "yes" })}
+                >
+                  <option value="yes">{isKhmer ? "បង្ហាញទាំង ដុល្លារ ($) និង រៀល (៛)" : "Show both USD ($) and KHR (៛)"}</option>
+                  <option value="no">{isKhmer ? "បង្ហាញតែ ដុល្លារ ($)" : "Show USD ($) only"}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 4: Live Interactive UI Preview */}
+          <div className="settings-card appearance-card">
+            <div className="settings-card-header">
+              <div className="settings-card-header-left">
+                <h3>
+                  <Eye size={18} color="#166534" />
+                  <span>{isKhmer ? "ការបង្ហាញគំរូជាក់ស្តែង (Live UI Preview)" : "Live Interactive UI Simulation"}</span>
+                </h3>
+                <p>
+                  {isKhmer
+                    ? "ទិដ្ឋភាពជាក់ស្តែងនៃប៊ូតុង ស្លាកសញ្ញា និងអត្ថបទតាមការកំណត់រូបរាងបច្ចុប្បន្ន"
+                    : "Real-time preview demonstrating typography, card surfaces, badges, and button states in current theme."}
+                </p>
+              </div>
+            </div>
+
+            <div className="preview-simulation-container">
+              <div className="preview-simulation-header">
+                <div className="preview-header-brand">
+                  <div className="preview-logo-dot" />
+                  <strong>Angkor Mall Admin Dashboard</strong>
+                </div>
+                <div className="preview-header-meta">
+                  <span className="preview-badge success">● System Online</span>
+                  <span className="preview-badge theme-tag">
+                    {resolvedTheme === "dark" ? "🌙 Dark Theme" : "☀️ Light Theme"}
+                  </span>
+                  <span className="preview-badge lang-tag">
+                    {language === "km" ? "🇰🇭 ភាសាខ្មែរ" : "🇺🇸 English"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="preview-simulation-grid">
+                {/* Metric Card 1 */}
+                <div className="preview-metric-card">
+                  <div className="preview-metric-top">
+                    <span className="preview-metric-label">{isKhmer ? "ចំណូលសរុបប្រចាំថ្ងៃ" : "Today's Total Revenue"}</span>
+                    <span className="preview-metric-growth">+18.4%</span>
+                  </div>
+                  <div className="preview-metric-value">$4,850.00</div>
+                  <div className="preview-metric-sub">{isKhmer ? "ស្មើនឹង ≈ 19,885,000 ៛" : "Approx ≈ 19,885,000 KHR"}</div>
+                </div>
+
+                {/* Metric Card 2 */}
+                <div className="preview-metric-card">
+                  <div className="preview-metric-top">
+                    <span className="preview-metric-label">{isKhmer ? "ការបញ្ជាទិញថ្មី" : "New Orders Today"}</span>
+                    <span className="preview-metric-growth blue">+12</span>
+                  </div>
+                  <div className="preview-metric-value">48 {isKhmer ? "កញ្ចប់" : "Orders"}</div>
+                  <div className="preview-metric-sub">{isKhmer ? "ABA KHQR: 36 | COD: 12" : "ABA KHQR: 36 | COD: 12"}</div>
+                </div>
+
+                {/* Metric Card 3 */}
+                <div className="preview-metric-card">
+                  <div className="preview-metric-top">
+                    <span className="preview-metric-label">{isKhmer ? "ជំនួយការឆ្លាតវៃ" : "AI Voice Assistant"}</span>
+                    <span className="preview-metric-growth green">{isKhmer ? "ដំណើរការ" : "Active"}</span>
+                  </div>
+                  <div className="preview-metric-value">Angkor AI 2.0</div>
+                  <div className="preview-metric-sub">
+                    {isKhmer ? "ភាសាសំឡេង៖ ខ្មែរ (ស្តង់ដារ)" : "Voice Engine: English (US)"}
+                  </div>
+                </div>
+              </div>
+
+              <div className="preview-action-row">
+                <button type="button" className="btn-save-primary">
+                  <Sparkles size={15} />
+                  <span>{isKhmer ? "សាកល្បងមុខងារថ្មី" : "Interactive Action"}</span>
+                </button>
+                <button type="button" className="btn-outline-secondary">
+                  <span>{isKhmer ? "មើលរបាយការណ៍លម្អិត" : "Export Report"}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 2: ROLES & PERMISSION RBAC MATRIX
          ========================================================================= */}
       {activeTab === "roles_permissions" && (
         <>
@@ -545,9 +981,9 @@ function SettingsPage() {
               <div className="settings-card-header-left">
                 <h3>
                   <Shield size={18} color="#166534" />
-                  <span>Select Role to Configure Permissions</span>
+                  <span>{isKhmer ? "ជ្រើសរើសតួនាទីដើម្បីកំណត់សិទ្ធិ" : "Select Role to Configure Permissions"}</span>
                 </h3>
-                <p>Choose a role to view or adjust module-level privileges and action rights.</p>
+                <p>{isKhmer ? "ជ្រើសរើសតួនាទីដើម្បីមើល ឬកែប្រែសិទ្ធិនីមួយៗក្នុងប្រព័ន្ធ" : "Choose a role to view or adjust module-level privileges and action rights."}</p>
               </div>
               <button
                 type="button"
@@ -558,7 +994,7 @@ function SettingsPage() {
                 }}
               >
                 <Plus size={15} />
-                <span>Add New Role</span>
+                <span>{isKhmer ? "បន្ថែមតួនាទីថ្មី" : "Add New Role"}</span>
               </button>
             </div>
 
@@ -589,9 +1025,9 @@ function SettingsPage() {
                   <h4 className="role-title">{role.name}</h4>
                   <p className="role-description">{role.desc}</p>
                   <div className="role-meta-row">
-                    <span>Assigned Staff:</span>
+                    <span>{isKhmer ? "បុគ្គលិកប្រើប្រាស់៖" : "Assigned Staff:"}</span>
                     <span className="role-user-count">
-                      {staff.filter((s) => s.roleId === role.id).length} Users
+                      {staff.filter((s) => s.roleId === role.id).length} {isKhmer ? "នាក់" : "Users"}
                     </span>
                   </div>
                 </div>
@@ -605,9 +1041,9 @@ function SettingsPage() {
               <div className="settings-card-header-left">
                 <h3>
                   <Key size={18} color="#166534" />
-                  <span>Permissions Matrix for: {currentRole.name}</span>
+                  <span>{isKhmer ? `តារាងសិទ្ធិសម្រាប់៖ ${currentRole.name}` : `Permissions Matrix for: ${currentRole.name}`}</span>
                 </h3>
-                <p>Check or uncheck individual operational capabilities for this role.</p>
+                <p>{isKhmer ? "ធីក ឬដោះធីកលើសកម្មភាពនីមួយៗសម្រាប់តួនាទីនេះ" : "Check or uncheck individual operational capabilities for this role."}</p>
               </div>
             </div>
 
@@ -615,9 +1051,9 @@ function SettingsPage() {
               <table className="matrix-table">
                 <thead>
                   <tr>
-                    <th style={{ width: "35%" }}>Module Name</th>
-                    <th>Select All</th>
-                    <th>Permissions & Actions</th>
+                    <th style={{ width: "35%" }}>{isKhmer ? "ផ្នែក / មុខងារ" : "Module Name"}</th>
+                    <th>{isKhmer ? "ជ្រើសទាំងអស់" : "Select All"}</th>
+                    <th>{isKhmer ? "សិទ្ធិអនុញ្ញាត" : "Permissions & Actions"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -676,7 +1112,7 @@ function SettingsPage() {
       )}
 
       {/* =========================================================================
-          TAB 2: STAFF DIRECTORY & ROLE ASSIGNMENT
+          TAB 3: STAFF DIRECTORY & ROLE ASSIGNMENT
          ========================================================================= */}
       {activeTab === "staff_users" && (
         <div className="settings-card">
@@ -684,9 +1120,9 @@ function SettingsPage() {
             <div className="settings-card-header-left">
               <h3>
                 <Users size={18} color="#166534" />
-                <span>Admin & Staff Accounts</span>
+                <span>{isKhmer ? "គណនី Admin & បុគ្គលិកគ្រប់គ្រង" : "Admin & Staff Accounts"}</span>
               </h3>
-              <p>Manage back-office users and their designated system roles.</p>
+              <p>{isKhmer ? "គ្រប់គ្រងអ្នកប្រើប្រាស់ និងតួនាទីរបស់ពួកគេក្នុងប្រព័ន្ធ" : "Manage back-office users and their designated system roles."}</p>
             </div>
             <button
               type="button"
@@ -698,7 +1134,7 @@ function SettingsPage() {
               }}
             >
               <Plus size={15} />
-              <span>Add Staff User</span>
+              <span>{isKhmer ? "បន្ថែមបុគ្គលិកថ្មី" : "Add Staff User"}</span>
             </button>
           </div>
 
@@ -706,11 +1142,11 @@ function SettingsPage() {
             <table className="staff-table">
               <thead>
                 <tr>
-                  <th>User</th>
-                  <th>Assigned Role</th>
-                  <th>Status</th>
-                  <th>Last Active</th>
-                  <th style={{ textAlign: "right" }}>Actions</th>
+                  <th>{isKhmer ? "ឈ្មោះអ្នកប្រើ" : "User"}</th>
+                  <th>{isKhmer ? "តួនាទី" : "Assigned Role"}</th>
+                  <th>{isKhmer ? "ស្ថានភាព" : "Status"}</th>
+                  <th>{isKhmer ? "សកម្មភាពចុងក្រោយ" : "Last Active"}</th>
+                  <th style={{ textAlign: "right" }}>{isKhmer ? "សកម្មភាព" : "Actions"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -720,8 +1156,8 @@ function SettingsPage() {
                       <div className="staff-user-cell">
                         <div className="staff-avatar">{member.name.charAt(0)}</div>
                         <div>
-                          <div style={{ fontWeight: 600, color: "#0f172a" }}>{member.name}</div>
-                          <div style={{ fontSize: "12px", color: "#64748b" }}>{member.email}</div>
+                          <div style={{ fontWeight: 600, color: "var(--text-dark, #0f172a)" }}>{member.name}</div>
+                          <div style={{ fontSize: "12px", color: "var(--text-muted, #64748b)" }}>{member.email}</div>
                         </div>
                       </div>
                     </td>
@@ -733,7 +1169,7 @@ function SettingsPage() {
                         {member.status}
                       </span>
                     </td>
-                    <td style={{ color: "#64748b" }}>{member.lastLogin}</td>
+                    <td style={{ color: "var(--text-muted, #64748b)" }}>{member.lastLogin}</td>
                     <td style={{ textAlign: "right" }}>
                       <button
                         type="button"
@@ -751,7 +1187,7 @@ function SettingsPage() {
                         }}
                       >
                         <Edit2 size={13} />
-                        <span>Edit</span>
+                        <span>{isKhmer ? "កែប្រែ" : "Edit"}</span>
                       </button>
                     </td>
                   </tr>
@@ -763,7 +1199,7 @@ function SettingsPage() {
       )}
 
       {/* =========================================================================
-          TAB 3: GENERAL STORE PROFILE
+          TAB 4: GENERAL STORE PROFILE
          ========================================================================= */}
       {activeTab === "general" && (
         <div className="settings-card">
@@ -771,15 +1207,15 @@ function SettingsPage() {
             <div className="settings-card-header-left">
               <h3>
                 <Store size={18} color="#166534" />
-                <span>Store Profile & Official Information</span>
+                <span>{isKhmer ? "ព័ត៌មានទូទៅរបស់ហាង" : "Store Profile & Official Information"}</span>
               </h3>
-              <p>Customize store branding, operating details, contact channels, and currency.</p>
+              <p>{isKhmer ? "កំណត់ឈ្មោះហាង ពាក្យស្លោក ព័ត៌មានទំនាក់ទំនង និងរូបិយប័ណ្ណ" : "Customize store branding, operating details, contact channels, and currency."}</p>
             </div>
           </div>
 
           <div className="settings-form-grid">
             <div className="form-group-item">
-              <label className="form-label">Mall / Store Name</label>
+              <label className="form-label">{isKhmer ? "ឈ្មោះហាង / ផ្សារទំនើប" : "Mall / Store Name"}</label>
               <input
                 type="text"
                 className="settings-input"
@@ -789,7 +1225,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">Official Tagline</label>
+              <label className="form-label">{isKhmer ? "ពាក្យស្លោកផ្លូវការ" : "Official Tagline"}</label>
               <input
                 type="text"
                 className="settings-input"
@@ -799,7 +1235,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">Support Email</label>
+              <label className="form-label">{isKhmer ? "អ៊ីមែលជំនួយការ" : "Support Email"}</label>
               <input
                 type="email"
                 className="settings-input"
@@ -809,7 +1245,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">Hotline Phone</label>
+              <label className="form-label">{isKhmer ? "លេខទូរស័ព្ទ Hotline" : "Hotline Phone"}</label>
               <input
                 type="text"
                 className="settings-input"
@@ -819,7 +1255,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">Official Telegram Channel</label>
+              <label className="form-label">{isKhmer ? "ឆានែល Telegram ផ្លូវការ" : "Official Telegram Channel"}</label>
               <input
                 type="text"
                 className="settings-input"
@@ -829,7 +1265,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">Primary Currency</label>
+              <label className="form-label">{isKhmer ? "រូបិយប័ណ្ណចម្បង" : "Primary Currency"}</label>
               <select
                 className="settings-select"
                 value={settings.currency}
@@ -841,7 +1277,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">KHR Exchange Rate (1 USD = X KHR)</label>
+              <label className="form-label">{isKhmer ? "អត្រាប្តូរប្រាក់រៀល (1 USD = X KHR)" : "KHR Exchange Rate (1 USD = X KHR)"}</label>
               <input
                 type="number"
                 className="settings-input"
@@ -851,7 +1287,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">VAT / Tax Rate (%)</label>
+              <label className="form-label">{isKhmer ? "អត្រាពន្ធ VAT (%)" : "VAT / Tax Rate (%)"}</label>
               <input
                 type="number"
                 className="settings-input"
@@ -861,7 +1297,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item full-width">
-              <label className="form-label">Physical Store / Headquarters Address</label>
+              <label className="form-label">{isKhmer ? "អាសយដ្ឋានទីស្នាក់ការកណ្តាល" : "Physical Store / Headquarters Address"}</label>
               <textarea
                 className="settings-textarea"
                 value={settings.storeAddress}
@@ -873,7 +1309,7 @@ function SettingsPage() {
       )}
 
       {/* =========================================================================
-          TAB 4: PAYMENT GATEWAYS
+          TAB 5: PAYMENT GATEWAYS
          ========================================================================= */}
       {activeTab === "payments" && (
         <div className="settings-card">
@@ -881,9 +1317,9 @@ function SettingsPage() {
             <div className="settings-card-header-left">
               <h3>
                 <CreditCard size={18} color="#166534" />
-                <span>Payment Gateways & Checkout Methods</span>
+                <span>{isKhmer ? "ធនាគារទូទាត់ប្រាក់ & KHQR" : "Payment Gateways & Checkout Methods"}</span>
               </h3>
-              <p>Configure ABA KHQR, Wing Bank, Cash on Delivery, and Credit/Debit cards.</p>
+              <p>{isKhmer ? "កំណត់ ABA KHQR, Wing Bank, Cash on Delivery និងកាតធនាគារ" : "Configure ABA KHQR, Wing Bank, Cash on Delivery, and Credit/Debit cards."}</p>
             </div>
           </div>
 
@@ -895,7 +1331,7 @@ function SettingsPage() {
                   <div className="gateway-icon-badge">🏦</div>
                   <div>
                     <strong style={{ fontSize: "14.5px" }}>ABA KHQR & PayWay</strong>
-                    <div style={{ fontSize: "12px", color: "#64748b" }}>Instant QR scan & in-app checkout</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted, #64748b)" }}>Instant QR scan & in-app checkout</div>
                   </div>
                 </div>
                 <label className="toggle-switch">
@@ -911,7 +1347,7 @@ function SettingsPage() {
               {settings.abaEnabled && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
                   <div>
-                    <label style={{ fontSize: "12px", color: "#475569", fontWeight: 600 }}>Merchant ID</label>
+                    <label style={{ fontSize: "12px", color: "var(--text-muted, #475569)", fontWeight: 600 }}>Merchant ID</label>
                     <input
                       type="text"
                       className="settings-input"
@@ -920,7 +1356,7 @@ function SettingsPage() {
                     />
                   </div>
                   <div>
-                    <label style={{ fontSize: "12px", color: "#475569", fontWeight: 600 }}>API Key / Secret</label>
+                    <label style={{ fontSize: "12px", color: "var(--text-muted, #475569)", fontWeight: 600 }}>API Key / Secret</label>
                     <input
                       type="password"
                       className="settings-input"
@@ -939,7 +1375,7 @@ function SettingsPage() {
                   <div className="gateway-icon-badge" style={{ color: "#84cc16" }}>💸</div>
                   <div>
                     <strong style={{ fontSize: "14.5px" }}>Wing Bank Wallet</strong>
-                    <div style={{ fontSize: "12px", color: "#64748b" }}>Wing KHQR & mobile account</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted, #64748b)" }}>Wing KHQR & mobile account</div>
                   </div>
                 </div>
                 <label className="toggle-switch">
@@ -960,7 +1396,7 @@ function SettingsPage() {
                   <div className="gateway-icon-badge">📦</div>
                   <div>
                     <strong style={{ fontSize: "14.5px" }}>Cash on Delivery (COD)</strong>
-                    <div style={{ fontSize: "12px", color: "#64748b" }}>Pay driver upon parcel receipt</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted, #64748b)" }}>Pay driver upon parcel receipt</div>
                   </div>
                 </div>
                 <label className="toggle-switch">
@@ -975,7 +1411,7 @@ function SettingsPage() {
 
               {settings.codEnabled && (
                 <div style={{ marginTop: "8px" }}>
-                  <label style={{ fontSize: "12px", color: "#475569", fontWeight: 600 }}>Max Order Limit for COD ($)</label>
+                  <label style={{ fontSize: "12px", color: "var(--text-muted, #475569)", fontWeight: 600 }}>Max Order Limit for COD ($)</label>
                   <input
                     type="number"
                     className="settings-input"
@@ -993,7 +1429,7 @@ function SettingsPage() {
                   <div className="gateway-icon-badge">💳</div>
                   <div>
                     <strong style={{ fontSize: "14.5px" }}>Credit / Debit Cards</strong>
-                    <div style={{ fontSize: "12px", color: "#64748b" }}>Visa, MasterCard, UnionPay</div>
+                    <div style={{ fontSize: "12px", color: "var(--text-muted, #64748b)" }}>Visa, MasterCard, UnionPay</div>
                   </div>
                 </div>
                 <label className="toggle-switch">
@@ -1011,7 +1447,7 @@ function SettingsPage() {
       )}
 
       {/* =========================================================================
-          TAB 5: SHIPPING & DELIVERY
+          TAB 6: SHIPPING & DELIVERY
          ========================================================================= */}
       {activeTab === "shipping" && (
         <div className="settings-card">
@@ -1019,15 +1455,15 @@ function SettingsPage() {
             <div className="settings-card-header-left">
               <h3>
                 <Truck size={18} color="#166534" />
-                <span>Delivery Zones & Shipping Rates</span>
+                <span>{isKhmer ? "ការដឹកជញ្ជូន & តម្លៃសេវា" : "Delivery Zones & Shipping Rates"}</span>
               </h3>
-              <p>Configure Phnom Penh express delivery and nationwide province dispatch fees.</p>
+              <p>{isKhmer ? "កំណត់តម្លៃដឹកជញ្ជូនក្នុងរាជធានីភ្នំពេញ និងតាមបណ្តាខេត្ត" : "Configure Phnom Penh express delivery and nationwide province dispatch fees."}</p>
             </div>
           </div>
 
           <div className="settings-form-grid">
             <div className="form-group-item">
-              <label className="form-label">Express Delivery Fee - Phnom Penh ($)</label>
+              <label className="form-label">{isKhmer ? "តម្លៃដឹកជញ្ជូនភ្នំពេញ ($)" : "Express Delivery Fee - Phnom Penh ($)"}</label>
               <input
                 type="number"
                 step="0.1"
@@ -1038,7 +1474,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">Estimated Delivery Timeframe</label>
+              <label className="form-label">{isKhmer ? "រយៈពេលប៉ាន់ស្មានដឹកដល់" : "Estimated Delivery Timeframe"}</label>
               <input
                 type="text"
                 className="settings-input"
@@ -1048,7 +1484,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">Provinces Shipping Fee ($)</label>
+              <label className="form-label">{isKhmer ? "តម្លៃដឹកជញ្ជូនតាមបណ្តាខេត្ត ($)" : "Provinces Shipping Fee ($)"}</label>
               <input
                 type="number"
                 step="0.1"
@@ -1059,21 +1495,23 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">Free Shipping Minimum Threshold ($)</label>
+              <label className="form-label">{isKhmer ? "កម្រិតទឹកប្រាក់ដើម្បីទទួលបានដឹកឥតគិតថ្លៃ ($)" : "Free Shipping Minimum Threshold ($)"}</label>
               <input
                 type="number"
                 className="settings-input"
                 value={settings.freeShippingThreshold}
                 onChange={(e) => setSettings({ ...settings, freeShippingThreshold: Number(e.target.value) })}
               />
-              <span className="form-helper-text">Orders above this amount receive free shipping automatically.</span>
+              <span className="form-helper-text">
+                {isKhmer ? "ការបញ្ជាទិញចាប់ពីចំនួននេះឡើងទៅនឹងទទួលបានការដឹកជញ្ជូនឥតគិតថ្លៃ" : "Orders above this amount receive free shipping automatically."}
+              </span>
             </div>
           </div>
         </div>
       )}
 
       {/* =========================================================================
-          TAB 6: SECURITY, ALERTS & MAINTENANCE
+          TAB 7: SECURITY, ALERTS & MAINTENANCE
          ========================================================================= */}
       {activeTab === "security" && (
         <div className="settings-card">
@@ -1081,9 +1519,9 @@ function SettingsPage() {
             <div className="settings-card-header-left">
               <h3>
                 <Lock size={18} color="#166534" />
-                <span>Security Policies, Alerts & Maintenance</span>
+                <span>{isKhmer ? "សុវត្ថិភាព ការជូនដំណឹង & ការថែទាំប្រព័ន្ធ" : "Security Policies, Alerts & Maintenance"}</span>
               </h3>
-              <p>Configure stock alert thresholds, Telegram webhooks, and maintenance mode.</p>
+              <p>{isKhmer ? "កំណត់កម្រិតព្រមានស្តុក Telegram Webhook និងរបៀបថែទាំប្រព័ន្ធ" : "Configure stock alert thresholds, Telegram webhooks, and maintenance mode."}</p>
             </div>
           </div>
 
@@ -1091,8 +1529,8 @@ function SettingsPage() {
             {/* Low Stock Alert */}
             <div className="switch-container">
               <div className="switch-label-group">
-                <span className="switch-title">Low Stock Alert Threshold (Units)</span>
-                <span className="switch-desc">Notify warehouse managers when item quantity drops below this number</span>
+                <span className="switch-title">{isKhmer ? "កម្រិតព្រមានស្តុកទាប (ចំនួនឯកតា)" : "Low Stock Alert Threshold (Units)"}</span>
+                <span className="switch-desc">{isKhmer ? "ជូនដំណឹងទៅកាន់អ្នកគ្រប់គ្រងស្តុកនៅពេលចំនួនផលិតផលធ្លាក់ចុះក្រោមចំនួននេះ" : "Notify warehouse managers when item quantity drops below this number"}</span>
               </div>
               <input
                 type="number"
@@ -1106,8 +1544,8 @@ function SettingsPage() {
             {/* Telegram Webhook Notifications */}
             <div className="switch-container">
               <div className="switch-label-group">
-                <span className="switch-title">Instant Telegram Order & Trade-In Webhook</span>
-                <span className="switch-desc">Receive real-time alerts in your staff Telegram group whenever an order or trade is placed</span>
+                <span className="switch-title">{isKhmer ? "ការជូនដំណឹងតាម Telegram ភ្លាមៗពេលមានការកុម្ម៉ង់ & ប្តូរសេរី" : "Instant Telegram Order & Trade-In Webhook"}</span>
+                <span className="switch-desc">{isKhmer ? "ផ្ញើសារដំណឹងទៅកាន់គ្រុប Telegram បុគ្គលិកភ្លាមៗនៅពេលមានការបញ្ជាទិញថ្មី" : "Receive real-time alerts in your staff Telegram group whenever an order or trade is placed"}</span>
               </div>
               <label className="toggle-switch">
                 <input
@@ -1122,8 +1560,8 @@ function SettingsPage() {
             {/* Enforce 2FA */}
             <div className="switch-container">
               <div className="switch-label-group">
-                <span className="switch-title">Enforce Two-Factor Authentication (2FA) for Staff</span>
-                <span className="switch-desc">Require OTP or authenticator verification on all admin/manager logins</span>
+                <span className="switch-title">{isKhmer ? "ទាមទារការផ្ទៀងផ្ទាត់ ២ ជំហាន (2FA) សម្រាប់បុគ្គលិក" : "Enforce Two-Factor Authentication (2FA) for Staff"}</span>
+                <span className="switch-desc">{isKhmer ? "ទាមទារលេខកូដ OTP មុនពេលចូលប្រើប្រាស់ផ្ទាំងគ្រប់គ្រង" : "Require OTP or authenticator verification on all admin/manager logins"}</span>
               </div>
               <label className="toggle-switch">
                 <input
@@ -1138,8 +1576,8 @@ function SettingsPage() {
             {/* Maintenance Mode */}
             <div className="switch-container" style={{ borderLeft: "4px solid #ef4444" }}>
               <div className="switch-label-group">
-                <span className="switch-title" style={{ color: "#dc2626" }}>Store Maintenance Mode</span>
-                <span className="switch-desc">Temporarily lock the customer-facing storefront during database or inventory audits</span>
+                <span className="switch-title" style={{ color: "#dc2626" }}>{isKhmer ? "របៀបថែទាំប្រព័ន្ធ (Maintenance Mode)" : "Store Maintenance Mode"}</span>
+                <span className="switch-desc">{isKhmer ? "បិទគេហទំព័រជាបណ្តោះអាសន្នពេលកំពុងធ្វើបច្ចុប្បន្នភាពទិន្នន័យ" : "Temporarily lock the customer-facing storefront during database or inventory audits"}</span>
               </div>
               <label className="toggle-switch">
                 <input
@@ -1153,7 +1591,7 @@ function SettingsPage() {
 
             {settings.maintenanceMode && (
               <div className="form-group-item">
-                <label className="form-label">Customer Maintenance Notice Banner</label>
+                <label className="form-label">{isKhmer ? "សារជូនដំណឹងទៅកាន់អតិថិជនពេលបិទថែទាំ" : "Customer Maintenance Notice Banner"}</label>
                 <textarea
                   className="settings-textarea"
                   value={settings.maintenanceMessage}
@@ -1172,7 +1610,7 @@ function SettingsPage() {
         <div className="settings-modal-overlay" onClick={() => setRoleModalOpen(false)}>
           <div className="settings-modal-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="settings-modal-header">
-              <h3>Create New Role</h3>
+              <h3>{isKhmer ? "បង្កើតតួនាទីថ្មី" : "Create New Role"}</h3>
               <button
                 type="button"
                 className="btn-outline-secondary"
@@ -1185,7 +1623,7 @@ function SettingsPage() {
             <form onSubmit={handleCreateRole}>
               <div className="settings-modal-body">
                 <div className="form-group-item">
-                  <label className="form-label">Role Title *</label>
+                  <label className="form-label">{isKhmer ? "ឈ្មោះតួនាទី *" : "Role Title *"}</label>
                   <input
                     type="text"
                     required
@@ -1196,7 +1634,7 @@ function SettingsPage() {
                   />
                 </div>
                 <div className="form-group-item">
-                  <label className="form-label">Description</label>
+                  <label className="form-label">{isKhmer ? "ការពិពណ៌នា" : "Description"}</label>
                   <textarea
                     placeholder="Describe responsibilities and scope of this role..."
                     className="settings-textarea"
@@ -1207,10 +1645,10 @@ function SettingsPage() {
               </div>
               <div className="settings-modal-footer">
                 <button type="button" className="btn-outline-secondary" onClick={() => setRoleModalOpen(false)}>
-                  Cancel
+                  {isKhmer ? "បោះបង់" : "Cancel"}
                 </button>
                 <button type="submit" className="btn-save-primary">
-                  Create Role
+                  {isKhmer ? "បង្កើតតួនាទី" : "Create Role"}
                 </button>
               </div>
             </form>
@@ -1225,7 +1663,7 @@ function SettingsPage() {
         <div className="settings-modal-overlay" onClick={() => setStaffModalOpen(false)}>
           <div className="settings-modal-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="settings-modal-header">
-              <h3>{selectedStaff ? "Edit Staff User" : "Add New Staff Member"}</h3>
+              <h3>{selectedStaff ? (isKhmer ? "កែប្រែព័ត៌មានបុគ្គលិក" : "Edit Staff User") : (isKhmer ? "បន្ថែមបុគ្គលិកថ្មី" : "Add New Staff Member")}</h3>
               <button
                 type="button"
                 className="btn-outline-secondary"
@@ -1238,7 +1676,7 @@ function SettingsPage() {
             <form onSubmit={handleSaveStaff}>
               <div className="settings-modal-body">
                 <div className="form-group-item">
-                  <label className="form-label">Full Name *</label>
+                  <label className="form-label">{isKhmer ? "ឈ្មោះពេញ *" : "Full Name *"}</label>
                   <input
                     type="text"
                     required
@@ -1248,7 +1686,7 @@ function SettingsPage() {
                   />
                 </div>
                 <div className="form-group-item">
-                  <label className="form-label">Email Address *</label>
+                  <label className="form-label">{isKhmer ? "អាសយដ្ឋានអ៊ីមែល *" : "Email Address *"}</label>
                   <input
                     type="email"
                     required
@@ -1258,7 +1696,7 @@ function SettingsPage() {
                   />
                 </div>
                 <div className="form-group-item">
-                  <label className="form-label">Assign Role *</label>
+                  <label className="form-label">{isKhmer ? "ជ្រើសរើសតួនាទី *" : "Assign Role *"}</label>
                   <select
                     className="settings-select"
                     value={staffForm.roleId}
@@ -1272,23 +1710,23 @@ function SettingsPage() {
                   </select>
                 </div>
                 <div className="form-group-item">
-                  <label className="form-label">Account Status</label>
+                  <label className="form-label">{isKhmer ? "ស្ថានភាពគណនី" : "Account Status"}</label>
                   <select
                     className="settings-select"
                     value={staffForm.status}
                     onChange={(e) => setStaffForm({ ...staffForm, status: e.target.value })}
                   >
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive / Suspended</option>
+                    <option value="Active">{isKhmer ? "សកម្ម (Active)" : "Active"}</option>
+                    <option value="Inactive">{isKhmer ? "អសកម្ម (Inactive)" : "Inactive / Suspended"}</option>
                   </select>
                 </div>
               </div>
               <div className="settings-modal-footer">
                 <button type="button" className="btn-outline-secondary" onClick={() => setStaffModalOpen(false)}>
-                  Cancel
+                  {isKhmer ? "បោះបង់" : "Cancel"}
                 </button>
                 <button type="submit" className="btn-save-primary">
-                  Save Staff
+                  {isKhmer ? "រក្សាទុក" : "Save Staff"}
                 </button>
               </div>
             </form>

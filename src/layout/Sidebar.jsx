@@ -19,10 +19,12 @@ import {
 import logo from "../assets/logo.jpg";
 import { NavLink, useLocation } from "react-router-dom";
 import { X, Sparkles } from "lucide-react";
+import { useTranslation } from "../context/LanguageContext";
 import { getSupportStatsApi } from "../services/supportMessageService";
 import "./style/Sidebar.css";
 
 function Sidebar({ open, setOpen }) {
+  const { isKhmer } = useTranslation();
   const sidebarRef = useRef(null);
   const menuRef = useRef(null);
   const location = useLocation();
@@ -87,41 +89,46 @@ function Sidebar({ open, setOpen }) {
   // Menu structure grouped with headers for best-in-class UX
   const menuSections = [
     {
-      title: "OVERVIEW",
+      title: isKhmer ? "ទិដ្ឋភាពទូទៅ" : "OVERVIEW",
       items: [
         {
-          name: "Dashboard",
+          name: isKhmer ? "ផ្ទាំងគ្រប់គ្រង" : "Dashboard",
           icon: <FaTachometerAlt />,
           path: "/admin/dashboard"
+        },
+        {
+          name: isKhmer ? "របាយការណ៍ & ស្ថិតិ" : "Reports & Analytics",
+          icon: <FaChartBar />,
+          path: "/admin/reports"
         }
       ]
     },
     {
-      title: "SALES & COMMERCE",
+      title: isKhmer ? "ការលក់ & ពាណិជ្ជកម្ម" : "SALES & COMMERCE",
       items: [
         {
-          name: "Flash Sale",
+          name: isKhmer ? "ប្រូម៉ូសិនពិសេស" : "Flash Sale",
           icon: <FaBolt />,
           path: "/admin/flash-sale",
           badge: "HOT"
         },
         {
-          name: "Products",
+          name: isKhmer ? "ផលិតផលទាំងអស់" : "Products",
           icon: <FaBox />,
           path: "/admin/products"
         },
         {
-          name: "Trading / Trade-In",
+          name: isKhmer ? "ប្តូរសេរីទូរស័ព្ទ" : "Trading / Trade-In",
           icon: <FaExchangeAlt />,
           path: "/admin/trading"
         },
         {
-          name: "Orders",
+          name: isKhmer ? "ការបញ្ជាទិញ" : "Orders",
           icon: <FaShoppingCart />,
           path: "/admin/orders"
         },
         {
-          name: "Customer Messages",
+          name: isKhmer ? "សារពីអតិថិជន" : "Customer Messages",
           icon: <FaEnvelope />,
           path: "/admin/messages",
           badgeCount: unreadMessages
@@ -129,55 +136,50 @@ function Sidebar({ open, setOpen }) {
       ]
     },
     {
-      title: "INVENTORY & SUPPLY",
+      title: isKhmer ? "ស្តុកទំនិញ & ការបញ្ជាទិញចូល" : "INVENTORY & SUPPLY",
       items: [
         {
-          name: "Inventory",
+          name: isKhmer ? "ស្តុកទំនិញ" : "Inventory",
           icon: <FaBoxes />,
           path: "/admin/inventory"
         },
         {
-          name: "Purchases",
+          name: isKhmer ? "ការទិញចូល" : "Purchases",
           icon: <FaFileInvoiceDollar />,
           path: "/admin/purchases"
         },
         {
-          name: "Suppliers",
+          name: isKhmer ? "អ្នកផ្គត់ផ្គង់" : "Suppliers",
           icon: <FaTruck />,
           path: "/admin/suppliers"
         }
       ]
     },
     {
-      title: "ORGANIZATION",
+      title: isKhmer ? "ការរៀបចំ & អតិថិជន" : "ORGANIZATION",
       items: [
         {
-          name: "Categories",
+          name: isKhmer ? "ប្រភេទផលិតផល" : "Categories",
           icon: <FaTh />,
           path: "/admin/categories"
         },
         {
-          name: "Brands",
+          name: isKhmer ? "ម៉ាកយីហោ" : "Brands",
           icon: <FaBookmark />,
           path: "/admin/brands"
         },
         {
-          name: "Customers",
+          name: isKhmer ? "អតិថិជន" : "Customers",
           icon: <FaUsers />,
           path: "/admin/customers"
         }
       ]
     },
     {
-      title: "SYSTEM",
+      title: isKhmer ? "ប្រព័ន្ធគ្រប់គ្រង" : "SYSTEM",
       items: [
         {
-          name: "Reports",
-          icon: <FaChartBar />,
-          path: "/admin/reports"
-        },
-        {
-          name: "Settings",
+          name: isKhmer ? "ការកំណត់ប្រព័ន្ធ" : "Settings",
           icon: <FaCog />,
           path: "/admin/settings"
         }
@@ -204,7 +206,7 @@ function Sidebar({ open, setOpen }) {
               <h2>Angkor Mall</h2>
               <div className="brand-status-pill">
                 <span className="live-status-dot" />
-                <span>Admin Suite</span>
+                <span>{isKhmer ? "ផ្ទាំង Admin" : "Admin Suite"}</span>
               </div>
             </div>
           </div>
@@ -262,7 +264,7 @@ function Sidebar({ open, setOpen }) {
         <div className="sidebar-footer">
           <div className="footer-support-hint">
             <Sparkles size={14} className="sparkle-icon" />
-            <span>AI Assistant & Store Live</span>
+            <span>{isKhmer ? "ជំនួយការ AI & ហាងអនឡាញ" : "AI Assistant & Store Live"}</span>
           </div>
           <p>© 2026 Angkor Shopping Mall</p>
         </div>

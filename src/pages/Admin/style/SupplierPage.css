@@ -550,3 +550,83 @@ input:checked + .slider:before {
 .btn-save:hover {
     background: #059669;
 }
+
+/* ==========================================================================
+   Dark Theme Overrides for Supplier Page
+   ========================================================================== */
+
+[data-theme="dark"] .supplier-page .header-title h1 {
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .supplier-page .header-title p {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .supplier-stat-card {
+    background: #0f172a;
+    border-color: #1e293b;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .supplier-stat-card .stat-info h3 {
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .supplier-stat-card .stat-info span {
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .supplier-controls {
+    background: #0f172a;
+    border-color: #1e293b;
+}
+
+[data-theme="dark"] .supplier-controls .search-box input {
+    background: #070a12;
+    border-color: #1e293b;
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .supplier-controls .filter-select {
+    background: #070a12;
+    border-color: #1e293b;
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .supplier-table-container {
+    background: #0f172a;
+    border-color: #1e293b;
+}
+
+[data-theme="dark"] .supplier-table th {
+    background: #090d16;
+    border-color: #1e293b;
+    color: #94a3b8;
+}
+
+[data-theme="dark"] .supplier-table td {
+    border-color: #1e293b;
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .supplier-modal {
+    background: #0f172a;
+    border-color: #1e293b;
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .supplier-modal input,
+[data-theme="dark"] .supplier-modal select,
+[data-theme="dark"] .supplier-modal textarea {
+    background: #070a12;
+    border-color: #1e293b;
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .btn-cancel {
+    background: #090d16;
+    border-color: #1e293b;
+    color: #cbd5e1;
+}
+

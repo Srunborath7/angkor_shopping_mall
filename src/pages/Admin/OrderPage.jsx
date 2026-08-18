@@ -400,33 +400,33 @@ function OrderPage() {
 
       {/* Stats Summary Cards */}
       <div className="order-stats">
-        <div className="order-stat-card total">
-          <div className="stat-icon"><FaShoppingCart /></div>
+        <div className="order-stat-card total-status">
           <div className="stat-info">
-            <span>Total Orders</span>
-            <h3>{stats.totalCount}</h3>
+            <p>Total Orders</p>
+            <h1>{stats.totalCount}</h1>
           </div>
+          <div className="icon-box"><FaShoppingCart /></div>
         </div>
-        <div className="order-stat-card revenue">
-          <div className="stat-icon"><FaDollarSign /></div>
+        <div className="order-stat-card active-status">
           <div className="stat-info">
-            <span>Total Sales</span>
-            <h3>${stats.totalRev.toFixed(2)}</h3>
+            <p>Total Sales</p>
+            <h1>${stats.totalRev.toFixed(2)}</h1>
           </div>
+          <div className="icon-box"><FaDollarSign /></div>
         </div>
-        <div className="order-stat-card pending">
-          <div className="stat-icon"><FaClock /></div>
+        <div className="order-stat-card stock-warning">
           <div className="stat-info">
-            <span>Pending Orders</span>
-            <h3>{stats.pendingCount}</h3>
+            <p>Pending Orders</p>
+            <h1>{stats.pendingCount}</h1>
           </div>
+          <div className="icon-box"><FaClock /></div>
         </div>
-        <div className="order-stat-card completed">
-          <div className="stat-icon"><FaCheckCircle /></div>
+        <div className="order-stat-card stock-value">
           <div className="stat-info">
-            <span>Completed / Paid</span>
-            <h3>{stats.completedCount}</h3>
+            <p>Completed / Paid</p>
+            <h1>{stats.completedCount}</h1>
           </div>
+          <div className="icon-box"><FaCheckCircle /></div>
         </div>
       </div>
 

@@ -262,34 +262,34 @@ function FlashSalePage() {
       </div>
 
       {/* Stats row */}
-      <div className="flash-stats-grid">
-        <div className="flash-stat-card">
-          <div className="stat-icon-box bg-red"><FaFire /></div>
-          <div>
-            <h3>{activeCount} Active</h3>
+      <div className="flash-stats-grid mt-4">
+        <div className="flash-stat-card inactive-status">
+          <div className="stat-info">
             <p>Live Flash Deals</p>
+            <h1>{activeCount} Active</h1>
           </div>
+          <div className="icon-box"><FaFire /></div>
         </div>
-        <div className="flash-stat-card">
-          <div className="stat-icon-box bg-orange"><FaPercentage /></div>
-          <div>
-            <h3>{avgDiscount}% AVG</h3>
+        <div className="flash-stat-card stock-warning">
+          <div className="stat-info">
             <p>Discount Rate</p>
+            <h1>{avgDiscount}% AVG</h1>
           </div>
+          <div className="icon-box"><FaPercentage /></div>
         </div>
-        <div className="flash-stat-card">
-          <div className="stat-icon-box bg-green"><FaTag /></div>
-          <div>
-            <h3>{flashSales.length} Deals</h3>
+        <div className="flash-stat-card active-status">
+          <div className="stat-info">
             <p>Total Configured</p>
+            <h1>{flashSales.length} Deals</h1>
           </div>
+          <div className="icon-box"><FaTag /></div>
         </div>
-        <div className="flash-stat-card">
-          <div className="stat-icon-box bg-blue"><FaClock /></div>
-          <div>
-            <h3>24 Hours</h3>
+        <div className="flash-stat-card total-status">
+          <div className="stat-info">
             <p>Active Campaign Cycle</p>
+            <h1>24 Hours</h1>
           </div>
+          <div className="icon-box"><FaClock /></div>
         </div>
       </div>
 
