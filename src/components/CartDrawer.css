@@ -760,3 +760,48 @@
     padding: 16px;
   }
 }
+
+/* ==========================================================================
+   Cart Drawer Dark Mode Overrides
+   ========================================================================== */
+
+[data-theme="dark"] .cart-drawer-container {
+  background-color: #0b0f19;
+  border-left: 1px solid #1e293b;
+  box-shadow: -10px 0 40px rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .cart-drawer-header,
+[data-theme="dark"] .cart-drawer-footer {
+  background-color: #090d16;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .header-title-box h3,
+[data-theme="dark"] .empty-cart-view h4,
+[data-theme="dark"] .preview-address-text,
+[data-theme="dark"] .review-mini-name {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .cart-item-card,
+[data-theme="dark"] .step-form-card,
+[data-theme="dark"] .order-summary-box {
+  background-color: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .address-review-highlight {
+  background-color: #090d16;
+  color: #f8fafc;
+  border-left-color: #10b981;
+}
+
+[data-theme="dark"] .review-mini-img {
+  background-color: #090d16;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .review-mini-price {
+  color: #34d399;
+}

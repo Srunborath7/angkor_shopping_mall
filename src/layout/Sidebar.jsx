@@ -95,11 +95,6 @@ function Sidebar({ open, setOpen }) {
           name: isKhmer ? "ផ្ទាំងគ្រប់គ្រង" : "Dashboard",
           icon: <FaTachometerAlt />,
           path: "/admin/dashboard"
-        },
-        {
-          name: isKhmer ? "របាយការណ៍ & ស្ថិតិ" : "Reports & Analytics",
-          icon: <FaChartBar />,
-          path: "/admin/reports"
         }
       ]
     },

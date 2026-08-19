@@ -867,8 +867,8 @@ function ProductDetailPage() {
             {/* Pricing */}
             <div className="product-price-section">
               {isFlashSaleActive && (
-                <div style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#fef2f2", color: "#ef4444", padding: "4px 12px", borderRadius: "20px", fontSize: "0.85rem", fontWeight: 700, marginBottom: "8px" }}>
-                  <Zap size={14} fill="#ef4444" /> Flash Sale Deal
+                <div className="flash-sale-product-pill">
+                  <Zap size={14} /> Flash Sale Deal
                 </div>
               )}
               <div>
@@ -914,9 +914,9 @@ function ProductDetailPage() {
 
             {/* Quantity Selector with stock limit enforcement */}
             <div className="quantity-control-group">
-              <div style={{ display: "flex", justifyContent: "space-between", width: "100%", maxWidth: "320px" }}>
+              <div className="quantity-header-row">
                 <span className="variant-label">Quantity:</span>
-                <span style={{ fontSize: "0.8rem", color: availableStock <= 5 ? "#dc2626" : "#64748b", fontWeight: 600 }}>
+                <span className={`stock-limit-text ${availableStock <= 5 ? "low" : ""}`}>
                   {availableStock > 0 ? `Max Stock: ${availableStock}` : "Stock Unavailable"}
                 </span>
               </div>
@@ -1023,43 +1023,45 @@ function ProductDetailPage() {
           <div className="tab-content-panel">
             {activeTab === "overview" && (
               <div>
-                <p style={{ marginBottom: "1.5rem" }}>{product.description}</p>
-                <h4 style={{ color: "#0f172a", marginBottom: "1rem" }}>API Technical Specifications</h4>
-                <table className="specs-table">
-                  <tbody>
-                    <tr>
-                      <td className="spec-name">Product Name</td>
-                      <td className="spec-val">{product.name}</td>
-                    </tr>
-                    <tr>
-                      <td className="spec-name">Category</td>
-                      <td className="spec-val">{product.category}</td>
-                    </tr>
-                    {product.brand && (
+                <p className="detail-tab-paragraph">{product.description}</p>
+                <h4 className="detail-section-subtitle">Technical Specifications</h4>
+                <div className="specs-table-wrapper">
+                  <table className="specs-table">
+                    <tbody>
                       <tr>
-                        <td className="spec-name">Brand</td>
-                        <td className="spec-val">{product.brand}</td>
+                        <td className="spec-name">Product Name</td>
+                        <td className="spec-val">{product.name}</td>
                       </tr>
-                    )}
-                    <tr>
-                      <td className="spec-name">Stock Status</td>
-                      <td className="spec-val">
-                        {availableStock > 0 ? `${availableStock} units in stock` : "Out of stock"}
-                      </td>
-                    </tr>
-                    <tr>
-                      <td className="spec-name">Warranty Info</td>
-                      <td className="spec-val">{product.warrantyInfo}</td>
-                    </tr>
-                    {specsEntries.length > 0 &&
-                      specsEntries.map(([key, val]) => (
-                        <tr key={key}>
-                          <td className="spec-name">{key}</td>
-                          <td className="spec-val">{typeof val === "object" ? JSON.stringify(val) : String(val)}</td>
+                      <tr>
+                        <td className="spec-name">Category</td>
+                        <td className="spec-val">{product.category}</td>
+                      </tr>
+                      {product.brand && (
+                        <tr>
+                          <td className="spec-name">Brand</td>
+                          <td className="spec-val">{product.brand}</td>
                         </tr>
-                      ))}
-                  </tbody>
-                </table>
+                      )}
+                      <tr>
+                        <td className="spec-name">Stock Status</td>
+                        <td className="spec-val">
+                          {availableStock > 0 ? `${availableStock} units in stock` : "Out of stock"}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="spec-name">Warranty Info</td>
+                        <td className="spec-val">{product.warrantyInfo || "1 Year Official Warranty"}</td>
+                      </tr>
+                      {specsEntries.length > 0 &&
+                        specsEntries.map(([key, val]) => (
+                          <tr key={key}>
+                            <td className="spec-name">{key}</td>
+                            <td className="spec-val">{typeof val === "object" ? JSON.stringify(val) : String(val)}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 
@@ -1092,7 +1094,7 @@ function ProductDetailPage() {
                             </button>
                           );
                         })}
-                        <span style={{ marginLeft: "0.5rem", fontSize: "0.9rem", fontWeight: 700, color: "#166534" }}>
+                        <span className="star-rating-count-text">
                           {newRating} / 5 Stars
                         </span>
                       </div>
@@ -1208,7 +1210,7 @@ function ProductDetailPage() {
                                 key={imgIdx}
                                 src={imgUrl}
                                 alt="Review attachment"
-                                style={{ width: "64px", height: "64px", objectFit: "cover", borderRadius: "8px", border: "1px solid #e2e8f0" }}
+                                className="review-attachment-thumbnail"
                               />
                             ))}
                           </div>
@@ -1254,14 +1256,14 @@ function ProductDetailPage() {
 
             {activeTab === "shipping" && (
               <div>
-                <h4 style={{ color: "#0f172a", marginBottom: "0.75rem" }}>Shipping Info</h4>
-                <p style={{ marginBottom: "1.5rem" }}>{product.shippingInfo}</p>
+                <h4 className="detail-section-subtitle">Shipping Info</h4>
+                <p className="detail-tab-paragraph">{product.shippingInfo}</p>
 
-                <h4 style={{ color: "#0f172a", marginBottom: "0.75rem" }}>Warranty Coverage</h4>
-                <p style={{ marginBottom: "1.5rem" }}>{product.warrantyInfo}</p>
+                <h4 className="detail-section-subtitle">Warranty Coverage</h4>
+                <p className="detail-tab-paragraph">{product.warrantyInfo}</p>
 
-                <h4 style={{ color: "#0f172a", marginBottom: "0.75rem" }}>Returns Policy</h4>
-                <p>
+                <h4 className="detail-section-subtitle">Returns Policy</h4>
+                <p className="detail-tab-paragraph">
                   If your item arrives damaged or incomplete, you can initiate a free return within 7 calendar days of receipt.
                 </p>
               </div>
@@ -1272,12 +1274,12 @@ function ProductDetailPage() {
         {/* Related Products Grid */}
         {relatedProducts.length > 0 && (
           <div className="related-products-section">
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem", flexWrap: "wrap", gap: "0.75rem" }}>
-              <h2 className="related-section-title" style={{ margin: 0, display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <Sparkles size={22} style={{ color: "#166534" }} />
+            <div className="related-section-header">
+              <h2 className="related-section-title">
+                <Sparkles size={22} className="related-sparkle-icon" />
                 You Might Also Like
               </h2>
-              <span style={{ fontSize: "0.8rem", padding: "4px 10px", borderRadius: "20px", background: "#f0fdf4", color: "#166534", fontWeight: 600, border: "1px solid #bbf7d0", display: "inline-flex", alignItems: "center", gap: "4px" }}>
+              <span className="related-source-badge">
                 <Sparkles size={12} /> {relatedSource === "similar" ? "AI Embedding Match" : "Category Recommendation"}
               </span>
             </div>

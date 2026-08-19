@@ -1516,8 +1516,27 @@
    ========================================================================== */
 
 [data-theme="dark"] .home-layout {
-  background-color: #070a12;
+  background-color: #070a13;
   color: #f8fafc;
+}
+
+[data-theme="dark"] .hero-search-form {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .hero-search-form:focus-within {
+  border-color: #10b981;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+}
+
+[data-theme="dark"] .search-input-group input {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .search-input-group input::placeholder {
+  color: #64748b;
 }
 
 [data-theme="dark"] .flash-sale-section {
@@ -1542,6 +1561,7 @@
 [data-theme="dark"] .perks-container {
   background: #0f172a;
   border-color: #1e293b;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
 [data-theme="dark"] .perk-item h4 {
@@ -1555,11 +1575,13 @@
 [data-theme="dark"] .category-card-item {
   background: #0f172a;
   border-color: #1e293b;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .category-card-item:hover {
   background: #151f38;
   border-color: #10b981;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
 }
 
 [data-theme="dark"] .category-card-item h3 {
@@ -1578,19 +1600,22 @@
 }
 
 [data-theme="dark"] .trending-tab-btn.active {
-  background: #059669;
-  border-color: #059669;
+  background: #10b981;
+  border-color: #10b981;
   color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
 }
 
 [data-theme="dark"] .product-card-item {
   background: #0f172a;
   border-color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
 [data-theme="dark"] .product-card-item:hover {
   background: #151f38;
   border-color: #10b981;
+  box-shadow: 0 16px 32px -6px rgba(0, 0, 0, 0.6);
 }
 
 [data-theme="dark"] .product-image-box,
@@ -1623,4 +1648,25 @@
   background: #070a12;
   border-color: #1e293b;
   color: #f8fafc;
+}
+
+[data-theme="dark"] .home-footer {
+  background: #090d16;
+  border-top-color: #1e293b;
+}
+
+[data-theme="dark"] .footer-brand-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .footer-links-group h4 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .footer-links-group a {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .footer-links-group a:hover {
+  color: #34d399;
 }

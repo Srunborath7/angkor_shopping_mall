@@ -856,39 +856,55 @@
 
 [data-theme="dark"] .orders-page-layout,
 [data-theme="dark"] .orders-unauth-layout {
-  background-color: #070a12;
+  background-color: #070a13;
   color: #f8fafc;
 }
 
 [data-theme="dark"] .profile-sidebar-aside,
-[data-theme="dark"] .orders-main-content,
-[data-theme="dark"] .order-accordion-card,
-[data-theme="dark"] .order-stat-card,
-[data-theme="dark"] .unauth-card {
+[data-theme="dark"] .welcome-banner-card,
+[data-theme="dark"] .dashboard-stat-card,
+[data-theme="dark"] .user-details-card,
+[data-theme="dark"] .accordion-order-item,
+[data-theme="dark"] .unauth-card,
+[data-theme="dark"] .empty-orders-view {
   background-color: #0f172a;
   border-color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
-[data-theme="dark"] .profile-user-name,
-[data-theme="dark"] .profile-section-title h2,
+[data-theme="dark"] .profile-brief-details h3,
+[data-theme="dark"] .welcome-banner-card h2,
 [data-theme="dark"] .stat-card-val,
+[data-theme="dark"] .user-details-card h3,
+[data-theme="dark"] .orders-header-row h3,
+[data-theme="dark"] .meta-id,
+[data-theme="dark"] .meta-total,
 [data-theme="dark"] .unauth-card h2 {
   color: #f8fafc;
 }
 
-[data-theme="dark"] .profile-user-role,
-[data-theme="dark"] .profile-user-email,
-[data-theme="dark"] .stat-card-label {
+[data-theme="dark"] .profile-brief-details span,
+[data-theme="dark"] .welcome-banner-card p,
+[data-theme="dark"] .stat-card-label,
+[data-theme="dark"] .row-label,
+[data-theme="dark"] .row-value,
+[data-theme="dark"] .meta-date,
+[data-theme="dark"] .meta-items-count {
   color: #94a3b8;
 }
 
-[data-theme="dark"] .profile-nav-link {
+[data-theme="dark"] .profile-nav-btn {
+  background-color: transparent;
   color: #94a3b8;
 }
 
-[data-theme="dark"] .profile-nav-link:hover,
-[data-theme="dark"] .profile-nav-link.active {
+[data-theme="dark"] .profile-nav-btn:hover {
   background-color: #1e293b;
+  color: #34d399;
+}
+
+[data-theme="dark"] .profile-nav-btn.active {
+  background-color: rgba(16, 185, 129, 0.18);
   color: #34d399;
 }
 
@@ -896,20 +912,34 @@
   background-color: #0f172a;
 }
 
-[data-theme="dark"] .order-detail-expanded {
+[data-theme="dark"] .order-accordion-header:hover {
+  background-color: #151f38;
+}
+
+[data-theme="dark"] .order-expanded-body {
   background-color: #090d16;
   border-top-color: #1e293b;
 }
 
-[data-theme="dark"] .product-mini-card {
+[data-theme="dark"] .shipping-details-subcard,
+[data-theme="dark"] .products-ordered-subcard {
   background-color: #0f172a;
   border-color: #1e293b;
 }
 
-[data-theme="dark"] .mini-card-name {
+[data-theme="dark"] .product-mini-card {
+  background-color: #090d16;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .mini-card-info h6 {
   color: #f8fafc;
 }
 
 [data-theme="dark"] .mini-card-total-cost {
   color: #34d399;
+}
+
+[data-theme="dark"] .details-row-item {
+  border-bottom-color: #1e293b;
 }

@@ -35,22 +35,24 @@ function MobileBottomNav() {
             aria-label="Home"
           >
             <div className="nav-icon-bubble">
-              <Home size={22} className="nav-icon" />
+              <Home size={20} className="nav-icon" />
             </div>
             <span className="nav-item-label">{t("nav.home", "Home")}</span>
+            {currentPath === "/" && <span className="nav-active-pill" />}
           </button>
 
           {/* 2. Shopping */}
           <button
             type="button"
-            className={`bottom-nav-item ${currentPath === "/shop" ? "active" : ""}`}
+            className={`bottom-nav-item ${currentPath === "/shop" || currentPath.startsWith("/product") ? "active" : ""}`}
             onClick={() => navigate("/shop")}
             aria-label="Shopping"
           >
             <div className="nav-icon-bubble">
-              <ShoppingBag size={22} className="nav-icon" />
+              <ShoppingBag size={20} className="nav-icon" />
             </div>
             <span className="nav-item-label">{t("nav.shop", "Shop")}</span>
+            {(currentPath === "/shop" || currentPath.startsWith("/product")) && <span className="nav-active-pill" />}
           </button>
 
           {/* 3. AI */}
@@ -61,9 +63,10 @@ function MobileBottomNav() {
             aria-label="AI Picks"
           >
             <div className="nav-icon-bubble">
-              <Sparkles size={22} className="nav-icon" />
+              <Sparkles size={20} className="nav-icon" />
             </div>
-            <span className="nav-item-label">{t("nav.aiRecommendations", "AI")}</span>
+            <span className="nav-item-label">{t("nav.aiRecommendations", "AI Picks")}</span>
+            {currentPath === "/recommendations" && <span className="nav-active-pill" />}
           </button>
 
           {/* 4. Trade */}
@@ -74,9 +77,10 @@ function MobileBottomNav() {
             aria-label="Trade"
           >
             <div className="nav-icon-bubble">
-              <Repeat size={22} className="nav-icon" />
+              <Repeat size={20} className="nav-icon" />
             </div>
-            <span className="nav-item-label">{t("nav.tradeIn", "Trade")}</span>
+            <span className="nav-item-label">{t("nav.tradeIn", "Trade-In")}</span>
+            {currentPath === "/trading" && <span className="nav-active-pill" />}
           </button>
 
           {/* 5. Order */}
@@ -87,9 +91,10 @@ function MobileBottomNav() {
             aria-label="Orders"
           >
             <div className="nav-icon-bubble">
-              <Clock size={22} className="nav-icon" />
+              <Clock size={20} className="nav-icon" />
             </div>
             <span className="nav-item-label">{t("nav.orders", "Orders")}</span>
+            {currentPath === "/orders" && <span className="nav-active-pill" />}
           </button>
         </nav>
       </div>

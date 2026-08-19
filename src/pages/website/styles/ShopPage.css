@@ -550,7 +550,8 @@
    ========================================================================== */
 
 [data-theme="dark"] .shop-workspace-container {
-  background-color: #070a12;
+  background-color: #070a13;
+  color: #f8fafc;
 }
 
 [data-theme="dark"] .shop-breadcrumbs-section {
@@ -566,6 +567,7 @@
 [data-theme="dark"] .shop-topbar-row {
   background-color: #0f172a;
   border-color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
 [data-theme="dark"] .sidebar-title,
@@ -588,7 +590,7 @@
 }
 
 [data-theme="dark"] .category-filter-btn.active {
-  background-color: rgba(16, 185, 129, 0.18);
+  background-color: rgba(16, 185, 129, 0.2);
   color: #34d399;
 }
 
@@ -608,10 +610,23 @@
   color: #ffffff;
 }
 
+[data-theme="dark"] .shop-topbar-search input,
 [data-theme="dark"] .sorting-select-box select {
   background-color: #090d16;
   border-color: #1e293b;
   color: #f8fafc;
+}
+
+[data-theme="dark"] .shop-product-card {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .shop-product-card:hover {
+  background-color: #151f38;
+  border-color: #10b981;
+  box-shadow: 0 16px 32px -6px rgba(0, 0, 0, 0.6);
 }
 
 [data-theme="dark"] .pagination-btn,
@@ -622,7 +637,7 @@
 }
 
 [data-theme="dark"] .pagination-page-btn.active {
-  background-color: #1c7e48;
-  border-color: #1c7e48;
+  background-color: #10b981;
+  border-color: #10b981;
   color: #ffffff;
 }

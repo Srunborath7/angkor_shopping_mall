@@ -792,9 +792,78 @@
 }
 
 .mobile-lang-choice.active {
-  background: #1c7e48;
-  border-color: #1c7e48;
+  background: #10b981;
+  border-color: #10b981;
   color: #ffffff;
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(28, 126, 72, 0.3);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+/* ==========================================================================
+   Header Dark Theme Mobile Overrides
+   ========================================================================== */
+
+[data-theme="dark"] .mobile-nav-panel {
+  background-color: #0f172a;
+  border-bottom-color: #1e293b;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .mobile-user-card {
+  background: #090d16;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .mobile-user-info .info-name {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .mobile-user-info .info-email {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .mobile-nav-item {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .mobile-nav-item:hover,
+[data-theme="dark"] .mobile-nav-item.active {
+  background-color: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+}
+
+[data-theme="dark"] .mobile-drawer-footer {
+  border-top-color: #1e293b;
+}
+
+[data-theme="dark"] .mobile-lang-strip {
+  background: #090d16;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .mobile-lang-title {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .mobile-lang-choice {
+  background: #0f172a;
+  border-color: #1e293b;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .mobile-lang-choice.active {
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .header-lang-btn {
+  background: #0f172a;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .header-lang-btn:hover {
+  background: #1e293b;
+  border-color: #10b981;
 }

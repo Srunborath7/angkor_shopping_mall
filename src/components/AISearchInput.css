@@ -313,3 +313,66 @@
 .ai-dropdown-empty button:hover {
   background: #f8fafc;
 }
+
+/* ==========================================================================
+   AI Search Input Dark Mode Styles
+   ========================================================================== */
+
+[data-theme="dark"] .ai-search-input {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .ai-search-input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+}
+
+[data-theme="dark"] .ai-search-dropdown {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .ai-dropdown-header {
+  border-bottom-color: #1e293b;
+}
+
+[data-theme="dark"] .suggestion-item:hover,
+[data-theme="dark"] .ai-item:hover {
+  background-color: #1e293b;
+}
+
+[data-theme="dark"] .suggestion-name {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .suggestion-meta {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .ai-recommended-box {
+  background-color: #090d16;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .ai-tag {
+  background-color: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #34d399;
+}
+
+[data-theme="dark"] .ai-badge-mini {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}
+
+[data-theme="dark"] .ai-dropdown-empty button {
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .ai-dropdown-empty button:hover {
+  background-color: #1e293b;
+}
