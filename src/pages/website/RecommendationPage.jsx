@@ -191,8 +191,10 @@ function RecommendationPage() {
   }, [wishlist]);
 
   const toggleWishlist = (id) => {
-    if (wishlist.includes(id)) {
-      setWishlist(wishlist.filter((item) => item !== id));
+    const stringId = String(id);
+    const exists = wishlist.some((item) => String(item) === stringId);
+    if (exists) {
+      setWishlist(wishlist.filter((item) => String(item) !== stringId));
       toast.success("Removed from wishlist", {
         icon: "🤍",
         style: { borderRadius: "10px", background: "#1e293b", color: "#fff" }
@@ -308,11 +310,18 @@ function RecommendationPage() {
 
               <button
                 type="button"
-                className={`rec-wishlist-btn ${wishlist.includes(prod.id) ? "active" : ""}`}
-                onClick={(e) => { e.stopPropagation(); toggleWishlist(prod.id); }}
+                className={`rec-wishlist-btn ${wishlist.some((item) => String(item) === String(prod.id)) ? "active" : ""}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleWishlist(prod.id);
+                }}
                 title="Toggle Wishlist"
               >
-                <Heart size={16} fill={wishlist.includes(prod.id) ? "#ef4444" : "none"} stroke={wishlist.includes(prod.id) ? "#ef4444" : "#64748b"} />
+                <Heart
+                  size={16}
+                  fill={wishlist.some((item) => String(item) === String(prod.id)) ? "#ef4444" : "none"}
+                  stroke={wishlist.some((item) => String(item) === String(prod.id)) ? "#ef4444" : "#64748b"}
+                />
               </button>
             </div>
 

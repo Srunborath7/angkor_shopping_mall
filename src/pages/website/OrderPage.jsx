@@ -369,20 +369,8 @@ function OrderPage() {
                                 <h5 style={{ margin: 0 }}>Products Purchased</h5>
                                 <button
                                   type="button"
+                                  className="order-tradein-btn"
                                   onClick={() => navigate("/trading?tab=eligible")}
-                                  style={{
-                                    background: "#ecfdf5",
-                                    color: "#059669",
-                                    border: "1px solid #a7f3d0",
-                                    borderRadius: "8px",
-                                    padding: "4px 10px",
-                                    fontSize: "12px",
-                                    fontWeight: 700,
-                                    cursor: "pointer",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: "4px"
-                                  }}
                                 >
                                   🔄 Trade-In / List Items for Exchange
                                 </button>

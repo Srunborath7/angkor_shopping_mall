@@ -328,8 +328,10 @@ function HomePage() {
   };
 
   const toggleWishlist = (id) => {
-    if (wishlist.includes(id)) {
-      setWishlist(wishlist.filter((item) => item !== id));
+    const stringId = String(id);
+    const exists = wishlist.some((item) => String(item) === stringId);
+    if (exists) {
+      setWishlist(wishlist.filter((item) => String(item) !== stringId));
       toast.success("Removed from wishlist", {
         icon: "🤍",
         style: { borderRadius: "10px", background: "#333", color: "#fff" }
@@ -621,11 +623,35 @@ function HomePage() {
 
                     <button
                       type="button"
-                      className={`product-wishlist-toggle ${wishlist.includes(prod.id) ? "active" : ""}`}
-                      onClick={(e) => { e.stopPropagation(); toggleWishlist(prod.id); }}
+                      className={`product-wishlist-toggle ${
+                        wishlist.some(
+                          (item) =>
+                            String(item) === String(prod.product_id || prod.id) ||
+                            String(item) === String(prod.id) ||
+                            (prod.product_id && String(item) === String(prod.product_id))
+                        )
+                          ? "active"
+                          : ""
+                      }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleWishlist(prod.product_id || prod.id);
+                      }}
                       title="Toggle Wishlist"
                     >
-                      <Heart size={16} fill={wishlist.includes(prod.id) ? "#e54b4b" : "none"} />
+                      <Heart
+                        size={16}
+                        fill={
+                          wishlist.some(
+                            (item) =>
+                              String(item) === String(prod.product_id || prod.id) ||
+                              String(item) === String(prod.id) ||
+                              (prod.product_id && String(item) === String(prod.product_id))
+                          )
+                            ? "#e54b4b"
+                            : "none"
+                        }
+                      />
                     </button>
                   </div>
 

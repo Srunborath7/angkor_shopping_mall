@@ -363,6 +363,11 @@ function ProductDetailPage() {
     }
   });
 
+  useEffect(() => {
+    localStorage.setItem("wishlist", JSON.stringify(wishlist));
+    window.dispatchEvent(new Event("cart-updated"));
+  }, [wishlist]);
+
   // Dynamic attributes extracted from current product schema
   const dynamicAttributes = useMemo(() => getDynamicAttributes(product), [product]);
 
@@ -539,12 +544,16 @@ function ProductDetailPage() {
 
   const toggleWishlist = () => {
     if (!product) return;
-    const prodId = product.id;
-    if (wishlist.includes(prodId)) {
-      setWishlist(wishlist.filter((item) => item !== prodId));
+    const prodId = String(product.id);
+    const flashId = effectiveFlashSale ? String(effectiveFlashSale.id) : null;
+    const exists = wishlist.some((item) => String(item) === prodId || (flashId && String(item) === flashId));
+
+    if (exists) {
+      const updated = wishlist.filter((item) => String(item) !== prodId && (!flashId || String(item) !== flashId));
+      setWishlist(updated);
       toast.success("Removed from wishlist", { icon: "🤍" });
     } else {
-      setWishlist([...wishlist, prodId]);
+      setWishlist([...wishlist, product.id]);
       toast.success("Added to wishlist!", { icon: "❤️" });
     }
   };
@@ -610,6 +619,15 @@ function ProductDetailPage() {
   const effectiveFlashSale = passedFlashSale || activeFlashSale;
   const isFlashSaleActive = fromFlashSale || (effectiveFlashSale && locationState.fromFlashSale !== false);
   const flashPrice = passedFlashPrice !== null ? Number(passedFlashPrice) : (effectiveFlashSale ? Number(effectiveFlashSale.price) : null);
+
+  const isWishlisted = Boolean(
+    product &&
+      wishlist.some(
+        (item) =>
+          String(item) === String(product.id) ||
+          (effectiveFlashSale && (String(item) === String(effectiveFlashSale.id) || String(item) === String(effectiveFlashSale.product_id)))
+      )
+  );
 
   const baseOriginalPrice = product?.originalPrice || (product?.price ? Number((product.price * 1.25).toFixed(2)) : 0);
   const regularPrice = selectedVariant ? Number(selectedVariant.price) : Number(product?.price ?? 0);
@@ -755,7 +773,6 @@ function ProductDetailPage() {
     );
   }
 
-  const isWishlisted = wishlist.includes(product.id);
   const specsEntries = Object.entries(product.specifications || {});
 
   return (

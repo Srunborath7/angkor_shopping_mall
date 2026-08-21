@@ -43,6 +43,7 @@ import {
   getMySupportMessagesApi,
   trackSupportMessagesApi
 } from "../services/supportMessageService";
+import { useTheme } from "../context/ThemeContext";
 import "./ChatBot.css";
 
 const DEFAULT_QUICK_CHIPS_EN = [
@@ -103,6 +104,9 @@ function ChatBot() {
   const auth = useSelector((state) => state.auth);
   const isLoggedIn = !!auth?.token;
   const user = auth?.user;
+  const themeContext = useTheme();
+  const isDark = Boolean(themeContext?.isDark);
+  const resolvedTheme = themeContext?.resolvedTheme || (isDark ? "dark" : "light");
 
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -431,8 +435,106 @@ function ChatBot() {
     }
   };
 
-  // Dual-Engine Speech Synthesis (Natural Khmer Audio Stream + Web Speech Fallback)
-  const speakTextDual = (id, text, lang = "km") => {
+  // Helper to split text into short sentences/chunks (<= 110 chars) so Google TTS never returns 400 Bad Request
+  const splitIntoSpeechChunks = (text, maxLen = 110) => {
+    if (!text) return [];
+    // Split on sentence terminators: periods, exclamation, question, Khmer punctuation '។' and newlines
+    const rawSentences = text.split(/(?<=[.!?។\n])\s+/);
+    const chunks = [];
+    let currentChunk = "";
+
+    for (let s of rawSentences) {
+      s = s.trim();
+      if (!s) continue;
+
+      if ((currentChunk + " " + s).trim().length <= maxLen) {
+        currentChunk = currentChunk ? currentChunk + " " + s : s;
+      } else {
+        if (currentChunk) chunks.push(currentChunk);
+        if (s.length <= maxLen) {
+          currentChunk = s;
+        } else {
+          let remaining = s;
+          while (remaining.length > maxLen) {
+            let splitAt = remaining.lastIndexOf(" ", maxLen);
+            if (splitAt <= 20) splitAt = maxLen;
+            chunks.push(remaining.slice(0, splitAt).trim());
+            remaining = remaining.slice(splitAt).trim();
+          }
+          currentChunk = remaining;
+        }
+      }
+    }
+
+    if (currentChunk.trim()) {
+      chunks.push(currentChunk.trim());
+    }
+
+    return chunks.filter(Boolean);
+  };
+
+  // Translation helper for dual voice playback (translates English to Khmer and vice versa on-the-fly)
+  const translateForVoice = async (text, targetLang = "km") => {
+    if (!text || !text.trim()) return text;
+
+    let clean = text
+      .replace(/[*#_`~•🏢👋🛍️✨🔄📦💳📱💻⚡✉️]/g, "")
+      .replace(/https?:\/\/\S+/g, "")
+      .replace(/[\n\r]+/g, " ")
+      .trim();
+
+    const hasEnglish = /[a-zA-Z]{2,}/.test(clean);
+    const hasKhmer = /[\u1780-\u17FF]/.test(clean);
+
+    if (targetLang === "km" && hasEnglish) {
+      try {
+        const encoded = encodeURIComponent(clean.slice(0, 400));
+        const res = await fetch(
+          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=km&dt=t&q=${encoded}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && Array.isArray(data[0])) {
+            const translated = data[0]
+              .map((item) => item[0])
+              .filter(Boolean)
+              .join("");
+            if (translated && translated.trim()) {
+              return translated.trim();
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Khmer translation for voice failed, using original:", err);
+      }
+    } else if (targetLang === "en" && hasKhmer) {
+      try {
+        const encoded = encodeURIComponent(clean.slice(0, 400));
+        const res = await fetch(
+          `https://translate.googleapis.com/translate_a/single?client=gtx&sl=km&tl=en&dt=t&q=${encoded}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && Array.isArray(data[0])) {
+            const translated = data[0]
+              .map((item) => item[0])
+              .filter(Boolean)
+              .join("");
+            if (translated && translated.trim()) {
+              return translated.trim();
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("English translation for voice failed, using original:", err);
+      }
+    }
+
+    return clean;
+  };
+
+  // Dual-Engine Speech Synthesis (Translates & Speaks in Natural Khmer Audio Stream + Web Speech Fallback)
+  const speakTextDual = async (id, text, lang = "km") => {
     if (speakingMsgId === id && speakingLang === lang) {
       stopSpeaking();
       return;
@@ -445,70 +547,86 @@ function ChatBot() {
     setSpeakingMsgId(id);
     setSpeakingLang(lang);
 
-    let clean = text
-      .replace(/[*#_`~]/g, "")
-      .replace(/https?:\/\/\S+/g, "")
-      .replace(/[\n\r]+/g, " ")
-      .trim();
+    // If English text is played with Khmer voice (🇰🇭 ស្តាប់), translate to Khmer first so it speaks natural Khmer!
+    // And if Khmer text is played with English voice (🇺🇸 Listen), translate to English first!
+    const voiceText = await translateForVoice(text, lang);
 
-    if (!clean) {
+    if (!voiceText) {
       setSpeakingMsgId(null);
       setSpeakingLang(null);
       return;
     }
 
-    // Voice snippet for clear pronunciation
-    const voiceSnippet = clean.slice(0, 260);
-
     if (lang === "km") {
-      // Natural Khmer audio endpoints (Vite proxy + direct fallback with no-referrer)
-      const encoded = encodeURIComponent(voiceSnippet);
-      const sources = [
-        `/tts-proxy?ie=UTF-8&tl=km&client=tw-ob&q=${encoded}`,
-        `https://translate.google.com/translate_tts?ie=UTF-8&tl=km&client=tw-ob&q=${encoded}`,
-        `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=km&q=${encoded}`,
-        `https://translate.google.com.kh/translate_tts?ie=UTF-8&tl=km&client=tw-ob&q=${encoded}`
-      ];
+      // Split into small speech-friendly chunks (<= 110 chars) so Google TTS never returns 400 Bad Request
+      const chunks = splitIntoSpeechChunks(voiceText, 110);
+      if (chunks.length === 0) {
+        setSpeakingMsgId(null);
+        setSpeakingLang(null);
+        return;
+      }
 
-      let sourceIndex = 0;
+      let chunkIdx = 0;
 
-      const tryPlaySource = () => {
-        if (sourceIndex >= sources.length) {
-          // If all online audio streams fail, attempt Web Speech only if native Khmer voice exists
-          playWebSpeech(id, voiceSnippet, "km-KH");
-          return;
-        }
-
-        const url = sources[sourceIndex];
-        sourceIndex += 1;
-
-        const audio = document.createElement("audio");
-        audio.referrerPolicy = "no-referrer";
-        audio.src = url;
-        currentAudioRef.current = audio;
-
-        audio.onended = () => {
+      const playNextChunk = () => {
+        if (chunkIdx >= chunks.length) {
           setSpeakingMsgId(null);
           setSpeakingLang(null);
           currentAudioRef.current = null;
-        };
-
-        audio.onerror = () => {
-          tryPlaySource();
-        };
-
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((err) => {
-            console.warn(`Audio stream failed for source ${sourceIndex}:`, err);
-            tryPlaySource();
-          });
+          return;
         }
+
+        const chunkText = chunks[chunkIdx];
+        chunkIdx++;
+
+        const encoded = encodeURIComponent(chunkText);
+        const sources = [
+          `/tts-proxy?ie=UTF-8&tl=km&client=tw-ob&q=${encoded}`,
+          `https://translate.google.com/translate_tts?ie=UTF-8&tl=km&client=tw-ob&q=${encoded}`,
+          `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=km&q=${encoded}`,
+          `https://translate.google.com.kh/translate_tts?ie=UTF-8&tl=km&client=tw-ob&q=${encoded}`
+        ];
+
+        let sourceIndex = 0;
+
+        const tryPlaySource = () => {
+          if (sourceIndex >= sources.length) {
+            // Fallback to Web Speech if online audio fails
+            playWebSpeech(id, chunkText, "km-KH");
+            return;
+          }
+
+          const url = sources[sourceIndex];
+          sourceIndex++;
+
+          const audio = document.createElement("audio");
+          audio.referrerPolicy = "no-referrer";
+          audio.src = url;
+          currentAudioRef.current = audio;
+
+          audio.onended = () => {
+            playNextChunk();
+          };
+
+          audio.onerror = () => {
+            tryPlaySource();
+          };
+
+          const playPromise = audio.play();
+          if (playPromise !== undefined) {
+            playPromise.catch((err) => {
+              console.warn(`Audio stream failed for source ${sourceIndex}:`, err);
+              tryPlaySource();
+            });
+          }
+        };
+
+        tryPlaySource();
       };
 
-      tryPlaySource();
+      playNextChunk();
     } else {
-      playWebSpeech(id, voiceSnippet, "en-US");
+      playWebSpeech(id, voiceText.slice(0, 300), "en-US");
     }
   };
 
@@ -931,6 +1049,10 @@ function ChatBot() {
     );
   };
 
+  // Do not show chatbot on authentication pages
+  const isAuthPage = location.pathname?.startsWith("/auth");
+  if (isAuthPage) return null;
+
   return (
     <>
       {/* Floating Trigger Container */}
@@ -993,7 +1115,8 @@ function ChatBot() {
       {/* Main Interactive Chatbot Window */}
       {isOpen && (
         <div
-          className={`chatbot-window ${isExpanded ? "expanded" : ""}`}
+          className={`chatbot-window ${isExpanded ? "expanded" : ""} ${isDark ? "dark-mode" : ""}`}
+          data-theme={isDark ? "dark" : "light"}
           role="dialog"
           aria-modal="true"
           aria-label="AI Shopping Assistant"

@@ -604,7 +604,6 @@
   font-weight: 700;
 }
 
-/* Purchased products breakdown list - Modern Card Grid (2-3 in one row) */
 .details-products-section h5 {
   font-size: 13px;
   font-weight: 700;
@@ -612,6 +611,27 @@
   color: var(--text-light);
   letter-spacing: 0.5px;
   margin-bottom: 12px;
+}
+
+.order-tradein-btn {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.order-tradein-btn:hover {
+  background: #d1fae5;
+  border-color: #6ee7b7;
+  transform: translateY(-1px);
 }
 
 .products-mini-cards-list {
@@ -916,28 +936,103 @@
   background-color: #151f38;
 }
 
-[data-theme="dark"] .order-expanded-body {
-  background-color: #090d16;
-  border-top-color: #1e293b;
+[data-theme="dark"] .order-accordion-details {
+  background-color: #0b1120 !important;
+  border-top: 1px solid #1e293b;
 }
 
-[data-theme="dark"] .shipping-details-subcard,
-[data-theme="dark"] .products-ordered-subcard {
-  background-color: #0f172a;
-  border-color: #1e293b;
+[data-theme="dark"] .details-info-card {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+[data-theme="dark"] .details-info-card h5,
+[data-theme="dark"] .details-products-section h5 {
+  color: #38bdf8 !important;
+}
+
+[data-theme="dark"] .details-info-card p {
+  color: #cbd5e1 !important;
+}
+
+[data-theme="dark"] .details-info-card p.bold-name {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .billing-line {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .billing-line .bold {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .billing-line.total-highlight {
+  border-top-color: #1e293b !important;
+}
+
+[data-theme="dark"] .billing-line.total-highlight .bold.text-green {
+  color: #34d399 !important;
+}
+
+[data-theme="dark"] .order-tradein-btn {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #34d399 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+[data-theme="dark"] .order-tradein-btn:hover {
+  background: rgba(16, 185, 129, 0.25) !important;
+  border-color: #10b981 !important;
 }
 
 [data-theme="dark"] .product-mini-card {
-  background-color: #090d16;
-  border-color: #1e293b;
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+[data-theme="dark"] .product-mini-card:hover {
+  background-color: #151f38 !important;
+  border-color: #10b981 !important;
+}
+
+[data-theme="dark"] .product-mini-card img {
+  background-color: #070a13 !important;
+  border-color: #1e293b !important;
 }
 
 [data-theme="dark"] .mini-card-info h6 {
-  color: #f8fafc;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .mini-card-info span {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .mini-card-info strong {
+  color: #f8fafc !important;
 }
 
 [data-theme="dark"] .mini-card-total-cost {
-  color: #34d399;
+  color: #34d399 !important;
+}
+
+[data-theme="dark"] .status-paid {
+  background-color: rgba(16, 185, 129, 0.18) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+[data-theme="dark"] .status-processing {
+  background-color: rgba(245, 158, 11, 0.18) !important;
+  color: #fbbf24 !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+[data-theme="dark"] .status-pending {
+  background-color: rgba(148, 163, 184, 0.15) !important;
+  color: #cbd5e1 !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
 }
 
 [data-theme="dark"] .details-row-item {
