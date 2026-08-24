@@ -30,16 +30,27 @@ import {
 import { checkoutApi, payOrderApi } from "../services/orderService";
 import { updateProductVariantInventoryApi, updateProductApi } from "../services/productsService";
 import { getMyTradeProductsApi } from "../services/tradeService";
+import { useTranslation } from "../context/LanguageContext";
+import KhqrPaymentModal from "./KhqrPaymentModal";
 import "./CartDrawer.css";
 
 function CartDrawer({ isOpen, onClose }) {
   const navigate = useNavigate();
+  const { t, language } = useTranslation();
   const auth = useSelector((state) => state.auth);
   const isLoggedIn = !!auth.token;
   const user = auth.user;
 
   // Multi-step Checkout State: 'cart' | 'info' | 'payment' | 'confirm'
   const [step, setStep] = useState("cart");
+
+  // KHQR Payment Modal State
+  const [khqrModal, setKhqrModal] = useState({
+    isOpen: false,
+    orderId: null,
+    orderNumber: "",
+    amount: 0
+  });
 
   // Cart Items State
   const [cartItems, setCartItems] = useState([]);
@@ -598,14 +609,55 @@ function CartDrawer({ isOpen, onClose }) {
         }
       }
 
-      // 4. Update local orders array
+      // 4. If payment method is KHQR / ABA QR, trigger the interactive Bakong KHQR modal
+      if (paymentMethod === "aba-qr") {
+        const newPendingOrder = {
+          id: orderId,
+          rawId: orderData?.id,
+          date: new Date().toISOString().split("T")[0],
+          items: cartItems.reduce((acc, item) => acc + item.quantity, 0),
+          total: grandTotal.toFixed(2),
+          status: "Pending KHQR Payment",
+          paymentMethod: "BAKONG KHQR",
+          addressMode: addressMode,
+          shippingInfo: {
+            ...form,
+            address: finalAddress,
+            mapLocation: addressMode === "map" ? mapLocation : null
+          },
+          products: cartItems
+        };
+
+        const existingOrders = localStorage.getItem("orders");
+        const ordersList = existingOrders ? JSON.parse(existingOrders) : [];
+        ordersList.unshift(newPendingOrder);
+        localStorage.setItem("orders", JSON.stringify(ordersList));
+
+        // Clear Cart
+        saveCartItems([]);
+        setPromoCode("");
+        setDiscount(0);
+        setIsSubmitting(false);
+        onClose();
+
+        // Open KHQR Modal
+        setKhqrModal({
+          isOpen: true,
+          orderId: orderData?.id,
+          orderNumber: orderId,
+          amount: grandTotal
+        });
+        return;
+      }
+
+      // 4. Regular / Non-KHQR flow (COD, Visa, etc.)
       const newOrder = {
         id: orderId,
         rawId: orderData?.id,
         date: new Date().toISOString().split("T")[0],
         items: cartItems.reduce((acc, item) => acc + item.quantity, 0),
         total: grandTotal.toFixed(2),
-        status: "Paid",
+        status: paymentMethod === "cod" ? "Pending (Cash on Delivery)" : "Paid",
         paymentMethod: paymentMethod.toUpperCase(),
         addressMode: addressMode,
         shippingInfo: {
@@ -645,6 +697,24 @@ function CartDrawer({ isOpen, onClose }) {
     }
   };
 
+  const handleKhqrSuccess = (confirmedOrderId) => {
+    try {
+      const existingOrders = localStorage.getItem("orders");
+      if (existingOrders) {
+        const list = JSON.parse(existingOrders);
+        const updatedList = list.map((o) =>
+          o.rawId === confirmedOrderId || o.id === khqrModal.orderNumber
+            ? { ...o, status: "Paid" }
+            : o
+        );
+        localStorage.setItem("orders", JSON.stringify(updatedList));
+      }
+    } catch (e) {
+      console.warn("Update local order after KHQR paid:", e);
+    }
+    navigate("/orders");
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -682,10 +752,10 @@ function CartDrawer({ isOpen, onClose }) {
                   </button>
                 )}
                 <h3>
-                  {step === "cart" && `Cart (${cartItems.length})`}
-                  {step === "info" && "Shipping Details"}
-                  {step === "payment" && "Select Payment"}
-                  {step === "confirm" && "Order Overview"}
+                  {step === "cart" && (language === "km" ? `កន្ត្រកទំនិញ (${cartItems.length})` : `Cart (${cartItems.length})`)}
+                  {step === "info" && (language === "km" ? "ព័ត៌មានដឹកជញ្ជូន" : "Shipping Details")}
+                  {step === "payment" && (language === "km" ? "ជ្រើសរើសវិធីទូទាត់" : "Select Payment")}
+                  {step === "confirm" && (language === "km" ? "សង្ខេបការបញ្ជាទិញ" : "Order Overview")}
                 </h3>
               </div>
               <button className="drawer-close-btn" onClick={onClose}>
@@ -700,10 +770,10 @@ function CartDrawer({ isOpen, onClose }) {
                   {cartItems.length === 0 ? (
                     <div className="empty-cart-view">
                       <ShoppingBag size={64} className="empty-cart-icon" />
-                      <h4>Your cart is empty</h4>
-                      <p>Browse products and add them to your cart to checkout.</p>
+                      <h4>{language === "km" ? "កន្ត្រកទំនិញរបស់អ្នកនៅទំនេរ" : "Your cart is empty"}</h4>
+                      <p>{language === "km" ? "សូមស្វែងរកផលិតផល និងបញ្ចូលទៅក្នុងកន្ត្រកដើម្បីទិញ។" : "Browse products and add them to your cart to checkout."}</p>
                       <button className="empty-continue-btn" onClick={() => { onClose(); navigate("/shop"); }}>
-                        Continue Shopping
+                        {language === "km" ? "បន្តការទិញទំនិញ" : "Continue Shopping"}
                       </button>
                     </div>
                   ) : (
@@ -1051,15 +1121,15 @@ function CartDrawer({ isOpen, onClose }) {
                   <h4 className="payment-section-title">Select Payment Method</h4>
 
                   <div className="payment-options-grid">
-                    {/* ABA KHQR */}
+                    {/* Bakong KHQR */}
                     <div
                       className={`payment-option-card ${paymentMethod === "aba-qr" ? "active" : ""}`}
                       onClick={() => setPaymentMethod("aba-qr")}
                     >
-                      <QrCode className="payment-card-icon" />
+                      <QrCode className="payment-card-icon" style={{ color: "#e11d48" }} />
                       <div className="payment-card-text">
-                        <span className="method-title">ABA KHQR</span>
-                        <span className="method-sub">Scan QR Code instantly</span>
+                        <span className="method-title">Bakong KHQR</span>
+                        <span className="method-sub">ABA, ACLEDA, Wing & all banks</span>
                       </div>
                     </div>
 
@@ -1256,6 +1326,16 @@ function CartDrawer({ isOpen, onClose }) {
           </motion.div>
         </>
       )}
+
+      {/* Interactive Bakong KHQR Modal */}
+      <KhqrPaymentModal
+        isOpen={khqrModal.isOpen}
+        onClose={() => setKhqrModal((prev) => ({ ...prev, isOpen: false }))}
+        orderId={khqrModal.orderId}
+        orderNumber={khqrModal.orderNumber}
+        amount={khqrModal.amount}
+        onSuccess={handleKhqrSuccess}
+      />
     </AnimatePresence>
   );
 }

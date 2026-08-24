@@ -44,6 +44,8 @@ import {
   trackSupportMessagesApi
 } from "../services/supportMessageService";
 import { useTheme } from "../context/ThemeContext";
+import { useLanguage } from "../context/LanguageContext";
+import { config } from "../api/request";
 import "./ChatBot.css";
 
 const DEFAULT_QUICK_CHIPS_EN = [
@@ -108,6 +110,10 @@ function ChatBot() {
   const isDark = Boolean(themeContext?.isDark);
   const resolvedTheme = themeContext?.resolvedTheme || (isDark ? "dark" : "light");
 
+  const { language, setLanguage } = useLanguage();
+  const preferredVoiceLang = language;
+  const setPreferredVoiceLang = (lang) => setLanguage(lang, true);
+
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showCallout, setShowCallout] = useState(true);
@@ -126,14 +132,10 @@ function ChatBot() {
   });
   const [sendingSupport, setSendingSupport] = useState(false);
 
-  const [preferredVoiceLang, setPreferredVoiceLang] = useState(() => {
-    return localStorage.getItem("angkor_preferred_voice_lang") || "km";
-  });
-
   const [messages, setMessages] = useState(() => {
     try {
       const saved = sessionStorage.getItem("angkor_ai_chat_history");
-      const initialLang = localStorage.getItem("angkor_preferred_voice_lang") || "km";
+      const initialLang = localStorage.getItem("angkor_language") || "km";
       return saved ? JSON.parse(saved) : (initialLang === "km" ? INITIAL_MESSAGES_KM : INITIAL_MESSAGES_EN);
     } catch {
       return INITIAL_MESSAGES_KM;
@@ -580,11 +582,12 @@ function ChatBot() {
         chunkIdx++;
 
         const encoded = encodeURIComponent(chunkText);
+        const apiBase = (config?.base_url || "https://angkor-shopping-mall-api.onrender.com").replace(/\/$/, "");
         const sources = [
-          `/tts-proxy?ie=UTF-8&tl=km&client=tw-ob&q=${encoded}`,
-          `https://translate.google.com/translate_tts?ie=UTF-8&tl=km&client=tw-ob&q=${encoded}`,
-          `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=km&q=${encoded}`,
-          `https://translate.google.com.kh/translate_tts?ie=UTF-8&tl=km&client=tw-ob&q=${encoded}`
+          `${apiBase}/api/chatbot/tts?lang=${lang}&text=${encoded}`,
+          `/tts-proxy?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encoded}`,
+          `https://translate.google.com/translate_tts?ie=UTF-8&tl=${lang}&client=tw-ob&q=${encoded}`,
+          `https://translate.googleapis.com/translate_tts?client=gtx&ie=UTF-8&tl=${lang}&q=${encoded}`
         ];
 
         let sourceIndex = 0;
@@ -592,15 +595,16 @@ function ChatBot() {
         const tryPlaySource = () => {
           if (sourceIndex >= sources.length) {
             // Fallback to Web Speech if online audio fails
-            playWebSpeech(id, chunkText, "km-KH");
+            playWebSpeech(id, chunkText, lang === "km" ? "km-KH" : "en-US");
             return;
           }
 
           const url = sources[sourceIndex];
           sourceIndex++;
 
-          const audio = document.createElement("audio");
+          const audio = new Audio();
           audio.referrerPolicy = "no-referrer";
+          audio.crossOrigin = "anonymous";
           audio.src = url;
           currentAudioRef.current = audio;
 
@@ -615,7 +619,7 @@ function ChatBot() {
           const playPromise = audio.play();
           if (playPromise !== undefined) {
             playPromise.catch((err) => {
-              console.warn(`Audio stream failed for source ${sourceIndex}:`, err);
+              console.warn(`Audio stream source ${sourceIndex} failed:`, err.message);
               tryPlaySource();
             });
           }
@@ -626,7 +630,26 @@ function ChatBot() {
 
       playNextChunk();
     } else {
-      playWebSpeech(id, voiceText.slice(0, 300), "en-US");
+      // English: attempt Web Speech first, fallback to backend TTS if no voice exists
+      if (window.speechSynthesis && window.speechSynthesis.getVoices().some((v) => v.lang.startsWith("en"))) {
+        playWebSpeech(id, voiceText.slice(0, 300), "en-US");
+      } else {
+        const encoded = encodeURIComponent(voiceText.slice(0, 250));
+        const apiBase = (config?.base_url || "https://angkor-shopping-mall-api.onrender.com").replace(/\/$/, "");
+        const audio = new Audio(`${apiBase}/api/chatbot/tts?lang=en&text=${encoded}`);
+        audio.referrerPolicy = "no-referrer";
+        currentAudioRef.current = audio;
+        audio.onended = () => {
+          setSpeakingMsgId(null);
+          setSpeakingLang(null);
+        };
+        audio.onerror = () => {
+          playWebSpeech(id, voiceText.slice(0, 300), "en-US");
+        };
+        audio.play().catch(() => {
+          playWebSpeech(id, voiceText.slice(0, 300), "en-US");
+        });
+      }
     }
   };
 
@@ -650,15 +673,10 @@ function ChatBot() {
     }
   };
 
-  // Switch voice language with immediate Khmer spoken greeting for Cambodians
+  // Switch voice & website language with immediate spoken greeting
   const handleSelectVoiceLanguage = (nextLang) => {
-    setPreferredVoiceLang(nextLang);
-    localStorage.setItem("angkor_preferred_voice_lang", nextLang);
-    localStorage.setItem("angkor_language", nextLang);
+    setLanguage(nextLang, true);
     setIsVoiceEnabled(true);
-
-    // Dispatch global website language change
-    window.dispatchEvent(new CustomEvent("angkor-language-change", { detail: nextLang }));
 
     if (recognitionRef.current) {
       recognitionRef.current.lang = nextLang === "km" ? "km-KH" : "en-US";
@@ -667,14 +685,12 @@ function ChatBot() {
     setChips(nextLang === "km" ? DEFAULT_QUICK_CHIPS_KM : DEFAULT_QUICK_CHIPS_EN);
 
     if (nextLang === "km") {
-      toast.success("🇰🇭 បានជ្រើសរើសសំឡេងខ្មែរ (Khmer AI Voice Active)");
       speakTextDual(
         "lang_switch_km",
         "សូមស្វាគមន៍មកកាន់ Angkor Shopping Mall! ខ្ញុំអាចជួយបងប្អូនជាភាសាខ្មែរបាន។ តើលោកអ្នកចង់ស្វែងរកអ្វីដែរ?",
         "km"
       );
     } else {
-      toast.success("🇺🇸 English Voice Activated");
       speakTextDual(
         "lang_switch_en",
         "Welcome to Angkor Shopping Mall! How can I assist you today?",
@@ -683,21 +699,13 @@ function ChatBot() {
     }
   };
 
-  // Sync with global website language change event
+  // Sync speech recognition & chips whenever language changes
   useEffect(() => {
-    const handleGlobalLangChange = (e) => {
-      const lang = e.detail;
-      if (lang && (lang === "km" || lang === "en") && lang !== preferredVoiceLang) {
-        setPreferredVoiceLang(lang);
-        setChips(lang === "km" ? DEFAULT_QUICK_CHIPS_KM : DEFAULT_QUICK_CHIPS_EN);
-        if (recognitionRef.current) {
-          recognitionRef.current.lang = lang === "km" ? "km-KH" : "en-US";
-        }
-      }
-    };
-    window.addEventListener("angkor-language-change", handleGlobalLangChange);
-    return () => window.removeEventListener("angkor-language-change", handleGlobalLangChange);
-  }, [preferredVoiceLang]);
+    setChips(language === "km" ? DEFAULT_QUICK_CHIPS_KM : DEFAULT_QUICK_CHIPS_EN);
+    if (recognitionRef.current) {
+      recognitionRef.current.lang = language === "km" ? "km-KH" : "en-US";
+    }
+  }, [language]);
 
   // Toggle voice playback mute/unmute
   const handleToggleVoicePlayback = () => {
@@ -719,19 +727,41 @@ function ChatBot() {
 
   const handleToggleVoiceMic = () => {
     if (!recognitionRef.current) {
-      toast.error("Speech recognition is not supported in this browser.");
+      toast.error(
+        preferredVoiceLang === "km"
+          ? "កម្មវិធីរុករកនេះមិនគាំទ្រការស្តាប់សំឡេងទេ"
+          : "Speech recognition is not supported in this browser."
+      );
       return;
     }
 
     if (isListening) {
       recognitionRef.current.stop();
       setIsListening(false);
+      toast(preferredVoiceLang === "km" ? "⏹️ បានបិទការស្តាប់" : "⏹️ Stopped listening");
     } else {
       try {
-        recognitionRef.current.lang = preferredVoiceLang === "km" ? "km-KH" : "en-US";
+        const targetLang = preferredVoiceLang === "km" ? "km-KH" : "en-US";
+        recognitionRef.current.lang = targetLang;
         recognitionRef.current.start();
+        toast(
+          preferredVoiceLang === "km"
+            ? "🎙️ កំពុងស្តាប់ជាភាសាខ្មែរ... (និយាយឥឡូវនេះ)"
+            : "🎙️ Listening in English... (Speak now)",
+          { icon: "🎙️" }
+        );
       } catch (e) {
-        recognitionRef.current.stop();
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+        setTimeout(() => {
+          try {
+            recognitionRef.current.lang = preferredVoiceLang === "km" ? "km-KH" : "en-US";
+            recognitionRef.current.start();
+          } catch (err) {
+            console.warn("Mic start error:", err);
+          }
+        }, 150);
       }
     }
   };
@@ -1219,28 +1249,6 @@ function ChatBot() {
                 {newRepliesCount > 0 && (
                   <span className="chatbot-tab-reply-count">{newRepliesCount}</span>
                 )}
-              </button>
-            </div>
-
-            {/* Language Capsule Switcher */}
-            <div className="chatbot-lang-segmented-control" title="Change Language / ប្តូរភាសា">
-              <button
-                type="button"
-                className={`btn-lang-segment ${preferredVoiceLang === "km" ? "active" : ""}`}
-                onClick={() => handleSelectVoiceLanguage("km")}
-                aria-label="Khmer Language"
-              >
-                <span className="lang-flag">🇰🇭</span>
-                <span className="lang-text">KH</span>
-              </button>
-              <button
-                type="button"
-                className={`btn-lang-segment ${preferredVoiceLang === "en" ? "active" : ""}`}
-                onClick={() => handleSelectVoiceLanguage("en")}
-                aria-label="English Language"
-              >
-                <span className="lang-flag">🇺🇸</span>
-                <span className="lang-text">EN</span>
               </button>
             </div>
           </div>

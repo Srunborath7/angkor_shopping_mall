@@ -14,11 +14,13 @@ import {
   Clock,
   ChevronDown,
   ChevronUp,
-  CreditCard
+  CreditCard,
+  QrCode
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
 import { getOrdersApi } from "../../services/orderService";
+import KhqrPaymentModal from "../../components/KhqrPaymentModal";
 import "./styles/OrderPage.css";
 
 function OrderPage() {
@@ -33,6 +35,12 @@ function OrderPage() {
   const [activeTab, setActiveTab] = useState("orders");
   const [orders, setOrders] = useState([]);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [khqrModal, setKhqrModal] = useState({
+    isOpen: false,
+    orderId: null,
+    orderNumber: "",
+    amount: 0
+  });
 
   // Load orders from API & localStorage fallback
   const loadOrders = async () => {
@@ -360,6 +368,39 @@ function OrderPage() {
                                     <span className="bold text-green">${order.total}</span>
                                   </div>
                                 </div>
+
+                                {String(order.status).toLowerCase().includes("pending") && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setKhqrModal({
+                                        isOpen: true,
+                                        orderId: order.rawId || order.id?.replace("#ORD-", ""),
+                                        orderNumber: order.id,
+                                        amount: parseFloat(order.total)
+                                      })
+                                    }
+                                    style={{
+                                      marginTop: "12px",
+                                      width: "100%",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      gap: "8px",
+                                      padding: "10px",
+                                      background: "linear-gradient(135deg, #e11d48 0%, #be123c 100%)",
+                                      color: "#ffffff",
+                                      border: "none",
+                                      borderRadius: "12px",
+                                      fontWeight: 700,
+                                      fontSize: "13px",
+                                      cursor: "pointer",
+                                      boxShadow: "0 4px 12px rgba(225, 29, 72, 0.25)"
+                                    }}
+                                  >
+                                    <QrCode size={16} /> Pay with Bakong KHQR
+                                  </button>
+                                )}
                               </div>
                             </div>
 
@@ -407,6 +448,18 @@ function OrderPage() {
 
         </div>
       </div>
+
+      {/* Bakong KHQR Payment Modal */}
+      <KhqrPaymentModal
+        isOpen={khqrModal.isOpen}
+        onClose={() => setKhqrModal((prev) => ({ ...prev, isOpen: false }))}
+        orderId={khqrModal.orderId}
+        orderNumber={khqrModal.orderNumber}
+        amount={khqrModal.amount}
+        onSuccess={() => {
+          loadOrders();
+        }}
+      />
     </div>
   );
 }

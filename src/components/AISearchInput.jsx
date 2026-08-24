@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Sparkles, Tag, ArrowRight, Loader2, X } from "lucide-react";
 import { getSearchRecommendationsApi } from "../services/recommendationService";
+import { useTranslation } from "../context/LanguageContext";
 import "./AISearchInput.css";
 
 const NO_IMAGE_PLACEHOLDER =
@@ -14,16 +15,19 @@ const NO_IMAGE_PLACEHOLDER =
   );
 
 export default function AISearchInput({
-  placeholder = "Search by product name, category, or brand...",
+  placeholder,
   initialValue = "",
   onSearchSubmit,
   className = ""
 }) {
   const navigate = useNavigate();
+  const { t, language } = useTranslation();
   const [query, setQuery] = useState(initialValue);
   const [suggestions, setSuggestions] = useState(null);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+
+  const defaultPlaceholder = placeholder || (language === "km" ? "ស្វែងរកផលិតផល ម៉ាក ឬប្រភេទជាមួយ AI..." : "Search by product name, category, or brand...");
 
   const wrapperRef = useRef(null);
 
@@ -119,7 +123,7 @@ export default function AISearchInput({
         <input
           type="text"
           className="ai-search-input"
-          placeholder={placeholder}
+          placeholder={placeholder || defaultPlaceholder}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -148,7 +152,7 @@ export default function AISearchInput({
         ) : null}
 
         <button type="submit" className="ai-search-submit-btn">
-          Search
+          {t("common.search", "Search")}
         </button>
       </form>
 

@@ -15,6 +15,7 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
 import AISearchInput from "../../components/AISearchInput";
+import { useTranslation } from "../../context/LanguageContext";
 import { productsPagedApi } from "../../services/productsService";
 import { useSelector } from "react-redux";
 import { addToCartApi } from "../../services/cartService";
@@ -111,13 +112,15 @@ function normalizeProduct(raw) {
 function ShopPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t, language } = useTranslation();
   const auth = useSelector((state) => state.auth);
-  const isLoggedIn = !!auth.token;
+  const isLoggedIn = !!auth?.token;
 
   // Product data from API
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Pagination state (server-driven, via GET /api/products/true)
   const [page, setPage] = useState(1);
@@ -255,7 +258,7 @@ function ShopPage() {
     });
   };
 
-  const clearFilters = () => {
+  const handleResetFilters = () => {
     setSearchQuery("");
     setSelectedCategory("All");
     setPriceRange(500);
@@ -301,46 +304,63 @@ function ShopPage() {
 
       <div className="shop-breadcrumbs-section">
         <div className="breadcrumbs-container">
-          <span className="breadcrumb-link" onClick={() => navigate("/")}>Home</span>
+          <span className="breadcrumb-link" onClick={() => navigate("/")}>{language === "km" ? "ទំព័រដើម" : "Home"}</span>
           <ChevronRight size={14} className="breadcrumb-arrow" />
-          <span className="breadcrumb-current">Shop</span>
+          <span className="breadcrumb-current">{language === "km" ? "ទំនិញទាំងអស់" : "All Products"}</span>
         </div>
       </div>
 
       <div className="shop-workspace-container">
         <div className="shop-grid-wrapper">
 
-          <aside className="shop-sidebar-aside">
-            <div className="sidebar-header-row">
-              <div className="sidebar-title">
+          <aside className={`shop-sidebar-filters ${sidebarOpen ? "mobile-open" : ""}`}>
+            <div className="sidebar-header-box">
+              <div className="sidebar-header-title">
                 <SlidersHorizontal size={18} />
-                <span>Filters</span>
+                <h3>{t("shop.filters", "Filters")}</h3>
               </div>
-              <button className="sidebar-clear-btn" onClick={clearFilters}>
-                <RotateCcw size={14} /> Clear All
+              <button
+                type="button"
+                className="reset-sidebar-btn"
+                onClick={handleResetFilters}
+                title={t("shop.resetFilters", "Reset Filters")}
+              >
+                <RotateCcw size={14} />
+                <span>{t("shop.resetFilters", "Reset")}</span>
               </button>
             </div>
 
             <div className="sidebar-filter-group">
-              <h4>Categories</h4>
+              <h4>{language === "km" ? "ប្រភេទ" : "Categories"}</h4>
               <div className="category-filter-list">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    className={`category-filter-btn ${selectedCategory === cat ? "active" : ""}`}
-                    onClick={() => setSelectedCategory(cat)}
-                  >
-                    <span>{cat}</span>
-                    <span className="cat-count">
-                      ({getCategoryCount(cat)})
-                    </span>
-                  </button>
-                ))}
+                {categories.map((cat) => {
+                  let displayCat = cat;
+                  if (language === "km") {
+                    if (cat === "All") displayCat = "ទាំងអស់";
+                    else if (cat === "Electronics") displayCat = "គ្រឿងអេឡិចត្រូនិក";
+                    else if (cat === "Fashion") displayCat = "ម៉ូដ & សម្លៀកបំពាក់";
+                    else if (cat === "Phone" || cat === "Phones") displayCat = "ទូរស័ព្ទដៃ";
+                    else if (cat === "Laptop" || cat === "Laptops") displayCat = "កុំព្យូទ័រ Laptop";
+                  }
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      className={`category-filter-item ${selectedCategory === cat ? "active" : ""}`}
+                      onClick={() => setSelectedCategory(cat)}
+                    >
+                      <span>{displayCat}</span>
+                      <span className="cat-count">
+                        ({getCategoryCount(cat)})
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             <div className="sidebar-filter-group">
-              <h4>Max Price</h4>
+              <h4>{language === "km" ? "ចន្លោះតម្លៃ" : "Price Range"}</h4>
               <div className="price-slider-box">
                 <input
                   type="range"
@@ -357,7 +377,7 @@ function ShopPage() {
             </div>
 
             <div className="sidebar-filter-group">
-              <h4>Customer Rating</h4>
+              <h4>{language === "km" ? "ការវាយតម្លៃ" : "Customer Rating"}</h4>
               <div className="rating-filter-list">
                 {[4, 3, 2, 0].map((star) => {
                   const matchRatingCount = products.filter((p) => {
@@ -370,11 +390,12 @@ function ShopPage() {
                   return (
                     <button
                       key={star}
+                      type="button"
                       className={`rating-filter-btn ${minRating === star ? "active" : ""}`}
                       onClick={() => setMinRating(star)}
                     >
                       {star === 0 ? (
-                        <span>All Ratings ({matchRatingCount})</span>
+                        <span>{language === "km" ? "ការវាយតម្លៃទាំងអស់" : "All Ratings"} ({matchRatingCount})</span>
                       ) : (
                         <>
                           <div className="rating-stars-row">
@@ -387,7 +408,7 @@ function ShopPage() {
                               />
                             ))}
                           </div>
-                          <span>{star} Stars & Up ({matchRatingCount})</span>
+                          <span>{star} {language === "km" ? "ផ្កាយឡើងទៅ" : "Stars & Up"} ({matchRatingCount})</span>
                         </>
                       )}
                     </button>
@@ -400,15 +421,19 @@ function ShopPage() {
           <main className="shop-products-main">
             <div className="shop-topbar-row">
               <div className="results-counter">
-                Showing <strong>{filteredProducts.length}</strong> of <strong>{totalItems}</strong> products
+                {language === "km" ? (
+                  <>បង្ហាញ <strong>{filteredProducts.length}</strong> នៃ <strong>{totalItems}</strong> ផលិតផល</>
+                ) : (
+                  <>Showing <strong>{filteredProducts.length}</strong> of <strong>{totalItems}</strong> products</>
+                )}
                 {totalPages > 1 && (
-                  <span className="page-indicator"> · Page {page} of {totalPages}</span>
+                  <span className="page-indicator"> · {language === "km" ? `ទំព័រ ${page} នៃ ${totalPages}` : `Page ${page} of ${totalPages}`}</span>
                 )}
               </div>
 
               <div className="shop-topbar-search-wrapper" style={{ flex: "1", maxWidth: "360px", minWidth: "220px" }}>
                 <AISearchInput
-                  placeholder="Search catalog with AI..."
+                  placeholder={t("shop.searchPlaceholder", "Search catalog with AI...")}
                   initialValue={searchQuery}
                   onSearchSubmit={(q) => setSearchQuery(q)}
                   className="shop-topbar-ai-search"
@@ -418,10 +443,10 @@ function ShopPage() {
               <div className="sorting-select-box">
                 <ArrowUpDown size={14} className="sort-icon" />
                 <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                  <option value="default">Default Sort</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="rating-desc">Rating: High to Low</option>
+                  <option value="default">{t("shop.sortBy", "Default Sort")}</option>
+                  <option value="price-asc">{t("shop.sortPriceLow", "Price: Low to High")}</option>
+                  <option value="price-desc">{t("shop.sortPriceHigh", "Price: High to Low")}</option>
+                  <option value="rating-desc">{t("shop.sortRating", "Rating: High to Low")}</option>
                 </select>
               </div>
             </div>
@@ -429,7 +454,7 @@ function ShopPage() {
             {isLoading && (
               <div className="no-products-found">
                 <Loader2 size={48} className="no-results-icon spin" />
-                <h3>Loading products…</h3>
+                <h3>{t("shop.loading", "Loading products…")}</h3>
               </div>
             )}
 
@@ -438,7 +463,7 @@ function ShopPage() {
                 <AlertTriangle size={48} className="no-results-icon" />
                 <h3>{loadError}</h3>
                 <button className="reset-sidebar-btn" onClick={() => fetchProducts(page)}>
-                  Retry
+                  {t("common.retry", "Retry")}
                 </button>
               </div>
             )}
@@ -446,10 +471,10 @@ function ShopPage() {
             {!isLoading && !loadError && filteredProducts.length === 0 && (
               <div className="no-products-found">
                 <RotateCcw size={48} className="no-results-icon" />
-                <h3>No Products Found</h3>
-                <p>We couldn't find any items matching your selected filter guidelines.</p>
-                <button className="reset-sidebar-btn" onClick={clearFilters}>
-                  Reset Filter Guidelines
+                <h3>{t("shop.noProductsFound", "No Products Found")}</h3>
+                <p>{language === "km" ? "មិនមានផលិតផលណាត្រូវនឹងលក្ខខណ្ឌចម្រាញ់របស់អ្នកឡើយ。" : "We couldn't find any items matching your selected filter guidelines."}</p>
+                <button type="button" className="reset-sidebar-btn" onClick={handleResetFilters}>
+                  {t("shop.resetFilters", "Reset Filters")}
                 </button>
               </div>
             )}
@@ -532,7 +557,9 @@ function ShopPage() {
                           disabled={prod.stockQuantity <= 0}
                           onClick={(e) => { e.stopPropagation(); addToCart(prod); }}
                         >
-                          {prod.stockQuantity <= 0 ? "Out of Stock" : "Add To Cart"}
+                          {prod.stockQuantity <= 0
+                            ? (language === "km" ? "អស់ពីស្តុក" : "Out of Stock")
+                            : (language === "km" ? "ដាក់ក្នុងកន្ត្រក" : "Add To Cart")}
                         </button>
                       </div>
                     </div>
@@ -550,7 +577,7 @@ function ShopPage() {
                   disabled={page <= 1}
                   onClick={() => goToPage(page - 1)}
                 >
-                  <ChevronLeft size={16} /> Prev
+                  <ChevronLeft size={16} /> {language === "km" ? "មុន" : "Prev"}
                 </button>
 
                 <div className="pagination-pages">
@@ -572,7 +599,7 @@ function ShopPage() {
                   disabled={page >= totalPages}
                   onClick={() => goToPage(page + 1)}
                 >
-                  Next <ChevronRight size={16} />
+                  {language === "km" ? "បន្ទាប់" : "Next"} <ChevronRight size={16} />
                 </button>
               </div>
             )}
