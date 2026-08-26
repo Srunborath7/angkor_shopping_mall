@@ -31,7 +31,7 @@ import { checkoutApi, payOrderApi } from "../services/orderService";
 import { updateProductVariantInventoryApi, updateProductApi } from "../services/productsService";
 import { getMyTradeProductsApi } from "../services/tradeService";
 import { useTranslation } from "../context/LanguageContext";
-import KhqrPaymentModal from "./KhqrPaymentModal";
+import AbaPaymentModal from "./AbaPaymentModal";
 import "./CartDrawer.css";
 
 function CartDrawer({ isOpen, onClose }) {
@@ -582,8 +582,9 @@ function CartDrawer({ isOpen, onClose }) {
       const numericId = orderData?.id || Math.floor(1000 + Math.random() * 9000);
       const orderId = `#ORD-${numericId}`;
 
-      // 3. Mark payment processed & send notification callback
-      if (orderData?.id) {
+      // 3. Mark payment processed ONLY for non-ABA immediate methods (e.g. COD / card demo)
+      // ABA PayWay orders must remain 'pending' so the QR payment gateway can generate and process the payment.
+      if (orderData?.id && paymentMethod !== "aba-qr" && paymentMethod !== "aba-pay") {
         try {
           await payOrderApi(orderData.id, `${paymentMethod.toUpperCase()}-PAYMENT-INTENT`);
         } catch (payErr) {
@@ -609,16 +610,16 @@ function CartDrawer({ isOpen, onClose }) {
         }
       }
 
-      // 4. If payment method is KHQR / ABA QR, trigger the interactive Bakong KHQR modal
-      if (paymentMethod === "aba-qr") {
+      // 4. If payment method is ABA PayWay (QR / App), trigger the interactive ABA PayWay modal
+      if (paymentMethod === "aba-qr" || paymentMethod === "aba-pay") {
         const newPendingOrder = {
           id: orderId,
           rawId: orderData?.id,
           date: new Date().toISOString().split("T")[0],
           items: cartItems.reduce((acc, item) => acc + item.quantity, 0),
           total: grandTotal.toFixed(2),
-          status: "Pending KHQR Payment",
-          paymentMethod: "BAKONG KHQR",
+          status: "Pending ABA Payment",
+          paymentMethod: "ABA PAYWAY",
           addressMode: addressMode,
           shippingInfo: {
             ...form,
@@ -640,7 +641,7 @@ function CartDrawer({ isOpen, onClose }) {
         setIsSubmitting(false);
         onClose();
 
-        // Open KHQR Modal
+        // Open ABA PayWay Modal
         setKhqrModal({
           isOpen: true,
           orderId: orderData?.id,
@@ -716,26 +717,29 @@ function CartDrawer({ isOpen, onClose }) {
   };
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Backdrop blur overlay */}
-          <motion.div
-            className="cart-drawer-backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-          />
+    <>
+      <AnimatePresence>
+        {isOpen && (
+          <React.Fragment key="cart-drawer-fragment">
+            {/* Backdrop blur overlay */}
+            <motion.div
+              key="cart-drawer-backdrop"
+              className="cart-drawer-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onClose}
+            />
 
-          {/* Drawer container */}
-          <motion.div
-            className="cart-drawer-container"
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "tween", duration: 0.35 }}
-          >
+            {/* Drawer container */}
+            <motion.div
+              key="cart-drawer-container"
+              className="cart-drawer-container"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "tween", duration: 0.35 }}
+            >
             {/* Header */}
             <div className="cart-drawer-header">
               <div className="header-title-box">
@@ -1121,27 +1125,15 @@ function CartDrawer({ isOpen, onClose }) {
                   <h4 className="payment-section-title">Select Payment Method</h4>
 
                   <div className="payment-options-grid">
-                    {/* Bakong KHQR */}
+                    {/* ABA PayWay (ABA Mobile & KHQR) */}
                     <div
-                      className={`payment-option-card ${paymentMethod === "aba-qr" ? "active" : ""}`}
+                      className={`payment-option-card ${paymentMethod === "aba-qr" || paymentMethod === "aba-pay" ? "active" : ""}`}
                       onClick={() => setPaymentMethod("aba-qr")}
                     >
-                      <QrCode className="payment-card-icon" style={{ color: "#e11d48" }} />
+                      <QrCode className="payment-card-icon" style={{ color: "#00A3E0" }} />
                       <div className="payment-card-text">
-                        <span className="method-title">Bakong KHQR</span>
-                        <span className="method-sub">ABA, ACLEDA, Wing & all banks</span>
-                      </div>
-                    </div>
-
-                    {/* ABA Pay */}
-                    <div
-                      className={`payment-option-card ${paymentMethod === "aba-pay" ? "active" : ""}`}
-                      onClick={() => setPaymentMethod("aba-pay")}
-                    >
-                      <CreditCard className="payment-card-icon" />
-                      <div className="payment-card-text">
-                        <span className="method-title">ABA Pay</span>
-                        <span className="method-sub">Direct ABA bank routing</span>
+                        <span className="method-title">ABA PayWay</span>
+                        <span className="method-sub">ABA Mobile, KHQR & All Banks</span>
                       </div>
                     </div>
 
@@ -1324,19 +1316,20 @@ function CartDrawer({ isOpen, onClose }) {
               </div>
             )}
           </motion.div>
-        </>
+        </React.Fragment>
       )}
-
-      {/* Interactive Bakong KHQR Modal */}
-      <KhqrPaymentModal
-        isOpen={khqrModal.isOpen}
-        onClose={() => setKhqrModal((prev) => ({ ...prev, isOpen: false }))}
-        orderId={khqrModal.orderId}
-        orderNumber={khqrModal.orderNumber}
-        amount={khqrModal.amount}
-        onSuccess={handleKhqrSuccess}
-      />
     </AnimatePresence>
+
+    {/* Interactive ABA PayWay Modal */}
+    <AbaPaymentModal
+      isOpen={khqrModal.isOpen}
+      onClose={() => setKhqrModal((prev) => ({ ...prev, isOpen: false }))}
+      orderId={khqrModal.orderId}
+      orderNumber={khqrModal.orderNumber}
+      amount={khqrModal.amount}
+      onSuccess={handleKhqrSuccess}
+    />
+  </>
   );
 }
 

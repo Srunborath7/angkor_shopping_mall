@@ -15,6 +15,7 @@ import {
     deleteCategoryApi
 } from "../../services/categoriesService";
 import Modal from "../../components/Modal";
+import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./style/CategoryPage.css";
 
 function getCategoryIcon(name) {
@@ -228,7 +229,7 @@ function CategoryPage() {
                 </div>
 
                 {loading && categories.length === 0 ? (
-                    <div className="loading">Loading...</div>
+                    <TableSkeleton rows={5} cols={6} hasImage={false} />
                 ) : (
                     <div className="product-table-wrapper">
                         {/* Table view (Desktop/iPad) */}

@@ -28,6 +28,7 @@ import { useTranslation } from "../../context/LanguageContext";
 import { useTheme } from "../../context/ThemeContext";
 import { getAdminOrdersApi } from "../../services/orderService";
 import { productsApi } from "../../services/productsService";
+import { KpiCardSkeleton, TableSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./style/ReportsPage.css";
 
 // Mock Sample Report Datasets
@@ -261,9 +262,12 @@ function ReportsPage() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="reports-kpi-grid">
-        {/* KPI 1: Gross Revenue */}
-        <div className="report-kpi-card">
+      {isLoading ? (
+        <KpiCardSkeleton count={4} />
+      ) : (
+        <div className="reports-kpi-grid">
+          {/* KPI 1: Gross Revenue */}
+          <div className="report-kpi-card">
           <div className="kpi-card-header">
             <span className="kpi-title">{isKhmer ? "ចំណូលសរុប (Gross Revenue)" : "Gross Total Revenue"}</span>
             <div className="kpi-icon-box green">
@@ -330,6 +334,7 @@ function ReportsPage() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Report View Mode Tabs */}
       <div className="reports-subnav-tabs">

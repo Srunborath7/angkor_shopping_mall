@@ -22,6 +22,7 @@ import {
 } from "../../services/flashSaleService";
 import { productsApi, productsPagedApi } from "../../services/productsService";
 import Modal from "../../components/Modal";
+import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./style/FlashSalePage.css";
 
 function getCategoryName(cat) {
@@ -332,7 +333,7 @@ function FlashSalePage() {
         </div>
 
         {loading && flashSales.length === 0 ? (
-          <div className="loading">Loading Flash Sales...</div>
+          <TableSkeleton rows={5} cols={7} hasImage={true} />
         ) : (
           <div className="product-table-wrapper">
             <table className="desktop-table">

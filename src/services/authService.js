@@ -24,3 +24,29 @@ export const getRolesApi = () => {
         "get"
     );
 };
+
+// Forgot Password - Email Flow
+export const sendForgotPasswordEmailApi = (email) => {
+    return api("/api/auth/forgot-password", "post", { email });
+};
+
+export const verifyResetOtpEmailApi = (email, otp) => {
+    return api("/api/auth/verify-reset-otp", "post", { email, otp });
+};
+
+export const resetPasswordEmailApi = (resetToken, newPassword) => {
+    return api("/api/auth/reset-password", "post", { resetToken, newPassword });
+};
+
+// Forgot Password - Telegram Flow
+export const sendResetOtpTelegramApi = (phone) => {
+    return api("/api/auth/telegram/otp/send", "post", { phone });
+};
+
+export const verifyResetOtpTelegramApi = (phone, otp) => {
+    return api("/api/auth/telegram/otp/verify", "post", { phone, otp });
+};
+
+export const resetPasswordTelegramApi = (resetToken, newPassword) => {
+    return api("/api/auth/telegram/password/reset", "post", { resetToken, newPassword });
+};

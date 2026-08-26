@@ -176,5 +176,17 @@
     "saveChanges": "Save All Changes",
     "resetDefaults": "Reset Defaults",
     "livePreview": "Live Interactive UI Preview"
+  },
+  "attendance": {
+    "title": "Staff Attendance & Time Clock",
+    "subtitle": "Live staff check-in, check-out terminal, break tracker, and daily attendance logs",
+    "checkIn": "Check In",
+    "checkOut": "Check Out",
+    "break": "Take Break",
+    "endBreak": "End Break",
+    "presentToday": "Present Today",
+    "onTime": "On Time Check-ins",
+    "late": "Late Arrivals",
+    "totalWorkOt": "Total Work & OT"
   }
 }

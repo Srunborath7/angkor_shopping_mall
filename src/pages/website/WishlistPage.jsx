@@ -19,6 +19,7 @@ import Header from "../../components/Header";
 import { productsPagedApi } from "../../services/productsService";
 import { getFlashSalesApi } from "../../services/flashSaleService";
 import { addToCartApi } from "../../services/cartService";
+import { ProductCardSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./styles/WishlistPage.css";
 
 const NO_IMAGE_PLACEHOLDER =
@@ -410,10 +411,7 @@ function WishlistPage() {
         </div>
 
         {loading ? (
-          <div className="wishlist-empty-state">
-            <Loader2 size={48} className="animate-spin" style={{ color: "#166534", marginBottom: "1rem" }} />
-            <p style={{ color: "#64748b", fontWeight: 600 }}>Loading your saved favorite products...</p>
-          </div>
+          <ProductCardSkeleton count={4} gridClassName="wishlist-grid" />
         ) : wishlistedProducts.length === 0 ? (
           /* Empty State */
           <div className="wishlist-empty-state">

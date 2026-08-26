@@ -34,6 +34,7 @@ import {
 } from "../../services/recommendationService";
 import { getFlashSalesApi } from "../../services/flashSaleService";
 import { addToCartApi } from "../../services/cartService";
+import { ProductDetailSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./styles/ProductDetailPage.css";
 
 const NO_IMAGE_PLACEHOLDER =
@@ -749,10 +750,7 @@ function ProductDetailPage() {
     return (
       <div className="product-detail-layout">
         <Header />
-        <div className="product-detail-loading">
-          <Loader2 size={48} className="animate-spin text-green" style={{ color: "#166534" }} />
-          <p>Fetching product attributes & details from backend server...</p>
-        </div>
+        <ProductDetailSkeleton />
       </div>
     );
   }

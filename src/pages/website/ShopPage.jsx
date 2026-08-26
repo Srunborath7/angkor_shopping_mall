@@ -10,7 +10,9 @@ import {
   RotateCcw,
   Loader2,
   AlertTriangle,
-  ChevronLeft
+  ChevronLeft,
+  X,
+  Filter
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
@@ -19,6 +21,7 @@ import { useTranslation } from "../../context/LanguageContext";
 import { productsPagedApi } from "../../services/productsService";
 import { useSelector } from "react-redux";
 import { addToCartApi } from "../../services/cartService";
+import { ProductCardSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./styles/ShopPage.css";
 
 // Inline "no image" placeholder — avoids depending on an external image
@@ -297,6 +300,12 @@ function ShopPage() {
     }).length;
   };
 
+  const activeFilterCount =
+    (selectedCategory !== "All" ? 1 : 0) +
+    (priceRange < 500 ? 1 : 0) +
+    (minRating > 0 ? 1 : 0) +
+    (searchQuery.trim() ? 1 : 0);
+
   return (
     <div className="shop-page-layout">
       <Toaster position="bottom-right" />
@@ -313,21 +322,40 @@ function ShopPage() {
       <div className="shop-workspace-container">
         <div className="shop-grid-wrapper">
 
-          <aside className={`shop-sidebar-filters ${sidebarOpen ? "mobile-open" : ""}`}>
-            <div className="sidebar-header-box">
-              <div className="sidebar-header-title">
+          {/* Backdrop for mobile filter drawer */}
+          <div
+            className={`shop-sidebar-backdrop ${sidebarOpen ? "active" : ""}`}
+            onClick={() => setSidebarOpen(false)}
+          />
+
+          <aside className={`shop-sidebar-aside ${sidebarOpen ? "mobile-open" : ""}`}>
+            <div className="sidebar-header-row">
+              <div className="sidebar-title">
                 <SlidersHorizontal size={18} />
                 <h3>{t("shop.filters", "Filters")}</h3>
+                {activeFilterCount > 0 && (
+                  <span className="active-filter-badge">{activeFilterCount}</span>
+                )}
               </div>
-              <button
-                type="button"
-                className="reset-sidebar-btn"
-                onClick={handleResetFilters}
-                title={t("shop.resetFilters", "Reset Filters")}
-              >
-                <RotateCcw size={14} />
-                <span>{t("shop.resetFilters", "Reset")}</span>
-              </button>
+              <div className="sidebar-header-actions">
+                <button
+                  type="button"
+                  className="sidebar-clear-btn"
+                  onClick={handleResetFilters}
+                  title={t("shop.resetFilters", "Reset Filters")}
+                >
+                  <RotateCcw size={13} />
+                  <span>{t("shop.resetFilters", "Reset")}</span>
+                </button>
+                <button
+                  type="button"
+                  className="sidebar-close-btn"
+                  onClick={() => setSidebarOpen(false)}
+                  aria-label="Close filters"
+                >
+                  <X size={18} />
+                </button>
+              </div>
             </div>
 
             <div className="sidebar-filter-group">
@@ -346,7 +374,7 @@ function ShopPage() {
                     <button
                       key={cat}
                       type="button"
-                      className={`category-filter-item ${selectedCategory === cat ? "active" : ""}`}
+                      className={`category-filter-btn ${selectedCategory === cat ? "active" : ""}`}
                       onClick={() => setSelectedCategory(cat)}
                     >
                       <span>{displayCat}</span>
@@ -416,22 +444,48 @@ function ShopPage() {
                 })}
               </div>
             </div>
+
+            {/* Mobile apply button inside drawer */}
+            <div className="sidebar-mobile-footer">
+              <button
+                type="button"
+                className="sidebar-apply-btn"
+                onClick={() => setSidebarOpen(false)}
+              >
+                {language === "km" ? `បង្ហាញ ${filteredProducts.length} ផលិតផល` : `Show ${filteredProducts.length} Products`}
+              </button>
+            </div>
           </aside>
 
           <main className="shop-products-main">
             <div className="shop-topbar-row">
-              <div className="results-counter">
-                {language === "km" ? (
-                  <>បង្ហាញ <strong>{filteredProducts.length}</strong> នៃ <strong>{totalItems}</strong> ផលិតផល</>
-                ) : (
-                  <>Showing <strong>{filteredProducts.length}</strong> of <strong>{totalItems}</strong> products</>
-                )}
-                {totalPages > 1 && (
-                  <span className="page-indicator"> · {language === "km" ? `ទំព័រ ${page} នៃ ${totalPages}` : `Page ${page} of ${totalPages}`}</span>
-                )}
+              <div className="shop-topbar-left">
+                <button
+                  type="button"
+                  className="mobile-filter-trigger-btn"
+                  onClick={() => setSidebarOpen(true)}
+                  aria-label="Open filters"
+                >
+                  <Filter size={16} />
+                  <span>{t("shop.filters", "Filters")}</span>
+                  {activeFilterCount > 0 && (
+                    <span className="filter-active-pill">{activeFilterCount}</span>
+                  )}
+                </button>
+
+                <div className="results-counter">
+                  {language === "km" ? (
+                    <>បង្ហាញ <strong>{filteredProducts.length}</strong> នៃ <strong>{totalItems}</strong> ផលិតផល</>
+                  ) : (
+                    <>Showing <strong>{filteredProducts.length}</strong> of <strong>{totalItems}</strong> products</>
+                  )}
+                  {totalPages > 1 && (
+                    <span className="page-indicator"> · {language === "km" ? `ទំព័រ ${page} នៃ ${totalPages}` : `Page ${page} of ${totalPages}`}</span>
+                  )}
+                </div>
               </div>
 
-              <div className="shop-topbar-search-wrapper" style={{ flex: "1", maxWidth: "360px", minWidth: "220px" }}>
+              <div className="shop-topbar-search-wrapper" style={{ flex: "1", maxWidth: "360px", minWidth: "200px" }}>
                 <AISearchInput
                   placeholder={t("shop.searchPlaceholder", "Search catalog with AI...")}
                   initialValue={searchQuery}
@@ -452,10 +506,7 @@ function ShopPage() {
             </div>
 
             {isLoading && (
-              <div className="no-products-found">
-                <Loader2 size={48} className="no-results-icon spin" />
-                <h3>{t("shop.loading", "Loading products…")}</h3>
-              </div>
+              <ProductCardSkeleton count={8} gridClassName="shop-products-grid" />
             )}
 
             {!isLoading && loadError && (

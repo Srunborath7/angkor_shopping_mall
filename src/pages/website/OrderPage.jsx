@@ -20,7 +20,8 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
 import { getOrdersApi } from "../../services/orderService";
-import KhqrPaymentModal from "../../components/KhqrPaymentModal";
+import AbaPaymentModal from "../../components/AbaPaymentModal";
+import { TableSkeleton, KpiCardSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./styles/OrderPage.css";
 
 function OrderPage() {
@@ -34,6 +35,7 @@ function OrderPage() {
   // Tabs state: 'overview' | 'orders' | 'wishlist'
   const [activeTab, setActiveTab] = useState("orders");
   const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [khqrModal, setKhqrModal] = useState({
     isOpen: false,
@@ -46,6 +48,7 @@ function OrderPage() {
   const loadOrders = async () => {
     if (isLoggedIn) {
       try {
+        setLoading(true);
         const res = await getOrdersApi();
         // Handle various Axios/fetch response wrappings
         const payload = res?.data?.data || res?.data || res || {};
@@ -84,6 +87,8 @@ function OrderPage() {
         }
       } catch (err) {
         console.warn("Failed to load orders API, using fallback:", err);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -293,7 +298,9 @@ function OrderPage() {
                   <span className="order-counter-badge">{orders.length} orders total</span>
                 </div>
 
-                {orders.length === 0 ? (
+                {loading ? (
+                  <TableSkeleton rows={4} cols={5} hasImage={true} />
+                ) : orders.length === 0 ? (
                   <div className="empty-orders-view">
                     <ShoppingBag size={48} className="empty-orders-icon" />
                     <h4>No Orders Placed</h4>
@@ -381,24 +388,24 @@ function OrderPage() {
                                       })
                                     }
                                     style={{
-                                      marginTop: "12px",
-                                      width: "100%",
                                       display: "flex",
                                       alignItems: "center",
                                       justifyContent: "center",
                                       gap: "8px",
+                                      width: "100%",
+                                      marginTop: "12px",
                                       padding: "10px",
-                                      background: "linear-gradient(135deg, #e11d48 0%, #be123c 100%)",
+                                      background: "linear-gradient(135deg, #00294B 0%, #004B7D 100%)",
                                       color: "#ffffff",
                                       border: "none",
                                       borderRadius: "12px",
                                       fontWeight: 700,
                                       fontSize: "13px",
                                       cursor: "pointer",
-                                      boxShadow: "0 4px 12px rgba(225, 29, 72, 0.25)"
+                                      boxShadow: "0 4px 12px rgba(0, 41, 75, 0.25)"
                                     }}
                                   >
-                                    <QrCode size={16} /> Pay with Bakong KHQR
+                                    <QrCode size={16} /> Pay with ABA PayWay
                                   </button>
                                 )}
                               </div>
@@ -449,8 +456,8 @@ function OrderPage() {
         </div>
       </div>
 
-      {/* Bakong KHQR Payment Modal */}
-      <KhqrPaymentModal
+      {/* ABA PayWay Payment Modal */}
+      <AbaPaymentModal
         isOpen={khqrModal.isOpen}
         onClose={() => setKhqrModal((prev) => ({ ...prev, isOpen: false }))}
         orderId={khqrModal.orderId}

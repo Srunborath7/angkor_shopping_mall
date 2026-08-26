@@ -21,6 +21,7 @@ import {
 } from "../../services/tradeService";
 import { categoriesApi } from "../../services/categoriesService";
 import Modal from "../../components/Modal";
+import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./style/TradingPage.css";
 
 const NO_IMG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23E2E8F0"/><text x="50%" y="50%" font-size="12" fill="%2394A3B8" text-anchor="middle" dominant-baseline="middle">No Image</text></svg>`;
@@ -405,9 +406,7 @@ function TradingPage() {
       {/* Main Table */}
       <div className="card">
         {loading ? (
-          <div style={{ textAlign: "center", padding: 40 }}>
-            <p>Loading trading products...</p>
-          </div>
+          <TableSkeleton rows={5} cols={8} hasImage={true} />
         ) : tradeProducts.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40, color: "#64748b" }}>
             <FaExchangeAlt size={36} style={{ marginBottom: 12, opacity: 0.4 }} />

@@ -21,6 +21,7 @@ import {
     deleteSupplierApi
 } from "../../services/supplierService";
 import Modal from "../../components/Modal";
+import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./style/SupplierPage.css";
 
 function SupplierPage() {
@@ -314,10 +315,7 @@ function SupplierPage() {
 
                 {/* Table */}
                 {loading && suppliers.length === 0 ? (
-                    <div className="loading-box">
-                        <div className="spinner"></div>
-                        <p>Loading suppliers directory...</p>
-                    </div>
+                    <TableSkeleton rows={5} cols={7} hasAvatar={true} />
                 ) : filteredSuppliers.length === 0 ? (
                     <div className="empty-box">
                         <p>No suppliers found matching your filters.</p>

@@ -28,6 +28,7 @@ import FlashSalePage from "./pages/Admin/FlashSalePage";
 import SettingsPage from "./pages/Admin/SettingsPage";
 import MessagesPage from "./pages/Admin/MessagesPage";
 import ReportsPage from "./pages/Admin/ReportsPage";
+import AttendancePage from "./pages/Admin/AttendancePage";
 import ChatBot from "./components/ChatBot";
 
 function App() {
@@ -56,6 +57,7 @@ function App() {
               <Route path="categories" element={<CategoryPage />} />
               <Route path="brands" element={<BrandPage />} />
               <Route path="customers" element={<CustomersPage />} />
+              <Route path="attendance" element={<AttendancePage />} />
               <Route path="inventory" element={<InventoryPage />} />
               <Route path="suppliers" element={<SupplierPage />} />
               <Route path="purchases" element={<PurchasePage />} />

@@ -710,29 +710,29 @@
   .profile-workspace-container {
     padding: 20px;
   }
-  
+
   .profile-grid-wrapper {
     flex-direction: column;
     gap: 30px;
   }
-  
+
   .profile-sidebar-aside {
     width: 100%;
   }
-  
+
   .profile-sidebar-nav {
     flex-direction: row;
     flex-wrap: wrap;
     gap: 10px;
   }
-  
+
   .profile-nav-btn {
     width: auto;
     flex: 1;
     min-width: 140px;
     justify-content: center;
   }
-  
+
   /* 2 or 3 in a row on iPad / Tablet */
   .dashboard-stats-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -748,7 +748,7 @@
   .order-accordion-header {
     padding: 14px;
   }
-  
+
   .order-details-grid-2col {
     grid-template-columns: 1fr;
     gap: 16px;
@@ -793,7 +793,7 @@
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
   }
-  
+
   .profile-nav-btn {
     width: 100%;
     min-width: unset;
@@ -807,7 +807,7 @@
   .profile-nav-btn span {
     font-size: 11px;
   }
-  
+
   /* Always 2 columns on mobile for cards */
   .dashboard-stats-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -832,19 +832,65 @@
   .stat-card-val {
     font-size: 14px;
   }
-  
+
   .order-accordion-header {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    gap: 10px 12px;
+  }
+
+  .order-main-meta {
+    flex: 1 1 55%;
+    min-width: 0;
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    gap: 4px;
   }
-  
-  .order-summary-meta {
-    align-items: flex-start;
+
+  .meta-id {
+    font-size: 13.5px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    display: block;
   }
-  
+
+  .meta-date {
+    font-size: 11.5px;
+  }
+
   .order-status-meta {
-    align-self: flex-end;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    align-self: center;
+  }
+
+  .order-summary-meta {
+    flex: 1 1 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 10px;
+    margin-top: 2px;
+    border-top: 1px dashed var(--border-color, #e2e8f0);
+  }
+
+  .meta-items-count {
+    font-size: 12px;
+  }
+
+  .meta-total {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-color, #166534);
   }
 
   .products-mini-cards-list {

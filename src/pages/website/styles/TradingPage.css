@@ -221,20 +221,54 @@
   min-width: 260px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   padding: 10px 16px;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.trading-search-box:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.trading-search-box:focus-within {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3.5px rgba(16, 185, 129, 0.16), 0 4px 12px rgba(16, 185, 129, 0.08);
+}
+
+.trading-search-box .trading-search-icon,
+.trading-search-box svg {
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+}
+
+.trading-search-box:focus-within .trading-search-icon,
+.trading-search-box:focus-within svg {
+  color: #10b981;
+  transform: scale(1.08);
 }
 
 .trading-search-box input {
-  border: none;
-  outline: none;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
   width: 100%;
   font-size: 14px;
-  background: transparent;
+  font-weight: 500;
+  color: #0f172a;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.trading-search-box input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1 !important;
+  font-weight: 400;
 }
 
 .trading-filter-group {
@@ -737,10 +771,36 @@
 [data-theme="dark"] .trading-search-box {
   background: #0f172a;
   border-color: #1e293b;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .trading-search-box:hover {
+  border-color: #334155;
+  background: #131d35;
+}
+
+[data-theme="dark"] .trading-search-box:focus-within {
+  border-color: #10b981;
+  background: #131d35;
+  box-shadow: 0 0 0 3.5px rgba(16, 185, 129, 0.25), 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .trading-search-box .trading-search-icon,
+[data-theme="dark"] .trading-search-box svg {
+  color: #64748b;
+}
+
+[data-theme="dark"] .trading-search-box:focus-within .trading-search-icon,
+[data-theme="dark"] .trading-search-box:focus-within svg {
+  color: #34d399;
 }
 
 [data-theme="dark"] .trading-search-box input {
   color: #f8fafc;
+}
+
+[data-theme="dark"] .trading-search-box input::placeholder {
+  color: #64748b;
 }
 
 [data-theme="dark"] .trading-select-ctrl {

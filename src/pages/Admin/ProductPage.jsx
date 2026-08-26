@@ -31,6 +31,7 @@ import {
 } from "../../services/productsService";
 import { categoriesApi } from "../../services/categoriesService";
 import Modal from "../../components/Modal";
+import { TableSkeleton, KpiCardSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./style/ProductPage.css";
 
 function ProductPage() {
@@ -726,7 +727,7 @@ function ProductPage() {
                 </div>
 
                 {loading && products.length === 0 ? (
-                    <div className="loading">Loading...</div>
+                    <TableSkeleton rows={6} cols={9} hasImage={true} />
                 ) : (
                     <div className="product-table-wrapper">
                         <table className="desktop-table">

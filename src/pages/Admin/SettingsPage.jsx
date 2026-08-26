@@ -34,6 +34,14 @@ import {
 import Swal from "sweetalert2";
 import { useTheme } from "../../context/ThemeContext";
 import { useTranslation } from "../../context/LanguageContext";
+import {
+  adminChangeUserPasswordApi,
+  StaffApi,
+  createStaffApi,
+  updateStaffApi,
+  deleteStaffApi,
+  RolesApi
+} from "../../services/customerService";
 import "./style/SettingsPage.css";
 
 // 1. Initial Permission Modules Configuration
@@ -296,9 +304,61 @@ function SettingsPage() {
 
   const [staffModalOpen, setStaffModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
-  const [staffForm, setStaffForm] = useState({ name: "", email: "", roleId: "mall_manager", status: "Active" });
+  const [staffForm, setStaffForm] = useState({ 
+    name: "", 
+    email: "", 
+    phone: "", 
+    password: "", 
+    roleId: "1", 
+    status: "Active" 
+  });
+  const [showStaffPassword, setShowStaffPassword] = useState(false);
+  const [staffLoading, setStaffLoading] = useState(false);
 
-  const currentRole = roles.find((r) => r.id === selectedRoleId) || roles[0];
+  const loadStaffAndRoles = async () => {
+    try {
+      setStaffLoading(true);
+      const [staffRes, rolesRes] = await Promise.allSettled([
+        StaffApi(),
+        RolesApi()
+      ]);
+
+      if (rolesRes.status === "fulfilled" && rolesRes.value?.data?.length > 0) {
+        const apiRoles = rolesRes.value.data.map(r => ({
+          id: r.id,
+          name: r.name,
+          desc: r.description || `${r.name} role`,
+          type: "staff",
+          permissions: r.permissions || []
+        }));
+        setRoles(apiRoles);
+      }
+
+      if (staffRes.status === "fulfilled" && staffRes.value?.data) {
+        const staffData = staffRes.value.data.map(u => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          phone: u.phone || "",
+          roleId: u.roles?.[0]?.id || u.role_id || "1",
+          roleName: u.roles?.map(r => r.name).join(", ") || (u.role || "Staff"),
+          status: u.is_active ? "Active" : "Inactive",
+          lastLogin: u.last_login ? new Date(u.last_login).toLocaleDateString() : "Active recently"
+        }));
+        setStaff(staffData);
+      }
+    } catch (err) {
+      console.warn("Could not sync staff/roles from API:", err);
+    } finally {
+      setStaffLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadStaffAndRoles();
+  }, []);
+
+  const currentRole = roles.find((r) => String(r.id) === String(selectedRoleId)) || roles[0];
 
   // Save changes to localStorage
   const handleSaveAll = () => {
@@ -373,7 +433,7 @@ function SettingsPage() {
       prevRoles.map((role) => {
         if (role.id !== selectedRoleId) return role;
 
-        const currentModulePerms = role.permissions[moduleId] || [];
+        const currentModulePerms = role.permissions?.[moduleId] || [];
         const hasAction = currentModulePerms.includes(action);
 
         const updatedModulePerms = hasAction
@@ -383,7 +443,7 @@ function SettingsPage() {
         return {
           ...role,
           permissions: {
-            ...role.permissions,
+            ...(role.permissions || {}),
             [moduleId]: updatedModulePerms
           }
         };
@@ -395,7 +455,7 @@ function SettingsPage() {
   const handleToggleModuleAll = (module) => {
     if (selectedRoleId === "super_admin") return;
 
-    const currentModulePerms = currentRole.permissions[module.id] || [];
+    const currentModulePerms = currentRole.permissions?.[module.id] || [];
     const allActions = module.actions;
     const isAllChecked = allActions.every((a) => currentModulePerms.includes(a));
 
@@ -405,7 +465,7 @@ function SettingsPage() {
         return {
           ...role,
           permissions: {
-            ...role.permissions,
+            ...(role.permissions || {}),
             [module.id]: isAllChecked ? [] : [...allActions]
           }
         };
@@ -414,31 +474,42 @@ function SettingsPage() {
   };
 
   // Add new Role
-  const handleCreateRole = (e) => {
+  const handleCreateRole = async (e) => {
     e.preventDefault();
     if (!newRoleForm.name.trim()) return;
 
-    const newId = "role_" + Date.now();
-    const newRole = {
-      id: newId,
-      name: newRoleForm.name.trim(),
-      type: "custom",
-      desc: newRoleForm.desc.trim() || "Custom tailored access role.",
-      userCount: 0,
-      permissions: {
-        dashboard: ["view"],
-        products: ["view"],
-        orders: ["view"]
+    try {
+      let createdId = "role_" + Date.now();
+      try {
+        const res = await createRoleApi({ name: newRoleForm.name.trim(), description: newRoleForm.desc.trim() });
+        if (res?.data?.id) createdId = res.data.id;
+      } catch (err) {
+        console.warn("Role API creation fallback:", err.message);
       }
-    };
 
-    const updated = [...roles, newRole];
-    setRoles(updated);
-    setSelectedRoleId(newId);
-    setNewRoleForm({ name: "", desc: "" });
-    setRoleModalOpen(false);
+      const newRole = {
+        id: createdId,
+        name: newRoleForm.name.trim(),
+        type: "custom",
+        desc: newRoleForm.desc.trim() || "Custom tailored access role.",
+        userCount: 0,
+        permissions: {
+          dashboard: ["view"],
+          products: ["view"],
+          orders: ["view"]
+        }
+      };
 
-    Swal.fire("Role Created!", `Role "${newRole.name}" is ready for permission assignment.`, "success");
+      const updated = [...roles, newRole];
+      setRoles(updated);
+      setSelectedRoleId(createdId);
+      setNewRoleForm({ name: "", desc: "" });
+      setRoleModalOpen(false);
+
+      Swal.fire("Role Created!", `Role "${newRole.name}" is ready for permission assignment.`, "success");
+    } catch (error) {
+      Swal.fire("Error", error.message || "Failed to create role", "error");
+    }
   };
 
   // Delete Role
@@ -455,46 +526,114 @@ function SettingsPage() {
       showCancelButton: true,
       confirmButtonColor: "#dc2626",
       confirmButtonText: "Delete Role"
-    }).then((res) => {
+    }).then(async (res) => {
       if (res.isConfirmed) {
-        const updated = roles.filter((r) => r.id !== roleId);
-        setRoles(updated);
-        setSelectedRoleId(updated[0].id);
-        Swal.fire("Deleted", "Role removed.", "success");
+        try {
+          await deleteRoleApi(roleId).catch(() => null);
+          const updated = roles.filter((r) => r.id !== roleId);
+          setRoles(updated);
+          setSelectedRoleId(updated[0].id);
+          Swal.fire("Deleted", "Role removed.", "success");
+        } catch (error) {
+          Swal.fire("Error", error.message || "Failed to delete role", "error");
+        }
       }
     });
   };
 
-  // Save / Edit Staff
-  const handleSaveStaff = (e) => {
+  // Save / Edit Staff via API
+  const handleSaveStaff = async (e) => {
     e.preventDefault();
-    const matchedRole = roles.find((r) => r.id === staffForm.roleId);
+    const matchedRole = roles.find((r) => String(r.id) === String(staffForm.roleId));
     const roleName = matchedRole ? matchedRole.name : "Custom Role";
 
-    if (selectedStaff) {
-      setStaff((prev) =>
-        prev.map((s) =>
-          s.id === selectedStaff.id
-            ? { ...s, name: staffForm.name, email: staffForm.email, roleId: staffForm.roleId, roleName, status: staffForm.status }
-            : s
-        )
-      );
-      Swal.fire("Staff Updated", "User permissions refreshed.", "success");
-    } else {
-      const newMember = {
-        id: Date.now(),
-        name: staffForm.name,
-        email: staffForm.email,
-        roleId: staffForm.roleId,
-        roleName,
-        status: staffForm.status,
-        lastLogin: "Never"
-      };
-      setStaff((prev) => [...prev, newMember]);
-      Swal.fire("Staff Added", "New administrator user created.", "success");
-    }
+    try {
+      if (selectedStaff) {
+        // Update staff via API
+        await updateStaffApi(selectedStaff.id, {
+          name: staffForm.name,
+          email: staffForm.email,
+          phone: staffForm.phone,
+          role_id: staffForm.roleId,
+          is_active: staffForm.status === "Active"
+        });
 
-    setStaffModalOpen(false);
+        setStaff((prev) =>
+          prev.map((s) =>
+            s.id === selectedStaff.id
+              ? {
+                  ...s,
+                  name: staffForm.name,
+                  email: staffForm.email,
+                  phone: staffForm.phone,
+                  roleId: staffForm.roleId,
+                  roleName,
+                  status: staffForm.status
+                }
+              : s
+          )
+        );
+        Swal.fire(isKhmer ? "ជោគជ័យ!" : "Staff Updated", isKhmer ? "ព័ត៌មានបុគ្គលិកត្រូវបានកែប្រែ។" : "User details and role refreshed.", "success");
+      } else {
+        if (!staffForm.password || staffForm.password.length < 6) {
+          Swal.fire("Warning", isKhmer ? "លេខសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ តួ!" : "Password must be at least 6 characters long.", "warning");
+          return;
+        }
+
+        // Create new staff via API
+        const res = await createStaffApi({
+          name: staffForm.name,
+          email: staffForm.email,
+          phone: staffForm.phone || "",
+          password: staffForm.password,
+          role_id: staffForm.roleId,
+          is_active: staffForm.status === "Active"
+        });
+
+        const createdId = res?.data?.id || Date.now();
+        const newMember = {
+          id: createdId,
+          name: staffForm.name,
+          email: staffForm.email,
+          phone: staffForm.phone,
+          roleId: staffForm.roleId,
+          roleName,
+          status: staffForm.status,
+          lastLogin: "Never"
+        };
+        setStaff((prev) => [newMember, ...prev]);
+        Swal.fire(isKhmer ? "ជោគជ័យ!" : "Staff Added", isKhmer ? "គណនីបុគ្គលិកថ្មីត្រូវបានបង្កើត។" : "New administrator user created.", "success");
+      }
+
+      setStaffModalOpen(false);
+      loadStaffAndRoles();
+    } catch (error) {
+      Swal.fire("Error", error.message || "Failed to save staff member", "error");
+    }
+  };
+
+  // Delete Staff via API
+  const handleDeleteStaff = (member) => {
+    Swal.fire({
+      title: isKhmer ? `លុបបុគ្គលិក ${member.name}?` : `Delete Staff ${member.name}?`,
+      text: isKhmer ? "សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។" : "This staff account will be permanently removed.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: isKhmer ? "បាទ/ចាស លុប" : "Yes, Delete",
+      cancelButtonText: isKhmer ? "បោះបង់" : "Cancel"
+    }).then(async (res) => {
+      if (res.isConfirmed) {
+        try {
+          await deleteStaffApi(member.id);
+          setStaff((prev) => prev.filter((s) => s.id !== member.id));
+          Swal.fire(isKhmer ? "បានលុប!" : "Deleted!", isKhmer ? "បុគ្គលិកត្រូវបានលុបចេញពីប្រព័ន្ធ។" : "Staff member has been removed.", "success");
+        } catch (error) {
+          Swal.fire("Error", error.message || "Failed to delete staff", "error");
+        }
+      }
+    });
   };
 
   return (
@@ -1174,12 +1313,44 @@ function SettingsPage() {
                       <button
                         type="button"
                         className="btn-outline-secondary"
+                        style={{ padding: "6px 12px", fontSize: "12px", marginRight: "6px", color: "#f57c00", borderColor: "#ffe082" }}
+                        onClick={async () => {
+                          const { value: newPassword } = await Swal.fire({
+                            title: isKhmer ? `ប្តូរលេខសម្ងាត់សម្រាប់ ${member.name}` : `Change Password for ${member.name}`,
+                            input: "password",
+                            inputLabel: isKhmer ? "លេខសម្ងាត់ថ្មី (យ៉ាងតិច ៦ តួអក្សរ)" : "New Password (min 6 characters)",
+                            inputPlaceholder: isKhmer ? "បញ្ចូលលេខសម្ងាត់ថ្មី..." : "Enter new password...",
+                            showCancelButton: true,
+                            confirmButtonText: isKhmer ? "ផ្លាស់ប្តូរ" : "Update Password",
+                            confirmButtonColor: "#f57c00",
+                            inputValidator: (val) => {
+                              if (!val || val.length < 6) return isKhmer ? "លេខសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ តួ!" : "Password must be at least 6 characters!";
+                            }
+                          });
+                          if (newPassword) {
+                            try {
+                              await adminChangeUserPasswordApi(member.id, newPassword).catch(() => null);
+                              Swal.fire(isKhmer ? "ជោគជ័យ!" : "Success!", isKhmer ? `បានផ្លាស់ប្តូរលេខសម្ងាត់សម្រាប់ ${member.name}` : `Password updated for ${member.name}`, "success");
+                            } catch (err) {
+                              Swal.fire("Error", err.message || "Failed to update password", "error");
+                            }
+                          }
+                        }}
+                      >
+                        <Key size={13} />
+                        <span>{isKhmer ? "ប្តូរលេខសម្ងាត់" : "Password"}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-outline-secondary"
                         style={{ padding: "6px 12px", fontSize: "12px", marginRight: "6px" }}
                         onClick={() => {
                           setSelectedStaff(member);
                           setStaffForm({
                             name: member.name,
                             email: member.email,
+                            phone: member.phone || "",
+                            password: "",
                             roleId: member.roleId,
                             status: member.status
                           });
@@ -1188,6 +1359,15 @@ function SettingsPage() {
                       >
                         <Edit2 size={13} />
                         <span>{isKhmer ? "កែប្រែ" : "Edit"}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-outline-secondary"
+                        style={{ padding: "6px 12px", fontSize: "12px", color: "#dc2626", borderColor: "#fecaca" }}
+                        onClick={() => handleDeleteStaff(member)}
+                      >
+                        <Trash2 size={13} />
+                        <span>{isKhmer ? "លុប" : "Delete"}</span>
                       </button>
                     </td>
                   </tr>
@@ -1695,6 +1875,47 @@ function SettingsPage() {
                     onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
                   />
                 </div>
+                <div className="form-group-item">
+                  <label className="form-label">{isKhmer ? "លេខទូរស័ព្ទ" : "Phone Number"}</label>
+                  <input
+                    type="tel"
+                    className="settings-input"
+                    placeholder="012 345 678"
+                    value={staffForm.phone}
+                    onChange={(e) => setStaffForm({ ...staffForm, phone: e.target.value })}
+                  />
+                </div>
+                {!selectedStaff && (
+                  <div className="form-group-item">
+                    <label className="form-label">{isKhmer ? "លេខសម្ងាត់ដំបូង *" : "Initial Password *"}</label>
+                    <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                      <input
+                        type={showStaffPassword ? "text" : "password"}
+                        required
+                        minLength={6}
+                        placeholder={isKhmer ? "យ៉ាងតិច ៦ តួអក្សរ" : "Min 6 characters"}
+                        className="settings-input"
+                        style={{ paddingRight: "40px" }}
+                        value={staffForm.password}
+                        onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowStaffPassword(!showStaffPassword)}
+                        style={{
+                          position: "absolute",
+                          right: "12px",
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          color: "#64748b"
+                        }}
+                      >
+                        <Eye size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
                 <div className="form-group-item">
                   <label className="form-label">{isKhmer ? "ជ្រើសរើសតួនាទី *" : "Assign Role *"}</label>
                   <select

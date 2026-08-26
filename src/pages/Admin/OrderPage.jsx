@@ -34,6 +34,7 @@ import {
 import { CustomersApi } from "../../services/customerService";
 import { productsApi } from "../../services/productsService";
 import Modal from "../../components/Modal";
+import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./style/OrderPage.css";
 
 function OrderPage() {
@@ -488,41 +489,35 @@ function OrderPage() {
       </div>
 
       {/* Orders Data Table */}
-      <div className="order-table-container">
-        <div className="table-responsive">
-          <table className="order-table">
-            <thead>
-              <tr>
-                {visibleColumns.orderId && <th>Order ID</th>}
-                {visibleColumns.customer && <th>Customer</th>}
-                {visibleColumns.date && <th>Date & Time</th>}
-                {visibleColumns.items && <th>Items Summary</th>}
-                {visibleColumns.total && <th>Total Amount</th>}
-                {visibleColumns.status && <th>Status</th>}
-                {visibleColumns.actions && <th>Actions</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
+      {loading && orders.length === 0 ? (
+        <TableSkeleton rows={6} cols={7} hasAvatar={true} />
+      ) : (
+        <div className="order-table-container">
+          <div className="table-responsive">
+            <table className="order-table">
+              <thead>
                 <tr>
-                  <td colSpan="7">
-                    <div className="order-loading-state">
-                      <FaSync className="spin" />
-                      <p>Loading orders...</p>
-                    </div>
-                  </td>
+                  {visibleColumns.orderId && <th>Order ID</th>}
+                  {visibleColumns.customer && <th>Customer</th>}
+                  {visibleColumns.date && <th>Date & Time</th>}
+                  {visibleColumns.items && <th>Items Summary</th>}
+                  {visibleColumns.total && <th>Total Amount</th>}
+                  {visibleColumns.status && <th>Status</th>}
+                  {visibleColumns.actions && <th>Actions</th>}
                 </tr>
-              ) : filteredOrders.length === 0 ? (
-                <tr>
-                  <td colSpan="7">
-                    <div className="order-empty-state">
-                      <FaShoppingCart />
-                      <h4>No orders found</h4>
-                      <p>Try adjusting your search or filters.</p>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
+              </thead>
+              <tbody>
+                {filteredOrders.length === 0 ? (
+                  <tr>
+                    <td colSpan="7">
+                      <div className="order-empty-state">
+                        <FaShoppingCart />
+                        <h4>No orders found</h4>
+                        <p>Try adjusting your search or filters.</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
                 filteredOrders.map((ord) => {
                   const customerName = ord.user?.name || "Guest Customer";
                   const initial = customerName.charAt(0).toUpperCase();
@@ -663,6 +658,7 @@ function OrderPage() {
           </table>
         </div>
       </div>
+      )}
 
       {/* ============ CUSTOMER DETAIL MODAL ============ */}
       <Modal

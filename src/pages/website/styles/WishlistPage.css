@@ -412,6 +412,12 @@
   .wishlist-page-layout {
     padding-bottom: 75px;
   }
+  .wishlist-breadcrumbs-section {
+    padding: 12px 20px;
+  }
+  .wishlist-workspace-container {
+    padding: 24px 20px;
+  }
   .wishlist-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 14px;
@@ -419,6 +425,20 @@
 }
 
 @media (max-width: 768px) {
+  .wishlist-workspace-container {
+    padding: 20px 16px;
+  }
+  .wishlist-header-row {
+    margin-bottom: 1.25rem;
+  }
+  .wishlist-main-heading {
+    font-size: 1.4rem;
+  }
+  .wishlist-icon-badge {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
   .wishlist-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
@@ -439,6 +459,9 @@
 }
 
 @media (max-width: 480px) {
+  .wishlist-workspace-container {
+    padding: 16px 12px;
+  }
   .wishlist-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 8px;
@@ -457,6 +480,9 @@
     padding: 6px;
     border-radius: 8px;
   }
+  .wishlist-empty-state {
+    padding: 3rem 1rem;
+  }
 }
 
 /* ==========================================================================
@@ -473,31 +499,29 @@
   border-bottom-color: #1e293b;
 }
 
+[data-theme="dark"] .wishlist-breadcrumb-link {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .wishlist-breadcrumb-link:hover {
+  color: #34d399;
+}
+
 [data-theme="dark"] .wishlist-breadcrumb-current,
 [data-theme="dark"] .wishlist-main-heading {
   color: #f8fafc;
 }
 
-[data-theme="dark"] .wishlist-card {
-  background-color: #0f172a;
-  border-color: #1e293b;
+[data-theme="dark"] .wishlist-icon-badge {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-[data-theme="dark"] .wishlist-card:hover {
-  background-color: #151f38;
-  border-color: #10b981;
-}
-
-[data-theme="dark"] .wishlist-card-img-box {
-  background-color: #090d16;
-}
-
-[data-theme="dark"] .wishlist-card-title {
-  color: #f8fafc;
-}
-
-[data-theme="dark"] .wishlist-item-price {
-  color: #34d399;
+[data-theme="dark"] .wishlist-count-pill {
+  background: #1e293b;
+  color: #94a3b8;
+  border: 1px solid #334155;
 }
 
 [data-theme="dark"] .clear-wishlist-btn {
@@ -509,4 +533,95 @@
 [data-theme="dark"] .clear-wishlist-btn:hover {
   background-color: #1e293b;
   color: #ef4444;
+  border-color: #ef4444;
+}
+
+[data-theme="dark"] .wishlist-card {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .wishlist-card:hover {
+  background-color: #151f38;
+  border-color: #10b981;
+  box-shadow: 0 16px 32px -6px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme="dark"] .wishlist-card-img-box {
+  background-color: #090d16;
+}
+
+[data-theme="dark"] .wishlist-remove-btn {
+  background-color: #0f172a;
+  border-color: #334155;
+  color: #f87171;
+}
+
+[data-theme="dark"] .wishlist-remove-btn:hover {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+[data-theme="dark"] .wishlist-card-category {
+  color: #34d399;
+}
+
+[data-theme="dark"] .wishlist-card-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .wishlist-card-title:hover {
+  color: #34d399;
+}
+
+[data-theme="dark"] .wishlist-rating-val {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .wishlist-sale-price {
+  color: #34d399;
+}
+
+[data-theme="dark"] .wishlist-original-price {
+  color: #64748b;
+}
+
+[data-theme="dark"] .wishlist-add-cart-btn {
+  background: #10b981;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="dark"] .wishlist-add-cart-btn:hover {
+  background: #059669;
+}
+
+[data-theme="dark"] .wishlist-empty-state {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .empty-heart-icon {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+[data-theme="dark"] .wishlist-empty-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .wishlist-empty-text {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .wishlist-shop-now-btn {
+  background: #10b981;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="dark"] .wishlist-shop-now-btn:hover {
+  background: #059669;
 }

@@ -15,6 +15,7 @@ import {
     deleteBrandApi
 } from "../../services/brandsService";
 import Modal from "../../components/Modal";
+import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./style/BrandPage.css";
 
 function BrandPage() {
@@ -184,7 +185,7 @@ function BrandPage() {
                 </div>
 
                 {loading && brands.length === 0 ? (
-                    <div className="loading">Loading...</div>
+                    <TableSkeleton rows={5} cols={4} hasImage={false} />
                 ) : (
                     <div className="brand-table-wrapper">
                         {/* Table view (Desktop/iPad) */}

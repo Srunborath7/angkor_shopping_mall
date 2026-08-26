@@ -27,6 +27,7 @@ import {
   getBestSellersRecommendationsApi
 } from "../../services/recommendationService";
 import { addToCartApi } from "../../services/cartService";
+import { ProductCardSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./styles/RecommendationPage.css";
 
 const NO_IMAGE_PLACEHOLDER =
@@ -502,11 +503,7 @@ function RecommendationPage() {
 
         {/* Loading / Error States */}
         {isLoading ? (
-          <div className="rec-state-box loading">
-            <Loader2 size={44} className="spin text-emerald" />
-            <h3>Analyzing your preferences & order trends...</h3>
-            <p>Fetching personalized items and real-time best sellers</p>
-          </div>
+          <ProductCardSkeleton count={8} gridClassName="recommendations-grid" />
         ) : loadError ? (
           <div className="rec-state-box error">
             <AlertTriangle size={44} className="text-red" />

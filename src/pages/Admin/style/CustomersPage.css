@@ -428,27 +428,37 @@ th,td{
 
 
 
-.edit-btn{
-
-
-    background:#e8f3ff;
-
-    color:#1976d2;
-
-
+.password-btn {
+    width: 35px;
+    height: 35px;
+    border: none;
+    border-radius: 8px;
+    margin-right: 8px;
+    cursor: pointer;
+    background: #fff8e1;
+    color: #f57c00;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
 }
 
-
-
-.delete-btn{
-
-
-    background:#ffe8e8;
-
-    color:#e53935;
-
-
+.password-btn:hover {
+    background: #ffe082;
+    color: #e65100;
+    transform: translateY(-2px);
 }
+
+.edit-btn {
+    background: #e8f3ff;
+    color: #1976d2;
+}
+
+.delete-btn {
+    background: #ffe8e8;
+    color: #e53935;
+}
+
 
 
 

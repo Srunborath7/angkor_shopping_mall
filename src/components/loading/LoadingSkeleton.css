@@ -1,0 +1,601 @@
+/* ==========================================================================
+   Angkor Shopping Mall - Premium Unified Loading & Skeleton System
+   ========================================================================== */
+
+/* Shimmer Animation */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes orbital-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orbital-reverse-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+
+@keyframes pulse-aura {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes bounce-dots {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.3;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Base Skeleton Block */
+.skeleton-box {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  background-color: #e2e8f0;
+  background-image: linear-gradient(
+    90deg,
+    rgba(226, 232, 240, 0.6) 0%,
+    rgba(255, 255, 255, 0.85) 50%,
+    rgba(226, 232, 240, 0.6) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  border-radius: 8px;
+}
+
+[data-theme="dark"] .skeleton-box,
+body.dark-theme .skeleton-box {
+  background-color: #1e293b;
+  background-image: linear-gradient(
+    90deg,
+    rgba(30, 41, 59, 0.7) 0%,
+    rgba(51, 65, 85, 0.8) 50%,
+    rgba(30, 41, 59, 0.7) 100%
+  );
+}
+
+.skeleton-circle {
+  border-radius: 50% !important;
+}
+
+.skeleton-pill {
+  border-radius: 9999px !important;
+}
+
+/* ==========================================================================
+   1. Product Card Skeleton
+   ========================================================================== */
+.product-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.product-skeleton-card {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+.product-skeleton-image-wrap {
+  width: 100%;
+  padding-top: 100%; /* 1:1 Aspect Ratio */
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.product-skeleton-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.product-skeleton-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 55px;
+  height: 22px;
+  z-index: 2;
+}
+
+.product-skeleton-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-grow: 1;
+}
+
+.product-skeleton-category {
+  width: 35%;
+  height: 12px;
+}
+
+.product-skeleton-title {
+  width: 85%;
+  height: 16px;
+  margin-top: 2px;
+}
+
+.product-skeleton-title-sub {
+  width: 60%;
+  height: 14px;
+}
+
+.product-skeleton-rating {
+  width: 45%;
+  height: 14px;
+  margin-top: 2px;
+}
+
+.product-skeleton-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-subtle, #f1f5f9);
+}
+
+.product-skeleton-price {
+  width: 40%;
+  height: 22px;
+}
+
+.product-skeleton-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+/* ==========================================================================
+   2. Product Detail Skeleton
+   ========================================================================== */
+.product-detail-skeleton-wrap {
+  max-width: 1240px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+  width: 100%;
+}
+
+.product-detail-skeleton-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+}
+
+@media (max-width: 900px) {
+  .product-detail-skeleton-grid {
+    grid-template-columns: 1fr;
+    padding: 1.5rem;
+    gap: 2rem;
+  }
+}
+
+.product-detail-skeleton-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.product-detail-skeleton-main-img {
+  width: 100%;
+  height: 420px;
+  border-radius: 16px;
+}
+
+.product-detail-skeleton-thumbs {
+  display: flex;
+  gap: 12px;
+}
+
+.product-detail-skeleton-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.product-detail-skeleton-info {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.product-detail-skeleton-tag {
+  width: 100px;
+  height: 24px;
+}
+
+.product-detail-skeleton-h1 {
+  width: 90%;
+  height: 32px;
+}
+
+.product-detail-skeleton-h1-sub {
+  width: 70%;
+  height: 24px;
+}
+
+.product-detail-skeleton-stars {
+  width: 180px;
+  height: 20px;
+}
+
+.product-detail-skeleton-price-box {
+  width: 160px;
+  height: 38px;
+  margin: 8px 0;
+}
+
+.product-detail-skeleton-desc {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.product-detail-skeleton-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.product-detail-skeleton-btn-main {
+  flex: 1;
+  height: 52px;
+  border-radius: 12px;
+}
+
+.product-detail-skeleton-btn-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+}
+
+/* ==========================================================================
+   3. Table Skeleton (Admin & General Data Tables)
+   ========================================================================== */
+.table-skeleton-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 14px;
+  background: var(--card-bg, #ffffff);
+}
+
+.table-skeleton {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table-skeleton th {
+  padding: 14px 16px;
+  background: var(--bg-light, #f8fafc);
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+.table-skeleton td {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-subtle, #f1f5f9);
+  vertical-align: middle;
+}
+
+.table-skeleton-cell {
+  height: 18px;
+  width: 80%;
+}
+
+.table-skeleton-row-avatar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.table-skeleton-avatar {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+}
+
+.table-skeleton-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.table-skeleton-badge {
+  width: 75px;
+  height: 24px;
+  border-radius: 20px;
+}
+
+.table-skeleton-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.table-skeleton-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+/* ==========================================================================
+   4. KPI Metric Cards Skeleton (Admin & Analytics)
+   ========================================================================== */
+.kpi-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.25rem;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+.kpi-skeleton-card {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.kpi-skeleton-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+}
+
+.kpi-skeleton-title {
+  width: 55%;
+  height: 14px;
+}
+
+.kpi-skeleton-val {
+  width: 45%;
+  height: 28px;
+}
+
+.kpi-skeleton-trend {
+  width: 35%;
+  height: 12px;
+}
+
+.kpi-skeleton-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   5. Trade Card Skeleton (Website Trading)
+   ========================================================================== */
+.trade-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.trade-skeleton-card {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.trade-skeleton-image {
+  width: 100%;
+  height: 180px;
+  border-radius: 12px;
+}
+
+/* ==========================================================================
+   6. Message Inbox List Skeleton
+   ========================================================================== */
+.message-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.message-skeleton-item {
+  background: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message-skeleton-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.message-skeleton-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   7. PageLoader & SectionLoader (Orbital Neon Spinners)
+   ========================================================================== */
+.page-loader-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 360px;
+  width: 100%;
+  padding: 3rem 1rem;
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.page-loader-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(248, 250, 252, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+}
+
+[data-theme="dark"] .page-loader-fullscreen,
+body.dark-theme .page-loader-fullscreen {
+  background: rgba(11, 15, 25, 0.92);
+}
+
+.orbital-spinner-wrap {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.orbital-ring-outer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  border-top-color: #10b981;
+  border-right-color: #10b981;
+  animation: orbital-spin 1s linear infinite;
+}
+
+.orbital-ring-inner {
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  border: 2.5px solid transparent;
+  border-bottom-color: #06b6d4;
+  border-left-color: #06b6d4;
+  animation: orbital-reverse-spin 0.8s linear infinite;
+}
+
+.orbital-center-icon {
+  width: 22px;
+  height: 22px;
+  color: #10b981;
+  animation: pulse-aura 1.5s ease-in-out infinite;
+}
+
+.page-loader-text-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.page-loader-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-dark, #0f172a);
+  letter-spacing: -0.01em;
+}
+
+.page-loader-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted, #64748b);
+}
+
+.dots-pulse-loader {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.dots-pulse-loader span {
+  width: 5px;
+  height: 5px;
+  background-color: #10b981;
+  border-radius: 50%;
+  display: inline-block;
+  animation: bounce-dots 1.4s infinite ease-in-out both;
+}
+
+.dots-pulse-loader span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+.dots-pulse-loader span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+/* ==========================================================================
+   8. Inline Button Spinner
+   ========================================================================== */
+.inline-spinner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.inline-spinner-svg {
+  width: 18px;
+  height: 18px;
+  animation: orbital-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}

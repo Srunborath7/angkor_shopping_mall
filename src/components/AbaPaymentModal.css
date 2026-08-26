@@ -1,0 +1,455 @@
+/* ==========================================================================
+   ABA PAYWAY PAYMENT MODAL STYLES (DEVELOPER SUITE DESIGN SYSTEM)
+   ========================================================================== */
+
+.aba-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 15, 29, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: abaBackdropFade 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes abaBackdropFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.aba-modal-card {
+  width: 100%;
+  max-width: 440px;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 25px 60px -15px rgba(0, 41, 75, 0.35), 0 0 0 1px rgba(0, 163, 224, 0.15);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: abaCardPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes abaCardPop {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Header */
+.aba-header {
+  background: linear-gradient(135deg, #00294B 0%, #004B7D 60%, #0077B6 100%);
+  padding: 20px 22px 18px;
+  color: #ffffff;
+  position: relative;
+}
+
+.aba-header::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00A3E0, #FFB703, #00A3E0);
+}
+
+.aba-header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.aba-branding-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.aba-logo-pill {
+  background: #00A3E0;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 163, 224, 0.4);
+}
+
+.aba-payway-text {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: #E2F4FD;
+}
+
+.aba-close-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #ffffff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aba-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.aba-merchant-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.aba-merchant-name {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+  color: #ffffff;
+}
+
+.aba-order-tag {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+/* Amount Bar & Currency Switcher */
+.aba-amount-section {
+  background: #f8fafc;
+  padding: 14px 22px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.aba-currency-pills {
+  display: inline-flex;
+  background: #e2e8f0;
+  padding: 3px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.aba-curr-btn {
+  border: none;
+  background: transparent;
+  padding: 4px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 999px;
+  cursor: pointer;
+  color: #475569;
+  transition: all 0.2s ease;
+}
+
+.aba-curr-btn.active {
+  background: #00294B;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 41, 75, 0.25);
+}
+
+.aba-amount-display {
+  font-size: 28px;
+  font-weight: 800;
+  color: #00294B;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+
+.aba-amount-sub {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+  display: block;
+}
+
+/* QR Body */
+.aba-body {
+  padding: 20px 22px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.aba-qr-frame {
+  position: relative;
+  background: #ffffff;
+  padding: 14px;
+  border-radius: 18px;
+  border: 2px solid #00A3E0;
+  box-shadow: 0 10px 30px rgba(0, 163, 224, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 220px;
+  min-height: 220px;
+}
+
+.aba-qr-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.aba-qr-spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #00A3E0;
+  border-radius: 50%;
+  animation: abaSpin 0.8s linear infinite;
+}
+
+@keyframes abaSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Timer Bar */
+.aba-timer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin-top: 14px;
+  font-size: 12px;
+  color: #334155;
+  font-weight: 600;
+}
+
+.aba-pulse-dot {
+  width: 8px;
+  height: 8px;
+  background: #00A3E0;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+  animation: abaPulse 1.5s infinite;
+}
+
+@keyframes abaPulse {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 163, 224, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(0, 163, 224, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 163, 224, 0); }
+}
+
+/* Actions Row */
+.aba-actions-row {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.aba-btn-action {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aba-btn-action:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #00A3E0;
+  color: #00294B;
+}
+
+.aba-btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Open in ABA Mobile Button */
+.aba-btn-primary {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #00294B 0%, #004B7D 100%);
+  color: #ffffff;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 41, 75, 0.25);
+  text-decoration: none;
+}
+
+.aba-btn-primary:hover {
+  background: linear-gradient(135deg, #001f38 0%, #003b64 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 41, 75, 0.35);
+}
+
+/* Simulator Button */
+.aba-dev-simulate-btn {
+  width: 100%;
+  margin-top: 10px;
+  background: #eff6ff;
+  border: 1px dashed #60a5fa;
+  color: #1e40af;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aba-dev-simulate-btn:hover:not(:disabled) {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.aba-dev-simulate-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Banks Footer */
+.aba-banks-footer {
+  background: #f8fafc;
+  padding: 12px 18px 16px;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.aba-banks-title {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.aba-banks-icons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.aba-bank-tag {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.aba-bank-tag.aba-highlight {
+  background: #00294B;
+  color: #ffffff;
+  border-color: #00294B;
+}
+
+/* Success View */
+.aba-success-view {
+  padding: 32px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.aba-success-icon-wrap {
+  width: 72px;
+  height: 72px;
+  background: #dcfce7;
+  color: #16a34a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  animation: abaPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes abaPopIn {
+  from { transform: scale(0.4); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.aba-success-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #00294B;
+  margin: 0 0 6px 0;
+}
+
+.aba-success-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 20px 0;
+}
+
+.aba-receipt-card {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 20px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.aba-receipt-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #475569;
+}
+
+.aba-receipt-row strong {
+  color: #0f172a;
+}

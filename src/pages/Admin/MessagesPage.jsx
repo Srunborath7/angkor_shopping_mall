@@ -27,6 +27,7 @@ import {
   generateAiDraftApi,
   getSupportStatsApi
 } from "../../services/supportMessageService";
+import { MessageListSkeleton, KpiCardSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./style/MessagesPage.css";
 
 function MessagesPage() {
@@ -299,10 +300,7 @@ function MessagesPage() {
 
           <div className="messages-list-scroll">
             {loading ? (
-              <div className="empty-list-state">
-                <RefreshCw size={24} className="animate-spin text-muted" />
-                <span>Loading messages...</span>
-              </div>
+              <MessageListSkeleton count={4} />
             ) : messages.length === 0 ? (
               <div className="empty-list-state">
                 <Inbox size={32} />

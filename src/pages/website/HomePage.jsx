@@ -33,6 +33,7 @@ import { productsPagedApi, getBestSellersApi } from "../../services/productsServ
 import { categoriesApi } from "../../services/categoriesService";
 import { addToCartApi } from "../../services/cartService";
 import { getFlashSalesApi } from "../../services/flashSaleService";
+import { ProductCardSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./styles/HomePage.css";
 
 const NO_IMAGE_PLACEHOLDER =
@@ -593,10 +594,7 @@ function HomePage() {
 
         {/* Flash Sale Product Grid */}
         {loading ? (
-          <div className="homepage-loading-state">
-            <Loader2 size={36} className="animate-spin text-green" />
-            <p>Loading real-time flash deals from server...</p>
-          </div>
+          <ProductCardSkeleton count={4} gridClassName="products-grid" />
         ) : (
           <div className="products-grid">
             {(flashSales.length > 0 ? flashSales : products.slice(0, 4)).map((prod, idx) => {

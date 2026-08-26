@@ -38,6 +38,7 @@ import {
   deleteTradeProductApi
 } from "../../services/tradeService";
 import { categoriesApi } from "../../services/categoriesService";
+import { TradeCardSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./styles/TradingPage.css";
 
 const NO_IMG = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500";
@@ -485,7 +486,7 @@ function WebsiteTradingPage() {
           {/* Filters Bar */}
           <div className="trading-market-filters">
             <form onSubmit={handleSearchSubmit} className="trading-search-box">
-              <Search size={18} color="#94a3b8" />
+              <Search size={18} className="trading-search-icon" />
               <input
                 type="text"
                 placeholder="Search trade items, gadgets, brands, wanted swaps..."
@@ -538,10 +539,7 @@ function WebsiteTradingPage() {
 
           {/* Listings Grid */}
           {loading ? (
-            <div className="trading-loading-box">
-              <Repeat size={36} className="spin" style={{ marginBottom: 12 }} />
-              <p>Loading available trade listings...</p>
-            </div>
+            <TradeCardSkeleton count={6} />
           ) : tradeProducts.length === 0 ? (
             <div className="trading-empty-card">
               <ArrowRightLeft size={48} className="trading-empty-icon" />
@@ -631,10 +629,7 @@ function WebsiteTradingPage() {
           </div>
 
           {loadingEligible ? (
-            <div className="trading-loading-box">
-              <Repeat size={32} className="spin" />
-              <p>Fetching your past purchases...</p>
-            </div>
+            <TradeCardSkeleton count={4} />
           ) : eligibleItems.length === 0 ? (
             <div className="trading-empty-card">
               <ShoppingBag size={48} className="trading-empty-icon" />
@@ -698,10 +693,7 @@ function WebsiteTradingPage() {
           </div>
 
           {loadingMyTrades ? (
-            <div className="trading-loading-box">
-              <Repeat size={32} className="spin" />
-              <p>Loading your active trade listings...</p>
-            </div>
+            <TradeCardSkeleton count={4} />
           ) : myListings.length === 0 ? (
             <div className="trading-empty-card">
               <Tag size={48} className="trading-empty-icon" />

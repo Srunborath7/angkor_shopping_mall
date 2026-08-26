@@ -21,6 +21,7 @@ import Swal from "sweetalert2";
 import { getOrdersApi } from "../../services/orderService";
 import { productsPagedApi } from "../../services/productsService";
 import { CustomersApi } from "../../services/customerService";
+import { KpiCardSkeleton, TableSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./style/Dashboard.css";
 
 function Dashboard() {

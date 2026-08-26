@@ -25,6 +25,7 @@ import {
 import { suppliersApi } from "../../services/supplierService";
 import { productsApi } from "../../services/productsService";
 import Modal from "../../components/Modal";
+import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./style/PurchasePage.css";
 
 function PurchasePage() {
@@ -475,10 +476,7 @@ function PurchasePage() {
 
                 {/* Table */}
                 {loading && purchaseOrders.length === 0 ? (
-                    <div className="loading-box">
-                        <div className="spinner"></div>
-                        <p>Loading purchase orders...</p>
-                    </div>
+                    <TableSkeleton rows={5} cols={7} hasAvatar={false} />
                 ) : filteredPOs.length === 0 ? (
                     <div className="empty-box">
                         <p>No purchase orders found matching your criteria.</p>

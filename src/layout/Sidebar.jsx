@@ -14,7 +14,8 @@ import {
   FaBolt,
   FaExchangeAlt,
   FaEnvelope,
-  FaHeadset
+  FaHeadset,
+  FaUserClock
 } from "react-icons/fa";
 import logo from "../assets/logo.jpg";
 import { NavLink, useLocation } from "react-router-dom";
@@ -162,6 +163,11 @@ function Sidebar({ open, setOpen }) {
           name: isKhmer ? "ម៉ាកយីហោ" : "Brands",
           icon: <FaBookmark />,
           path: "/admin/brands"
+        },
+        {
+          name: isKhmer ? "វត្តមានបុគ្គលិក" : "Staff Attendance",
+          icon: <FaUserClock />,
+          path: "/admin/attendance"
         },
         {
           name: isKhmer ? "អតិថិជន" : "Customers",

@@ -5,16 +5,21 @@ import {
     FaEdit,
     FaTrash,
     FaUser,
-    FaSlidersH
+    FaSlidersH,
+    FaKey,
+    FaEye,
+    FaEyeSlash
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
     CustomersApi,
     createCutomersApi,
     updateCustomersApi,
-    deleteCustomersApi
+    deleteCustomersApi,
+    adminChangeUserPasswordApi
 } from "../../services/customerService";
 import Modal from "../../components/Modal";
+import { TableSkeleton, KpiCardSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./style/CustomersPage.css";
 
 function CustomersPage() {
@@ -22,6 +27,7 @@ function CustomersPage() {
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     const [form, setForm] = useState({
         name: "",
@@ -29,6 +35,12 @@ function CustomersPage() {
         phone: "",
         password: ""
     });
+
+    const [passwordForm, setPasswordForm] = useState({
+        newPassword: "",
+        confirmPassword: ""
+    });
+    const [showPassword, setShowPassword] = useState(false);
 
     // Column visibility states
     const [isColDropdownOpen, setIsColDropdownOpen] = useState(false);
@@ -97,6 +109,16 @@ function CustomersPage() {
         setIsModalOpen(true);
     };
 
+    const openPasswordModal = (item) => {
+        setSelectedCustomer(item);
+        setPasswordForm({
+            newPassword: "",
+            confirmPassword: ""
+        });
+        setShowPassword(false);
+        setIsPasswordModalOpen(true);
+    };
+
     const handleChange = (e) => {
         setForm({
             ...form,
@@ -119,6 +141,29 @@ function CustomersPage() {
             fetchCustomers();
         } catch (error) {
             Swal.fire("Error", error.message || "Failed to save customer", "error");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePasswordSubmit = async (e) => {
+        e.preventDefault();
+        if (passwordForm.newPassword.length < 6) {
+            Swal.fire("Warning", "Password must be at least 6 characters long.", "warning");
+            return;
+        }
+        if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+            Swal.fire("Warning", "Passwords do not match.", "warning");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            await adminChangeUserPasswordApi(selectedCustomer.id, passwordForm.newPassword);
+            Swal.fire("Success", `Password updated for ${selectedCustomer.name}!`, "success");
+            setIsPasswordModalOpen(false);
+        } catch (error) {
+            Swal.fire("Error", error.message || "Failed to change password", "error");
         } finally {
             setLoading(false);
         }
@@ -209,7 +254,7 @@ function CustomersPage() {
             <div className="page-header">
                 <div>
                     <h1>Customers</h1>
-                    <p>Manage your customers</p>
+                    <p>Manage your customers & user accounts</p>
                 </div>
                 <button className="add-btn" onClick={openCreateModal}>
                     <FaPlus /> Add Customer
@@ -256,7 +301,7 @@ function CustomersPage() {
                 </div>
 
                 {loading && customers.length === 0 ? (
-                    <div className="loading">Loading...</div>
+                    <TableSkeleton rows={5} cols={7} hasAvatar={true} />
                 ) : (
                     <div className="product-table-wrapper">
                         {/* Table view (Desktop/iPad) */}
@@ -277,7 +322,7 @@ function CustomersPage() {
                                     <tr key={item.id}>
                                         {visibleColumns.hash && <td>{index + 1}</td>}
                                         {visibleColumns.customer && (
-                                            <td>
+                                             <td>
                                                 <div className="customer-name">
                                                     <div className="customer-icon">
                                                         <FaUser />
@@ -298,13 +343,20 @@ function CustomersPage() {
                                         {visibleColumns.role && (
                                             <td>
                                                 <span className="role-badge">
-                                                    {item.roles?.map(role => role.name).join(", ") || "Customer"}
+                                                    {item.roles?.map(role => role.name).join(", ") || (item.role || "Customer")}
                                                 </span>
                                             </td>
                                         )}
                                         {visibleColumns.actions && (
                                             <td>
                                                 <div className="table-row-actions">
+                                                    <button 
+                                                        className="password-btn" 
+                                                        onClick={() => openPasswordModal(item)} 
+                                                        title="Change Password"
+                                                    >
+                                                        <FaKey />
+                                                    </button>
                                                     <button className="edit-btn" onClick={() => openEditModal(item)} title="Edit">
                                                         <FaEdit />
                                                     </button>
@@ -333,7 +385,7 @@ function CustomersPage() {
                                             <div className="mobile-product-icon-placeholder"><FaUser /></div>
                                             <div>
                                                 <h4 className="mobile-product-name">{item.name}</h4>
-                                                <span className="role-badge">{item.roles?.map(role => role.name).join(", ") || "Customer"}</span>
+                                                <span className="role-badge">{item.roles?.map(role => role.name).join(", ") || (item.role || "Customer")}</span>
                                             </div>
                                         </div>
                                         <span className={`status-badge ${item.is_active ? "active" : "inactive"}`}>
@@ -350,6 +402,9 @@ function CustomersPage() {
                                             <span className="info-value">{item.phone || "-"}</span>
                                         </div>
                                         <div className="mobile-card-actions">
+                                            <button className="password-btn" onClick={() => openPasswordModal(item)} title="Change Password">
+                                                <FaKey /> Key
+                                            </button>
                                             <button className="edit-btn" onClick={() => openEditModal(item)}>
                                                 <FaEdit /> Edit
                                             </button>
@@ -368,7 +423,7 @@ function CustomersPage() {
                 )}
             </div>
 
-            {/* Modal integration */}
+            {/* Edit / Create Customer Modal */}
             <Modal 
                 isOpen={isModalOpen} 
                 onClose={() => setIsModalOpen(false)} 
@@ -418,7 +473,7 @@ function CustomersPage() {
                                     value={form.password} 
                                     onChange={handleChange} 
                                     required 
-                                    placeholder="Enter password"
+                                    placeholder="Enter password (min 6 characters)"
                                 />
                             </div>
                         )}
@@ -429,6 +484,68 @@ function CustomersPage() {
                         </button>
                         <button type="submit" className="save-btn" disabled={loading}>
                             {loading ? "Saving..." : "Save Customer"}
+                        </button>
+                    </div>
+                </form>
+            </Modal>
+
+            {/* Change Password Modal */}
+            <Modal
+                isOpen={isPasswordModalOpen}
+                onClose={() => setIsPasswordModalOpen(false)}
+                title={`Change Password - ${selectedCustomer?.name || "User"}`}
+                size="sm"
+            >
+                <form onSubmit={handlePasswordSubmit} className="product-form">
+                    <div style={{ marginBottom: "16px", color: "var(--text-muted, #64748b)", fontSize: "14px" }}>
+                        Enter a new password for <strong>{selectedCustomer?.email}</strong>. The user will be able to log in with this new password immediately.
+                    </div>
+                    <div className="form-group" style={{ marginBottom: "14px" }}>
+                        <label>New Password</label>
+                        <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                value={passwordForm.newPassword}
+                                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                                required
+                                minLength={6}
+                                placeholder="Enter new password (min 6 chars)"
+                                style={{ width: "100%", paddingRight: "40px" }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                style={{
+                                    position: "absolute",
+                                    right: "10px",
+                                    background: "none",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    color: "#64748b"
+                                }}
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </button>
+                        </div>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: "20px" }}>
+                        <label>Confirm New Password</label>
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            value={passwordForm.confirmPassword}
+                            onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                            required
+                            minLength={6}
+                            placeholder="Repeat new password"
+                            style={{ width: "100%" }}
+                        />
+                    </div>
+                    <div className="modal-footer">
+                        <button type="button" className="cancel-btn" onClick={() => setIsPasswordModalOpen(false)}>
+                            Cancel
+                        </button>
+                        <button type="submit" className="save-btn" disabled={loading} style={{ background: "#f57c00", borderColor: "#f57c00" }}>
+                            {loading ? "Updating..." : "Update Password"}
                         </button>
                     </div>
                 </form>

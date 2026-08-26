@@ -216,28 +216,58 @@
 /* Coupon Box */
 .coupon-box-form {
   display: flex;
-  gap: 12px;
-  margin-top: 10px;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .coupon-box-form input {
   flex: 1;
-  padding: 10px 14px;
+  padding: 11px 16px;
   font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color, #e2e8f0);
+  background-color: #ffffff;
+  color: var(--text-dark, #0f172a);
+  outline: none;
+  transition: var(--transition-all);
+}
+
+.coupon-box-form input:focus {
+  border-color: var(--primary-color, #10b981);
+  box-shadow: 0 0 0 3px var(--primary-light, rgba(16, 185, 129, 0.16));
 }
 
 .coupon-box-form button {
-  background-color: var(--text-dark);
+  background: linear-gradient(135deg, #10b981, #059669);
   color: #ffffff;
-  padding: 10px 20px;
+  padding: 11px 22px;
   border-radius: var(--radius-xl);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-all);
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
 }
 
 .coupon-box-form button:hover {
-  background-color: #000000;
+  background: linear-gradient(135deg, #34d399, #10b981);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.38);
 }
+
+.coupon-box-form button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+
 
 /* Shipping Info Step */
 .info-step-content {
@@ -805,3 +835,34 @@
 [data-theme="dark"] .review-mini-price {
   color: #34d399;
 }
+
+/* Coupon Box Dark Mode */
+[data-theme="dark"] .coupon-box-form input {
+  background-color: #090d16;
+  border-color: #1e293b;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .coupon-box-form input::placeholder {
+  color: #64748b;
+}
+
+[data-theme="dark"] .coupon-box-form input:focus {
+  border-color: #10b981;
+  background-color: #0d1322;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="dark"] .coupon-box-form button {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #ffffff !important;
+  border: none;
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+}
+
+[data-theme="dark"] .coupon-box-form button:hover {
+  background: linear-gradient(135deg, #34d399, #10b981);
+  color: #ffffff !important;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+}
+

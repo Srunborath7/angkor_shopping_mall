@@ -22,6 +22,7 @@ import {
     updateProductVariantInventoryApi
 } from "../../services/productsService";
 import { categoriesApi } from "../../services/categoriesService";
+import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./style/InventoryPage.css";
 
 function InventoryPage() {
@@ -335,10 +336,7 @@ function InventoryPage() {
 
                 {/* Desktop and Tablet Expandable Table */}
                 {loading ? (
-                    <div className="loading-container">
-                        <FaSpinner className="spinner-icon" />
-                        <p>Loading Inventory...</p>
-                    </div>
+                    <TableSkeleton rows={6} cols={8} hasImage={true} />
                 ) : (
                     <div className="inventory-table-wrapper">
                         <table className="inventory-table">
