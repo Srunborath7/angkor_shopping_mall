@@ -22,9 +22,11 @@ import {
 } from "../../services/supplierService";
 import Modal from "../../components/Modal";
 import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
+import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import "./style/SupplierPage.css";
 
 function SupplierPage() {
+    const { can } = usePermissions();
     const [suppliers, setSuppliers] = useState([]);
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
@@ -176,6 +178,10 @@ function SupplierPage() {
     const activeCount = suppliers.filter(s => s.is_active).length;
     const inactiveCount = suppliers.filter(s => !s.is_active).length;
 
+    if (!can("suppliers", "view")) {
+        return <AccessDeniedView moduleName="Suppliers & Vendor Directory" />;
+    }
+
     return (
         <div className="supplier-page">
             {/* Header */}
@@ -184,9 +190,11 @@ function SupplierPage() {
                     <h1>Suppliers Directory</h1>
                     <p>Manage product vendors, contact info, and active supply partners</p>
                 </div>
-                <button className="add-btn" onClick={openCreateModal}>
-                    <FaPlus /> Add New Supplier
-                </button>
+                {can("suppliers", "create") && (
+                    <button className="add-btn" onClick={openCreateModal}>
+                        <FaPlus /> Add New Supplier
+                    </button>
+                )}
             </div>
 
             {/* Stats Row */}
@@ -407,20 +415,24 @@ function SupplierPage() {
                                         {visibleColumns.actions && (
                                             <td>
                                                 <div className="action-btns" style={{ justifyContent: "flex-end" }}>
-                                                    <button
-                                                        className="btn-icon edit"
-                                                        title="Edit Supplier"
-                                                        onClick={() => openEditModal(item)}
-                                                    >
-                                                        <FaEdit />
-                                                    </button>
-                                                    <button
-                                                        className="btn-icon delete"
-                                                        title="Delete Supplier"
-                                                        onClick={() => handleDelete(item.id)}
-                                                    >
-                                                        <FaTrash />
-                                                    </button>
+                                                    {can("suppliers", "edit") && (
+                                                        <button
+                                                            className="btn-icon edit"
+                                                            title="Edit Supplier"
+                                                            onClick={() => openEditModal(item)}
+                                                        >
+                                                            <FaEdit />
+                                                        </button>
+                                                    )}
+                                                    {can("suppliers", "delete") && (
+                                                        <button
+                                                            className="btn-icon delete"
+                                                            title="Delete Supplier"
+                                                            onClick={() => handleDelete(item.id)}
+                                                        >
+                                                            <FaTrash />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         )}

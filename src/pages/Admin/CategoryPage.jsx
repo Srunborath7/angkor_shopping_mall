@@ -16,6 +16,7 @@ import {
 } from "../../services/categoriesService";
 import Modal from "../../components/Modal";
 import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
+import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import "./style/CategoryPage.css";
 
 function getCategoryIcon(name) {
@@ -36,6 +37,7 @@ function getCategoryIcon(name) {
 }
 
 function CategoryPage() {
+    const { can } = usePermissions();
     const [categories, setCategories] = useState([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(false);
@@ -84,9 +86,12 @@ function CategoryPage() {
             setLoading(true);
             const res = await categoriesApi();
             const list = res?.data?.data || res?.data || (Array.isArray(res) ? res : []);
-            setCategories(list);
+            if (Array.isArray(list)) {
+                setCategories(list);
+            }
         } catch (error) {
-            Swal.fire("Error", error.message || "Failed to load categories", "error");
+            console.warn("Could not load categories from API:", error.message);
+            // Maintain existing categories state or fallback gracefully
         } finally {
             setLoading(false);
         }
@@ -177,6 +182,10 @@ function CategoryPage() {
         item.name?.toLowerCase().includes(search.toLowerCase())
     );
 
+    if (!can("categories", "view")) {
+        return <AccessDeniedView moduleName="Product Categories" />;
+    }
+
     return (
         <div className="category-page">
             <div className="page-header">
@@ -184,9 +193,11 @@ function CategoryPage() {
                     <h1>Categories</h1>
                     <p>Manage your product categories</p>
                 </div>
-                <button className="add-btn" onClick={openCreateModal}>
-                    <FaPlus /> Add Category
-                </button>
+                {can("categories", "create") && (
+                    <button className="add-btn" onClick={openCreateModal}>
+                        <FaPlus /> Add Category
+                    </button>
+                )}
             </div>
 
             <div className="category-card">
@@ -273,12 +284,16 @@ function CategoryPage() {
                                             {visibleColumns.actions && (
                                                 <td>
                                                     <div className="table-row-actions">
-                                                        <button className="edit-btn" onClick={() => openEditModal(item)} title="Edit">
-                                                            <FaEdit />
-                                                        </button>
-                                                        <button className="delete-btn" onClick={() => deleteCategory(item.id)} title="Delete">
-                                                            <FaTrash />
-                                                        </button>
+                                                        {can("categories", "edit") && (
+                                                            <button className="edit-btn" onClick={() => openEditModal(item)} title="Edit">
+                                                                <FaEdit />
+                                                            </button>
+                                                        )}
+                                                        {can("categories", "delete") && (
+                                                            <button className="delete-btn" onClick={() => deleteCategory(item.id)} title="Delete">
+                                                                <FaTrash />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 </td>
                                             )}
@@ -317,12 +332,16 @@ function CategoryPage() {
                                                 </div>
                                             )}
                                             <div className="mobile-card-actions">
-                                                <button className="edit-btn" onClick={() => openEditModal(item)}>
-                                                    <FaEdit /> Edit
-                                                </button>
-                                                <button className="delete-btn" onClick={() => deleteCategory(item.id)}>
-                                                    <FaTrash /> Delete
-                                                </button>
+                                                {can("categories", "edit") && (
+                                                    <button className="edit-btn" onClick={() => openEditModal(item)}>
+                                                        <FaEdit /> Edit
+                                                    </button>
+                                                )}
+                                                {can("categories", "delete") && (
+                                                    <button className="delete-btn" onClick={() => deleteCategory(item.id)}>
+                                                        <FaTrash /> Delete
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

@@ -40,11 +40,34 @@ function Header() {
   const location = useLocation();
   const dispatch = useDispatch();
   const { t, language, setLanguage } = useTranslation();
-  const auth = useSelector((state) => state.auth);
+  const auth = useSelector((state) => state.auth || {});
 
   const isLoggedIn = !!auth.token;
   const user = auth.user;
   const role = auth.role;
+
+  const userRoleStr = (
+    role ||
+    user?.role ||
+    user?.role_name ||
+    user?.roles?.[0]?.name ||
+    (Array.isArray(user?.roles) ? user.roles.map((r) => r.name || r).join(" ") : "") ||
+    ""
+  ).toLowerCase();
+
+  const isCustomer =
+    userRoleStr === "customer" ||
+    userRoleStr === "customers" ||
+    (!userRoleStr && !user);
+
+  const canAccessAdmin = isLoggedIn && !isCustomer;
+
+  const displayRoleName =
+    user?.role_name ||
+    (Array.isArray(user?.roles) ? user.roles.map((r) => r.name || r).join(", ") : null) ||
+    (typeof user?.role === "string" ? user.role : null) ||
+    (typeof role === "string" ? role : null) ||
+    (isCustomer ? "Customer" : "Administrator");
 
   // Header Interactive UI States
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
@@ -376,10 +399,10 @@ function Header() {
                   <div className="dropdown-user-info">
                     <span className="info-name">{user?.name || "Member User"}</span>
                     <span className="info-email">{user?.email || ""}</span>
-                    <span className="info-role">{role ? role.toUpperCase() : "CUSTOMER"}</span>
+                    <span className="info-role">{displayRoleName.toUpperCase()}</span>
                   </div>
 
-                  {(role === "admin" || role === "sale") && (
+                  {canAccessAdmin && (
                     <button
                       className="dropdown-item"
                       onClick={() => {
@@ -427,7 +450,7 @@ function Header() {
                   <div className="mobile-user-info">
                     <span className="info-name">{user?.name || "Member User"}</span>
                     <span className="info-email">{user?.email || ""}</span>
-                    <span className="info-role-badge">{role ? role.toUpperCase() : "CUSTOMER"}</span>
+                    <span className="info-role-badge">{displayRoleName.toUpperCase()}</span>
                   </div>
                 </div>
               )}
@@ -453,17 +476,17 @@ function Header() {
                 <div className="mobile-lang-btn-group">
                   <button
                     type="button"
-                    className={`mobile-lang-choice ${language === "km" ? "active" : ""}`}
+                    className={`lang-option-pill ${language === "km" ? "active" : ""}`}
                     onClick={() => setLanguage("km")}
                   >
-                    🇰🇭 ភាសាខ្មែរ
+                    🇰🇭 ខ្មែរ (KM)
                   </button>
                   <button
                     type="button"
-                    className={`mobile-lang-choice ${language === "en" ? "active" : ""}`}
+                    className={`lang-option-pill ${language === "en" ? "active" : ""}`}
                     onClick={() => setLanguage("en")}
                   >
-                    🇺🇸 English
+                    🇺🇸 English (EN)
                   </button>
                 </div>
               </div>
@@ -554,7 +577,7 @@ function Header() {
                   <ChevronRight size={16} className="arrow-dim" />
                 </div>
 
-                {(role === "admin" || role === "sale") && (
+                {canAccessAdmin && (
                   <div
                     className="mobile-nav-item admin-link"
                     onClick={() => {

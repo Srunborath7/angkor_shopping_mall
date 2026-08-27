@@ -32,9 +32,11 @@ import {
 import { categoriesApi } from "../../services/categoriesService";
 import Modal from "../../components/Modal";
 import { TableSkeleton, KpiCardSkeleton } from "../../components/loading/LoadingSkeleton";
+import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import "./style/ProductPage.css";
 
 function ProductPage() {
+    const { can } = usePermissions();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [brands, setBrands] = useState([]);
@@ -110,32 +112,24 @@ function ProductPage() {
                 brandsApi().catch(() => ({ data: [] }))
             ]);
 
-            const rawProducts = prodRes.data?.products || prodRes.data || [];
-            const detailedProducts = await Promise.all(
-                rawProducts.map(async (p) => {
-                    try {
-                        const detailRes = await getProductByIdApi(p.id);
-                        const detailed = detailRes.data;
-                        const primaryImg = detailed.images?.find(img => img.is_primary)?.image_url
-                            || detailed.images?.[0]?.image_url
-                            || "";
-                        return {
-                            ...p,
-                            images: detailed.images || [],
-                            image_url: primaryImg,
-                            detail: detailed.detail,
-                            variants: detailed.variants || []
-                        };
-                    } catch (err) {
-                        console.error(`Failed to load details for product ${p.id}`, err);
-                        return p;
-                    }
-                })
-            );
+            const rawProducts = prodRes?.data?.products || prodRes?.data?.data || prodRes?.data || (Array.isArray(prodRes) ? prodRes : []);
+            const formattedProducts = (Array.isArray(rawProducts) ? rawProducts : []).map((p) => {
+                const primaryImg = p.images?.find(img => img.is_primary)?.image_url
+                    || p.images?.[0]?.image_url
+                    || p.image_url
+                    || p.image
+                    || "";
+                return {
+                    ...p,
+                    images: Array.isArray(p.images) ? p.images : (primaryImg ? [{ image_url: primaryImg, is_primary: true }] : []),
+                    image_url: primaryImg,
+                    variants: p.variants || []
+                };
+            });
 
-            setProducts(detailedProducts);
-            setCategories(catRes.data || []);
-            setBrands(brandRes.data?.brands || brandRes.data || []);
+            setProducts(formattedProducts);
+            setCategories(catRes?.data?.data || catRes?.data || (Array.isArray(catRes) ? catRes : []));
+            setBrands(brandRes?.data?.brands || brandRes?.data?.data || brandRes?.data || (Array.isArray(brandRes) ? brandRes : []));
         } catch (error) {
             Swal.fire("Error", error.message || "Failed to load catalog data", "error");
         } finally {
@@ -204,72 +198,108 @@ function ProductPage() {
     };
 
     const openEditModal = async (item) => {
+        if (!item) return;
+        setSelectedProduct(item);
+        setActiveTab("general");
+        setIsVariantFormOpen(false);
+
+        const primaryImg = item.images?.find(img => img.is_primary)?.image_url
+            || item.images?.[0]?.image_url
+            || item.image_url
+            || item.image
+            || "";
+
+        setName(item.name || "");
+        setDescription(item.description || "");
+        setPrice(item.price || "");
+        setStockQuantity(item.stock_quantity !== undefined ? item.stock_quantity : "");
+        setCategoryId(item.category_id || item.category?.id || (categories[0]?.id || ""));
+        setBrandId(item.brand_id || item.brand?.id || (brands[0]?.id || ""));
+        setImageUrl(primaryImg);
+        setIsActive(item.is_active !== undefined ? item.is_active : true);
+        setImageFile(null);
+        setImagePreview(primaryImg);
+
+        // Specs & Details from item
+        setLongDescription(item.detail?.long_description || item.description || "");
+        setWarrantyInfo(item.detail?.warranty_info || "");
+        setShippingInfo(item.detail?.shipping_info || "");
+        const specs = item.detail?.specifications || {};
+        setSpecifications(Object.keys(specs).map(k => ({ key: k, value: specs[k] })));
+
+        // Variants & Gallery from item
+        setVariants(item.variants || []);
+        setGalleryImages(item.images || []);
+
+        setIsModalOpen(true);
+
+        // Try background refresh if API provides additional relational fields
         try {
-            setSelectedProduct(item);
-            setActiveTab("general");
-            setIsModalOpen(true);
-            setIsVariantFormOpen(false);
-            setLoading(true);
-
             const res = await getProductByIdApi(item.id);
-            const detailed = res.data;
-
-            const primaryImg = detailed.images?.find(img => img.is_primary)?.image_url
-                || detailed.images?.[0]?.image_url
-                || "";
-
-            setName(detailed.name || "");
-            setDescription(detailed.description || "");
-            setPrice(detailed.price || "");
-            setStockQuantity(detailed.stock_quantity || "");
-            setCategoryId(detailed.category_id || "");
-            setBrandId(detailed.brand_id || "");
-            setImageUrl(primaryImg);
-            setIsActive(detailed.is_active !== undefined ? detailed.is_active : true);
-            setImageFile(null);
-            setImagePreview(primaryImg);
-
-            // Specs
-            setLongDescription(detailed.detail?.long_description || "");
-            setWarrantyInfo(detailed.detail?.warranty_info || "");
-            setShippingInfo(detailed.detail?.shipping_info || "");
-            const specs = detailed.detail?.specifications || {};
-            setSpecifications(Object.keys(specs).map(k => ({ key: k, value: specs[k] })));
-
-            // Variants
-            setVariants(detailed.variants || []);
-
-            // Gallery
-            setGalleryImages(detailed.images || []);
-        } catch (error) {
-            Swal.fire("Error", "Failed to retrieve full product information", "error");
-            setIsModalOpen(false);
-        } finally {
-            setLoading(false);
+            const detailed = res?.data;
+            if (detailed && typeof detailed === "object" && detailed.id) {
+                if (detailed.name) setName(detailed.name);
+                if (detailed.description) setDescription(detailed.description);
+                if (detailed.price !== undefined) setPrice(detailed.price);
+                if (detailed.stock_quantity !== undefined) setStockQuantity(detailed.stock_quantity);
+                if (detailed.category_id) setCategoryId(detailed.category_id);
+                if (detailed.brand_id) setBrandId(detailed.brand_id);
+                if (detailed.detail) {
+                    if (detailed.detail.long_description) setLongDescription(detailed.detail.long_description);
+                    if (detailed.detail.warranty_info) setWarrantyInfo(detailed.detail.warranty_info);
+                    if (detailed.detail.shipping_info) setShippingInfo(detailed.detail.shipping_info);
+                    if (detailed.detail.specifications) {
+                        const s = detailed.detail.specifications;
+                        setSpecifications(Object.keys(s).map(k => ({ key: k, value: s[k] })));
+                    }
+                }
+                if (Array.isArray(detailed.variants) && detailed.variants.length > 0) {
+                    setVariants(detailed.variants);
+                }
+                if (Array.isArray(detailed.images) && detailed.images.length > 0) {
+                    setGalleryImages(detailed.images);
+                }
+            }
+        } catch {
+            // Silently fallback to item data already populated
         }
     };
 
     const openDetailModal = async (item) => {
-        try {
-            setLoading(true);
-            const res = await getProductByIdApi(item.id);
-            const detailed = res.data;
-            const primaryImg = detailed.images?.find(img => img.is_primary)?.image_url
-                || detailed.images?.[0]?.image_url
-                || "";
+        if (!item) return;
+        const primaryImg = item.images?.find(img => img.is_primary)?.image_url
+            || item.images?.[0]?.image_url
+            || item.image_url
+            || item.image
+            || "";
 
-            const enrichedProduct = {
-                ...item,
-                ...detailed,
-                image_url: primaryImg
-            };
-            setDetailProduct(enrichedProduct);
-            setActiveDetailImage(primaryImg);
-            setIsDetailModalOpen(true);
-        } catch (error) {
-            Swal.fire("Error", "Failed to retrieve full product information", "error");
-        } finally {
-            setLoading(false);
+        const enrichedProduct = {
+            ...item,
+            image_url: primaryImg
+        };
+        setDetailProduct(enrichedProduct);
+        setActiveDetailImage(primaryImg);
+        setIsDetailModalOpen(true);
+
+        // Attempt background enrichment if available
+        try {
+            const res = await getProductByIdApi(item.id);
+            const detailed = res?.data;
+            if (detailed && typeof detailed === "object" && detailed.id) {
+                const refreshedImg = detailed.images?.find(img => img.is_primary)?.image_url
+                    || detailed.images?.[0]?.image_url
+                    || primaryImg;
+                setDetailProduct(prev => ({
+                    ...prev,
+                    ...detailed,
+                    image_url: refreshedImg
+                }));
+                if (refreshedImg) {
+                    setActiveDetailImage(refreshedImg);
+                }
+            }
+        } catch {
+            // Silently use existing enrichedProduct
         }
     };
 
@@ -629,6 +659,10 @@ function ProductPage() {
         actions: "Action"
     };
 
+    if (!can("products", "view")) {
+        return <AccessDeniedView moduleName="Products & Catalog" />;
+    }
+
     return (
         <div className="product-page">
             <div>
@@ -683,9 +717,11 @@ function ProductPage() {
                     <h1>Products</h1>
                     <p>Manage your product catalog</p>
                 </div>
-                <button className="add-btn" onClick={openCreateModal}>
-                    <FaPlus /> Add Product
-                </button>
+                {can("products", "create") && (
+                    <button className="add-btn" onClick={openCreateModal}>
+                        <FaPlus /> Add Product
+                    </button>
+                )}
             </div>
 
             <div className="product-card">
@@ -800,12 +836,16 @@ function ProductPage() {
                                                     <button className="view-btn" onClick={() => openDetailModal(item)} title="View Details">
                                                         <FaInfoCircle />
                                                     </button>
-                                                    <button className="edit-btn" onClick={() => openEditModal(item)} title="Manage & Edit Product">
-                                                        <FaCog />
-                                                    </button>
-                                                    <button className="delete-btn" onClick={() => handleDelete(item.id)} title="Delete">
-                                                        <FaTrash />
-                                                    </button>
+                                                    {can("products", "edit") && (
+                                                        <button className="edit-btn" onClick={() => openEditModal(item)} title="Manage & Edit Product">
+                                                            <FaCog />
+                                                        </button>
+                                                    )}
+                                                    {can("products", "delete") && (
+                                                        <button className="delete-btn" onClick={() => handleDelete(item.id)} title="Delete">
+                                                            <FaTrash />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         )}
@@ -858,12 +898,16 @@ function ProductPage() {
                                             <button className="view-btn" onClick={() => openDetailModal(item)}>
                                                 <FaInfoCircle /> View
                                             </button>
-                                            <button className="edit-btn" onClick={() => openEditModal(item)}>
-                                                <FaCog /> Manage
-                                            </button>
-                                            <button className="delete-btn" onClick={() => handleDelete(item.id)}>
-                                                <FaTrash /> Delete
-                                            </button>
+                                            {can("products", "edit") && (
+                                                <button className="edit-btn" onClick={() => openEditModal(item)}>
+                                                    <FaCog /> Manage
+                                                </button>
+                                            )}
+                                            {can("products", "delete") && (
+                                                <button className="delete-btn" onClick={() => handleDelete(item.id)}>
+                                                    <FaTrash /> Delete
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

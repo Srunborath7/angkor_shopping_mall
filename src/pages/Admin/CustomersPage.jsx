@@ -20,9 +20,11 @@ import {
 } from "../../services/customerService";
 import Modal from "../../components/Modal";
 import { TableSkeleton, KpiCardSkeleton } from "../../components/loading/LoadingSkeleton";
+import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import "./style/CustomersPage.css";
 
 function CustomersPage() {
+    const { can } = usePermissions();
     const [customers, setCustomers] = useState([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(false);
@@ -201,6 +203,10 @@ function CustomersPage() {
     const totalCount = customers.length;
     const activeCount = customers.filter(c => c.is_active).length;
     const inactiveCount = customers.filter(c => !c.is_active).length;
+
+    if (!can("customers", "view")) {
+        return <AccessDeniedView moduleName="Customer Accounts & Profiles" />;
+    }
 
     return (
         <div className="customer-page">

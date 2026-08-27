@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useSelector } from "react-redux";
 import {
   FaClock,
   FaUserCheck,
@@ -7,7 +8,6 @@ import {
   FaSignOutAlt,
   FaSignInAlt,
   FaQrcode,
-  FaKey,
   FaFileDownload,
   FaPrint,
   FaPlus,
@@ -23,17 +23,32 @@ import {
   FaBusinessTime,
   FaStopwatch,
   FaTimes,
-  FaBackspace,
   FaMapMarkerAlt,
   FaCrosshairs,
   FaExternalLinkAlt,
-  FaCog
+  FaCog,
+  FaThList,
+  FaThLarge,
+  FaInfoCircle,
+  FaQuestionCircle,
+  FaUserTie,
+  FaShieldAlt,
+  FaMobileAlt,
+  FaUmbrellaBeach,
+  FaCalendarCheck,
+  FaClipboardList,
+  FaCheck,
+  FaBan,
+  FaFileAlt,
+  FaHistory
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import confetti from "canvas-confetti";
 import Modal from "../../components/Modal";
 import { TableSkeleton, KpiCardSkeleton } from "../../components/loading/LoadingSkeleton";
 import { useTranslation } from "../../context/LanguageContext";
+import { useTheme } from "../../context/ThemeContext";
+import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import {
   getStaffListApi,
   getStoredStaff,
@@ -49,13 +64,57 @@ import {
   addManualAttendanceRecordApi,
   updateAttendanceRecordApi,
   deleteAttendanceRecordApi,
-  verifyStaffPin,
+  getLeaveRequestsApi,
+  submitLeaveRequestApi,
+  updateLeaveRequestStatusApi,
+  deleteLeaveRequestApi,
   exportAttendanceToCSV
 } from "../../services/attendanceService";
 import "./style/AttendancePage.css";
 
 function AttendancePage() {
   const { isKhmer } = useTranslation();
+  const { isDark } = useTheme();
+  const authState = useSelector((state) => state.auth);
+  const currentUser = authState?.user;
+  const userRole = (
+    authState?.role ||
+    currentUser?.role ||
+    currentUser?.role_name ||
+    currentUser?.roles?.[0]?.name ||
+    ""
+  ).toLowerCase();
+
+  // Role authorization: ONLY accounts with role name "manager" can select other staff members (Manager Mode)
+  const isManager = useMemo(() => {
+    if (!currentUser) return false;
+
+    // Check roles array e.g. [{ id: "...", name: "manager" }]
+    const rolesList = Array.isArray(currentUser?.roles)
+      ? currentUser.roles.map((r) =>
+          String(typeof r === "object" ? r?.name || "" : r)
+            .toLowerCase()
+            .trim()
+        )
+      : [];
+
+    const roleName = String(
+      currentUser?.role_name ||
+      currentUser?.role?.name ||
+      (typeof currentUser?.role === "string" ? currentUser.role : "") ||
+      authState?.role ||
+      ""
+    )
+      .toLowerCase()
+      .trim();
+
+    const userRoleField = String(currentUser?.user_role || "").toLowerCase().trim();
+
+    const allRoles = [...rolesList, roleName, userRoleField].filter(Boolean);
+
+    // Strictly check if the user has "manager" role name
+    return allRoles.some((r) => r === "manager" || r.includes("manager"));
+  }, [currentUser, authState?.role]);
 
   // Real-time clock state
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -64,11 +123,17 @@ function AttendancePage() {
   const [deviceGps, setDeviceGps] = useState(null);
   const [gpsLoading, setGpsLoading] = useState(false);
 
+  // Responsive display mode: Window / Laptop shows List (Table), Mobile shows Kanban only
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth <= 768 : false
+  );
+
   // Data states
   const [loading, setLoading] = useState(false);
   const [staffList, setStaffList] = useState([]);
   const [shifts, setShifts] = useState([]);
   const [records, setRecords] = useState([]);
+  const [leaveRequests, setLeaveRequests] = useState([]);
   const [geofenceConfig, setGeofenceConfig] = useState(getStoredGeofenceConfig());
 
   const [kpiMetrics, setKpiMetrics] = useState({
@@ -78,13 +143,14 @@ function AttendancePage() {
     lateCount: 0,
     onBreakCount: 0,
     checkedOutCount: 0,
+    onLeaveCount: 0,
     absentCount: 0,
     attendanceRate: 0,
     totalHoursWorked: 0,
     totalOvertimeHours: 0
   });
 
-  // Kiosk Terminal Selected Staff
+  // Kiosk Terminal Selected Staff (Auto-selects current logged-in user if available)
   const [selectedStaffId, setSelectedStaffId] = useState("");
   const [selectedShiftId, setSelectedShiftId] = useState("shift_morning");
   const [terminalNotes, setTerminalNotes] = useState("");
@@ -94,12 +160,14 @@ function AttendancePage() {
   const [dateFilterMode, setDateFilterMode] = useState("today"); // today, yesterday, this_month, custom
   const [customDate, setCustomDate] = useState(new Date().toISOString().split("T")[0]);
   const [selectedDepartment, setSelectedDepartment] = useState("all");
-  const [selectedStatusTab, setSelectedStatusTab] = useState("all");
+  const [selectedStatusTab, setSelectedStatusTab] = useState("present");
 
   // Modal States
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [isLeaveManagerOpen, setIsLeaveManagerOpen] = useState(false);
+  const [leaveFilterTab, setLeaveFilterTab] = useState("all"); // all, pending, approved, rejected
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isGeofenceModalOpen, setIsGeofenceModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
@@ -115,12 +183,28 @@ function AttendancePage() {
     notes: ""
   });
 
+  // Leave Request Form (Ask Permission)
+  const [leaveForm, setLeaveForm] = useState({
+    employeeId: "",
+    leaveType: "Sick Leave",
+    leaveTypeKh: "ច្បាប់ឈឺ",
+    startDate: new Date().toISOString().split("T")[0],
+    endDate: new Date().toISOString().split("T")[0],
+    reason: "",
+    contactNumber: ""
+  });
+
   // Geofence Edit Form
   const [geofenceForm, setGeofenceForm] = useState({ ...geofenceConfig });
 
-  // PIN Terminal Form
-  const [pinInput, setPinInput] = useState("");
-  const [pinAction, setPinAction] = useState("check_in");
+  // Responsive listener: List on Window/Laptop (>768px), Kanban on Mobile (<=768px)
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Update clock every second
   useEffect(() => {
@@ -149,15 +233,35 @@ function AttendancePage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const staff = await getStaffListApi();
+      const staff = await getStaffListApi(currentUser);
       const shiftData = getStoredShifts();
       const geo = getStoredGeofenceConfig();
       setStaffList(staff);
       setShifts(shiftData);
       setGeofenceConfig(geo);
 
+      // Auto-Select Current Logged-in User if not selected
       if (staff && staff.length > 0) {
-        setSelectedStaffId((prev) => (prev && staff.some((s) => s.id === prev) ? prev : staff[0].id));
+        setSelectedStaffId((prev) => {
+          if (prev && staff.some((s) => s.id === prev)) return prev;
+
+          // Try matching logged in currentUser
+          if (currentUser) {
+            const curId = String(currentUser.id || currentUser.user_id || "");
+            const curEmail = currentUser.email || "";
+            const curName = currentUser.name || `${currentUser.first_name || ""} ${currentUser.last_name || ""}`.trim() || currentUser.username;
+
+            const matchedCur = staff.find(
+              (s) =>
+                (curId && String(s.id) === curId) ||
+                (curEmail && s.email === curEmail) ||
+                (curName && s.name.toLowerCase() === curName.toLowerCase())
+            );
+            if (matchedCur) return matchedCur.id;
+          }
+
+          return staff[0].id;
+        });
       }
 
       let queryDate = "";
@@ -170,17 +274,20 @@ function AttendancePage() {
       else if (dateFilterMode === "yesterday") queryDate = yesterdayStr;
       else if (dateFilterMode === "custom") queryDate = customDate;
 
-      const res = await getAttendanceRecordsApi({
-        search: searchQuery,
-        date: queryDate,
-        department: selectedDepartment,
-        status: selectedStatusTab
-      });
+      const [res, kpis, leaveRes] = await Promise.all([
+        getAttendanceRecordsApi({
+          search: searchQuery,
+          date: queryDate,
+          department: selectedDepartment,
+          status: selectedStatusTab
+        }),
+        getAttendanceKPIsApi(queryDate || todayStr),
+        getLeaveRequestsApi()
+      ]);
 
       setRecords(res.data || []);
-
-      const kpis = await getAttendanceKPIsApi(queryDate || todayStr);
       setKpiMetrics(kpis);
+      setLeaveRequests(leaveRes.data || []);
     } catch (err) {
       console.error(err);
       Swal.fire({
@@ -197,9 +304,83 @@ function AttendancePage() {
     loadData();
   }, [dateFilterMode, customDate, selectedDepartment, selectedStatusTab, searchQuery]);
 
+  const activeLoggedInStaff = useMemo(() => {
+    if (!currentUser || !staffList.length) return null;
+    const curId = String(currentUser.id || currentUser.user_id || "");
+    const curEmail = currentUser.email || "";
+    const curName = (
+      currentUser.name ||
+      `${currentUser.first_name || ""} ${currentUser.last_name || ""}`.trim() ||
+      currentUser.username ||
+      ""
+    ).toLowerCase();
+
+    return (
+      staffList.find(
+        (s) =>
+          (curId && String(s.id) === curId) ||
+          (curEmail && s.email === curEmail) ||
+          (curName && s.name.toLowerCase() === curName)
+      ) || null
+    );
+  }, [currentUser, staffList]);
+
+  // Staff list available in select dropdowns:
+  // - Managers see ALL staff members to select anyone
+  // - Non-managers (without manager role) see ONLY their own logged-in user account
+  const selectableStaffList = useMemo(() => {
+    if (isManager) {
+      return staffList;
+    }
+    if (activeLoggedInStaff) {
+      return [activeLoggedInStaff];
+    }
+    if (currentUser) {
+      const curId = String(currentUser.id || currentUser.user_id || "");
+      const curEmail = currentUser.email || "";
+      const curName = (
+        currentUser.name ||
+        `${currentUser.first_name || ""} ${currentUser.last_name || ""}`.trim() ||
+        currentUser.username ||
+        ""
+      ).toLowerCase();
+
+      const matched = staffList.filter(
+        (s) =>
+          (curId && String(s.id) === curId) ||
+          (curEmail && s.email === curEmail) ||
+          (curName && s.name.toLowerCase() === curName)
+      );
+      if (matched.length > 0) return matched;
+
+      return [
+        {
+          id: curId || "CURRENT_USER",
+          name: currentUser.name || "You",
+          khmerName: currentUser.khmer_name || "",
+          email: curEmail,
+          role: currentUser.roles?.[0]?.name || currentUser.role || "Staff",
+          department: currentUser.department || "Operations",
+          avatar: currentUser.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name || "You")}&background=0284c7&color=fff&bold=true`
+        }
+      ];
+    }
+    return [];
+  }, [isManager, staffList, activeLoggedInStaff, currentUser]);
+
+  // Auto-sync selectedStaffId to logged-in user when user is not a manager
+  useEffect(() => {
+    if (!isManager && activeLoggedInStaff?.id) {
+      setSelectedStaffId(activeLoggedInStaff.id);
+    }
+  }, [isManager, activeLoggedInStaff]);
+
   const activeSelectedStaff = useMemo(() => {
-    return staffList.find((s) => s.id === selectedStaffId) || null;
-  }, [staffList, selectedStaffId]);
+    if (!isManager && activeLoggedInStaff) {
+      return activeLoggedInStaff;
+    }
+    return staffList.find((s) => s.id === selectedStaffId) || activeLoggedInStaff || staffList[0] || null;
+  }, [staffList, selectedStaffId, isManager, activeLoggedInStaff]);
 
   const todayStr = useMemo(() => new Date().toISOString().split("T")[0], []);
 
@@ -207,6 +388,100 @@ function AttendancePage() {
     if (!selectedStaffId) return null;
     return records.find((r) => r.employeeId === selectedStaffId && r.date === todayStr);
   }, [records, selectedStaffId, todayStr]);
+
+  const pendingLeavesCount = useMemo(() => {
+    return leaveRequests.filter((l) => l.status === "Pending").length;
+  }, [leaveRequests]);
+
+  // Order records: Present & On Duty first, then other records
+  const sortedRecords = useMemo(() => {
+    return [...records].sort((a, b) => {
+      const aIsActive =
+        (a.status === "Present" || a.status === "On Shift" || a.breakStatus === "On Break" || a.checkInStatus === "Late") &&
+        !a.checkOutTime;
+      const bIsActive =
+        (b.status === "Present" || b.status === "On Shift" || b.breakStatus === "On Break" || b.checkInStatus === "Late") &&
+        !b.checkOutTime;
+
+      if (aIsActive && !bIsActive) return -1;
+      if (!aIsActive && bIsActive) return 1;
+
+      if ((b.date || "") !== (a.date || "")) {
+        return (b.date || "").localeCompare(a.date || "");
+      }
+      return (b.checkInTime || "").localeCompare(a.checkInTime || "");
+    });
+  }, [records]);
+
+  // Kanban Columns Calculation (Present, On Break, Late, On Leave, Checked Out, Not Checked In)
+  const kanbanColumns = useMemo(() => {
+    const presentList = records.filter(
+      (r) => (r.status === "Present" || r.status === "On Shift") && r.breakStatus !== "On Break"
+    );
+    const onBreakList = records.filter(
+      (r) => r.status === "On Break" || r.breakStatus === "On Break"
+    );
+    const lateList = records.filter((r) => r.checkInStatus === "Late" && !r.checkOutTime && r.status !== "On Leave");
+    const onLeaveList = records.filter(
+      (r) => r.status === "On Leave" || r.checkInStatus === "On Leave"
+    );
+    const checkedOutList = records.filter((r) => (r.status === "Checked Out" || !!r.checkOutTime) && r.status !== "On Leave");
+
+    // Unscheduled / Not checked in today from staff list
+    const checkedInStaffIds = new Set(records.map((r) => String(r.employeeId)));
+    const notCheckedInStaff = staffList.filter((s) => !checkedInStaffIds.has(String(s.id)));
+
+    return [
+      {
+        id: "present",
+        title: isKhmer ? "កំពុងបំពេញការងារ" : "On Duty / Present",
+        icon: "🟢",
+        badgeClass: "badge-present",
+        records: presentList,
+        type: "attendance"
+      },
+      {
+        id: "break",
+        title: isKhmer ? "កំពុងសម្រាក" : "On Break",
+        icon: "☕",
+        badgeClass: "badge-break",
+        records: onBreakList,
+        type: "attendance"
+      },
+      {
+        id: "late",
+        title: isKhmer ? "មកយឺតថ្ងៃនេះ" : "Late Arrivals",
+        icon: "🟡",
+        badgeClass: "badge-late",
+        records: lateList,
+        type: "attendance"
+      },
+      {
+        id: "leave",
+        title: isKhmer ? "សុំច្បាប់ឈប់សម្រាក" : "On Leave",
+        icon: "🏖️",
+        badgeClass: "badge-leave",
+        records: onLeaveList,
+        type: "attendance"
+      },
+      {
+        id: "checked_out",
+        title: isKhmer ? "បាន Check-Out" : "Checked Out",
+        icon: "🔵",
+        badgeClass: "badge-checkout",
+        records: checkedOutList,
+        type: "attendance"
+      },
+      {
+        id: "not_in",
+        title: isKhmer ? "មិនទាន់ Check-In" : "Not Checked In",
+        icon: "⚪",
+        badgeClass: "badge-notin",
+        records: notCheckedInStaff,
+        type: "staff"
+      }
+    ];
+  }, [records, staffList, isKhmer]);
 
   // Handle Quick Kiosk Check-In with GPS tracking
   const handleKioskCheckIn = async () => {
@@ -329,68 +604,92 @@ function AttendancePage() {
     }
   };
 
-  // Handle PIN Keypad input
-  const handlePinKeyClick = (num) => {
-    if (pinInput.length < 4) {
-      setPinInput((prev) => prev + num);
+  // Open Leave Permission Modal for Selected Staff
+  const handleOpenLeaveModal = (staffId = null) => {
+    let targetId = staffId;
+    if (!targetId) {
+      if (!isManager && activeLoggedInStaff) {
+        targetId = activeLoggedInStaff.id;
+      } else {
+        targetId = selectedStaffId || (staffList[0]?.id || "");
+      }
     }
-  };
-
-  const handlePinBackspace = () => {
-    setPinInput((prev) => prev.slice(0, -1));
-  };
-
-  const handlePinClear = () => {
-    setPinInput("");
-  };
-
-  // Submit PIN Punch
-  const handlePinSubmit = async () => {
-    if (pinInput.length < 4) {
-      Swal.fire("Warning", isKhmer ? "សូមបញ្ចូលលេខកូដសម្ងាត់ ៤ ខ្ទង់" : "Please enter a 4-digit PIN", "warning");
-      return;
+    if (!isManager && activeLoggedInStaff) {
+      targetId = activeLoggedInStaff.id;
     }
+    const staff = staffList.find((s) => s.id === targetId) || activeLoggedInStaff || staffList[0];
+    setLeaveForm({
+      employeeId: staff ? staff.id : "",
+      leaveType: "Sick Leave",
+      leaveTypeKh: "ច្បាប់ឈឺ (Sick Leave)",
+      startDate: new Date().toISOString().split("T")[0],
+      endDate: new Date().toISOString().split("T")[0],
+      reason: "",
+      contactNumber: staff?.phone || ""
+    });
+    setIsLeaveModalOpen(true);
+  };
 
-    const matchedStaff = verifyStaffPin(pinInput);
-    if (!matchedStaff) {
-      Swal.fire({
-        title: isKhmer ? "លេខកូដមិនត្រឹមត្រូវ" : "Invalid PIN Code",
-        text: isKhmer ? "សូមពិនិត្យលេខកូដបុគ្គលិករបស់អ្នកម្តងទៀត" : "No staff found with this PIN code.",
-        icon: "error"
-      });
-      setPinInput("");
+  // Submit Leave Permission Request
+  const handleSubmitLeave = async (e) => {
+    e.preventDefault();
+    if (!leaveForm.employeeId || !leaveForm.startDate || !leaveForm.reason.trim()) {
+      Swal.fire("Warning", isKhmer ? "សូមបំពេញព័ត៌មាននិងមូលហេតុនៃការសុំច្បាប់" : "Please select staff and specify reason.", "warning");
       return;
     }
 
     try {
-      if (pinAction === "check_in") {
-        await checkInStaffApi({
-          employeeId: matchedStaff.id,
-          shiftId: matchedStaff.defaultShiftId || "shift_morning",
-          method: "PIN Code",
-          location: deviceGps
-        });
-        confetti({ particleCount: 70, spread: 50 });
-        Swal.fire(isKhmer ? "ជោគជ័យ!" : "Success!", `${matchedStaff.name} clocked in via PIN.`, "success");
-      } else if (pinAction === "check_out") {
-        await checkOutStaffApi({
-          employeeId: matchedStaff.id,
-          method: "PIN Code",
-          location: deviceGps
-        });
-        Swal.fire(isKhmer ? "ជោគជ័យ!" : "Success!", `${matchedStaff.name} clocked out via PIN.`, "success");
-      } else if (pinAction === "break") {
-        await toggleBreakApi({ employeeId: matchedStaff.id });
-        Swal.fire(isKhmer ? "ជោគជ័យ!" : "Success!", `${matchedStaff.name} break updated.`, "info");
-      }
-
-      setIsPinModalOpen(false);
-      setPinInput("");
+      await submitLeaveRequestApi(leaveForm);
+      confetti({ particleCount: 70, spread: 60 });
+      Swal.fire({
+        title: isKhmer ? "បានដាក់ពាក្យសុំច្បាប់ជោគជ័យ!" : "Leave Permission Requested!",
+        text: isKhmer
+          ? "ពាក្យសុំច្បាប់ឈប់សម្រាកត្រូវបានបញ្ជូនទៅកាន់អ្នកគ្រប់គ្រងដើម្បីអនុម័ត"
+          : "Leave permission request submitted successfully for manager review.",
+        icon: "success"
+      });
+      setIsLeaveModalOpen(false);
       loadData();
-    } catch (e) {
-      Swal.fire("Error", e.message, "error");
-      setPinInput("");
+    } catch (err) {
+      Swal.fire("Error", err.message, "error");
     }
+  };
+
+  // Approve Leave Request
+  const handleApproveLeave = async (req) => {
+    try {
+      await updateLeaveRequestStatusApi(req.id, "Approved", "Approved by Admin", currentUser?.name || "Admin");
+      Swal.fire(isKhmer ? "បានអនុម័ត" : "Approved", `${req.employeeName}'s leave request approved.`, "success");
+      loadData();
+    } catch (err) {
+      Swal.fire("Error", err.message, "error");
+    }
+  };
+
+  // Reject Leave Request
+  const handleRejectLeave = async (req) => {
+    const { value: reason } = await Swal.fire({
+      title: isKhmer ? "បដិសេធពាក្យសុំច្បាប់?" : "Reject Leave Request?",
+      input: "text",
+      inputLabel: isKhmer ? "មូលហេតុនៃការបដិសេធ" : "Rejection Reason",
+      inputPlaceholder: "e.g. Critical store event / shift required...",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      confirmButtonText: isKhmer ? "បដិសេធ" : "Reject"
+    });
+
+    if (reason !== undefined) {
+      await updateLeaveRequestStatusApi(req.id, "Rejected", reason || "Request declined", currentUser?.name || "Admin");
+      Swal.fire(isKhmer ? "បានបដិសេធ" : "Rejected", "Leave request declined.", "info");
+      loadData();
+    }
+  };
+
+  // Delete Leave Request
+  const handleDeleteLeave = async (id) => {
+    await deleteLeaveRequestApi(id);
+    Swal.fire(isKhmer ? "បានលុប" : "Deleted", "Leave request record deleted.", "success");
+    loadData();
   };
 
   // Handle Manual Add Record
@@ -476,6 +775,12 @@ function AttendancePage() {
     window.print();
   };
 
+  const { can } = usePermissions();
+
+  if (!can("attendance", "view")) {
+    return <AccessDeniedView moduleName={isKhmer ? "វត្តមានបុគ្គលិក (Staff Attendance)" : "Staff Attendance & Time Clock"} />;
+  }
+
   return (
     <div className="attendance-page">
       {/* Page Header */}
@@ -494,6 +799,27 @@ function AttendancePage() {
 
         <div className="header-actions">
           <button
+            className="btn-action-secondary highlight-leave"
+            onClick={() => handleOpenLeaveModal()}
+            title="Ask Permission / Leave Request"
+          >
+            <FaUmbrellaBeach style={{ color: "#0284c7" }} />
+            <span>{isKhmer ? "សុំច្បាប់ឈប់សម្រាក" : "Ask Permission (Leave)"}</span>
+          </button>
+
+          <button
+            className="btn-action-secondary highlight-manager"
+            onClick={() => setIsLeaveManagerOpen(true)}
+            title="Manage Leave Requests"
+          >
+            <FaClipboardList style={{ color: "#6366f1" }} />
+            <span>{isKhmer ? "គ្រប់គ្រងច្បាប់" : "Leave Requests"}</span>
+            {pendingLeavesCount > 0 && (
+              <span className="badge-pending-count">{pendingLeavesCount}</span>
+            )}
+          </button>
+
+          <button
             className="btn-action-secondary"
             onClick={() => {
               setGeofenceForm({ ...geofenceConfig });
@@ -502,17 +828,6 @@ function AttendancePage() {
           >
             <FaCog />
             <span>{isKhmer ? "កំណត់ Geofence" : "Geofence Settings"}</span>
-          </button>
-
-          <button
-            className="btn-action-secondary"
-            onClick={() => {
-              setPinAction("check_in");
-              setIsPinModalOpen(true);
-            }}
-          >
-            <FaKey />
-            <span>{isKhmer ? "PIN Clock Terminal" : "PIN Keypad Punch"}</span>
           </button>
 
           <button
@@ -641,17 +956,36 @@ function AttendancePage() {
         <div className="kiosk-actions-section">
           <div className="kiosk-staff-selector-row">
             <div className="kiosk-select-group">
-              <label>{isKhmer ? "ជ្រើសរើសបុគ្គលិក (Staff Member)" : "Select Staff Member"}</label>
+              <label>
+                {isKhmer ? "ជ្រើសរើសបុគ្គលិក (Staff Member)" : "Select Staff Member"}
+                {!isManager ? (
+                  <span className="kiosk-locked-tag" title="Only managers can switch staff selection">
+                    🔒 {isKhmer ? "(គណនីរបស់អ្នក - ចាក់សោ)" : "(Logged-in User - Locked)"}
+                  </span>
+                ) : (
+                  <span className="kiosk-current-user-tag" title="Manager mode: You can select any employee">
+                    👑 {isKhmer ? "(សិទ្ធិ Manager)" : "(Manager Mode - Select Any)"}
+                  </span>
+                )}
+              </label>
               <select
-                className="kiosk-select-input"
-                value={selectedStaffId}
-                onChange={(e) => setSelectedStaffId(e.target.value)}
+                className={`kiosk-select-input ${!isManager ? "locked-user-select" : ""}`}
+                value={!isManager && activeLoggedInStaff ? activeLoggedInStaff.id : selectedStaffId}
+                disabled={!isManager}
+                onChange={(e) => isManager && setSelectedStaffId(e.target.value)}
+                title={!isManager ? "Logged-in as current user (Locked)" : "Manager Mode: Select any staff member"}
               >
-                {staffList.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name} ({s.role} - {s.department})
-                  </option>
-                ))}
+                {selectableStaffList.map((s) => {
+                  const isCurrent = currentUser && (
+                    String(s.id) === String(currentUser.id || currentUser.user_id) ||
+                    (currentUser.email && s.email === currentUser.email)
+                  );
+                  return (
+                    <option key={s.id} value={s.id}>
+                      {s.name} {s.khmerName ? `(${s.khmerName})` : ""} - {s.role} ({s.department}) {isCurrent ? " ★ (You)" : ""}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -681,8 +1015,12 @@ function AttendancePage() {
                   className="staff-preview-avatar"
                 />
                 <div className="staff-preview-text">
-                  <h4>{activeSelectedStaff.name} {activeSelectedStaff.khmerName && `(${activeSelectedStaff.khmerName})`}</h4>
-                  <p>{activeSelectedStaff.id} • {activeSelectedStaff.role} • {activeSelectedStaff.department}</p>
+                  <h4>
+                    {activeSelectedStaff.name} {activeSelectedStaff.khmerName && `(${activeSelectedStaff.khmerName})`}
+                  </h4>
+                  <p>
+                    {activeSelectedStaff.id} • {activeSelectedStaff.role} • {activeSelectedStaff.department}
+                  </p>
                 </div>
               </div>
 
@@ -691,6 +1029,10 @@ function AttendancePage() {
                 {!activeStaffRecordToday ? (
                   <span className="staff-live-badge not-checked-in">
                     ● {isKhmer ? "មិនទាន់ Check-In" : "Not Checked In"}
+                  </span>
+                ) : activeStaffRecordToday.status === "On Leave" ? (
+                  <span className="staff-live-badge on-break" style={{ background: "#fef3c7", color: "#b45309" }}>
+                    🏖️ {isKhmer ? "សុំច្បាប់ឈប់សម្រាក (On Leave)" : "On Leave"}
                   </span>
                 ) : activeStaffRecordToday.checkOutTime ? (
                   <span className="staff-live-badge checked-out">
@@ -714,7 +1056,7 @@ function AttendancePage() {
             <button
               className="btn-punch btn-punch-in"
               onClick={handleKioskCheckIn}
-              disabled={!!activeStaffRecordToday && !activeStaffRecordToday.checkOutTime}
+              disabled={!!activeStaffRecordToday && !activeStaffRecordToday.checkOutTime && activeStaffRecordToday.status !== "On Leave"}
             >
               <FaSignInAlt />
               <span>{isKhmer ? "ចុះវត្តមានចូល (Check In)" : "Check In"}</span>
@@ -723,7 +1065,7 @@ function AttendancePage() {
             <button
               className="btn-punch btn-punch-break"
               onClick={handleKioskBreak}
-              disabled={!activeStaffRecordToday || !!activeStaffRecordToday.checkOutTime}
+              disabled={!activeStaffRecordToday || !!activeStaffRecordToday.checkOutTime || activeStaffRecordToday.status === "On Leave"}
             >
               <FaCoffee />
               <span>
@@ -736,21 +1078,19 @@ function AttendancePage() {
             <button
               className="btn-punch btn-punch-out"
               onClick={handleKioskCheckOut}
-              disabled={!activeStaffRecordToday || !!activeStaffRecordToday.checkOutTime}
+              disabled={!activeStaffRecordToday || !!activeStaffRecordToday.checkOutTime || activeStaffRecordToday.status === "On Leave"}
             >
               <FaSignOutAlt />
               <span>{isKhmer ? "ចុះវត្តមានចេញ (Check Out)" : "Check Out"}</span>
             </button>
 
             <button
-              className="btn-punch btn-punch-pin"
-              onClick={() => {
-                setPinAction("check_in");
-                setIsPinModalOpen(true);
-              }}
+              className="btn-punch btn-punch-leave"
+              onClick={() => handleOpenLeaveModal()}
+              title="Ask permission for leave / vacation / sick"
             >
-              <FaKey />
-              <span>{isKhmer ? "បញ្ចូល PIN" : "PIN Punch"}</span>
+              <FaUmbrellaBeach />
+              <span>{isKhmer ? "សុំច្បាប់ (Ask Leave)" : "Ask Permission"}</span>
             </button>
           </div>
         </div>
@@ -797,10 +1137,10 @@ function AttendancePage() {
 
             <div className="attendance-kpi-card kpi-late">
               <div className="kpi-left">
-                <p>{isKhmer ? "មកយឺត" : "Late Arrivals"}</p>
-                <h3>{kpiMetrics.lateCount}</h3>
+                <p>{isKhmer ? "មកយឺត / សុំច្បាប់" : "Late / On Leave"}</p>
+                <h3>{kpiMetrics.lateCount} <span style={{ fontSize: "15px", color: "#64748b" }}>/ {kpiMetrics.onLeaveCount} Leave</span></h3>
                 <span className="kpi-subtext">
-                  {isKhmer ? "លើសពីម៉ោងកំណត់ + 15 នាទី" : "Beyond grace period"}
+                  {kpiMetrics.onLeaveCount > 0 ? `${kpiMetrics.onLeaveCount} on approved leave` : "Late arrivals today"}
                 </span>
               </div>
               <div className="attendance-kpi-icon">
@@ -889,331 +1229,713 @@ function AttendancePage() {
           </div>
         </div>
 
-        {/* Quick Status Tabs */}
-        <div className="attendance-status-tabs">
-          {[
-            { id: "all", label: isKhmer ? "ទាំងអស់" : "All Records", count: records.length },
-            { id: "present", label: isKhmer ? "កំពុងបំពេញការងារ" : "Present / On Shift", count: kpiMetrics.presentCount },
-            { id: "late", label: isKhmer ? "មកយឺត" : "Late", count: kpiMetrics.lateCount },
-            { id: "break", label: isKhmer ? "កំពុងសម្រាក" : "On Break", count: kpiMetrics.onBreakCount },
-            { id: "checked_out", label: isKhmer ? "បាន Check-Out" : "Checked Out", count: kpiMetrics.checkedOutCount }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              className={`status-tab-btn ${selectedStatusTab === tab.id ? "active" : ""}`}
-              onClick={() => setSelectedStatusTab(tab.id)}
-            >
-              <span>{tab.label}</span>
-              <span className="status-tab-count">{tab.count}</span>
-            </button>
-          ))}
+        {/* Quick Status Tabs & View Switcher Row */}
+        <div className="attendance-filter-bottom-row">
+          <div className="attendance-status-tabs">
+            {[
+              { id: "present", label: isKhmer ? "🟢 កំពុងបំពេញការងារ (Present)" : "🟢 Present / On Duty", count: kpiMetrics.presentCount },
+              { id: "all", label: isKhmer ? "📋 កំណត់ត្រាទាំងអស់ (All Records)" : "📋 All Records", count: records.length },
+              { id: "late", label: isKhmer ? "🟡 មកយឺត" : "🟡 Late Arrivals", count: kpiMetrics.lateCount },
+              { id: "break", label: isKhmer ? "☕ កំពុងសម្រាក" : "☕ On Break", count: kpiMetrics.onBreakCount },
+              { id: "leave", label: isKhmer ? "🏖️ សុំច្បាប់" : "🏖️ On Leave", count: kpiMetrics.onLeaveCount || 0 },
+              { id: "checked_out", label: isKhmer ? "🔵 បាន Check-Out" : "🔵 Checked Out", count: kpiMetrics.checkedOutCount }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                className={`status-tab-btn ${selectedStatusTab === tab.id ? "active" : ""}`}
+                onClick={() => setSelectedStatusTab(tab.id)}
+              >
+                <span>{tab.label}</span>
+                <span className="status-tab-count">{tab.count}</span>
+              </button>
+            ))}
+          </div>
+
         </div>
       </div>
 
       {/* ===================================================================
-          4. Attendance Records Table with GPS Location Tracking
+          4. Attendance Records: Kanban (Mobile Only) vs List/Table (Window / Laptop)
           =================================================================== */}
-      <div className="attendance-table-card">
-        {loading ? (
-          <TableSkeleton rows={6} cols={9} />
-        ) : (
-          <div className="table-responsive-wrapper">
-            <table className="attendance-table">
-              <thead>
-                <tr>
-                  <th>{isKhmer ? "បុគ្គលិក" : "Employee"}</th>
-                  <th>{isKhmer ? "ផ្នែក & តួនាទី" : "Department / Role"}</th>
-                  <th>{isKhmer ? "កាលបរិច្ឆេទ & វេន" : "Date & Shift"}</th>
-                  <th>{isKhmer ? "ម៉ោងចូល (Check In)" : "Check In"}</th>
-                  <th>{isKhmer ? "ទីតាំង GPS" : "GPS Location"}</th>
-                  <th>{isKhmer ? "ម៉ោងចេញ (Check Out)" : "Check Out"}</th>
-                  <th>{isKhmer ? "សម្រាក" : "Break"}</th>
-                  <th>{isKhmer ? "ម៉ោងសរុប & OT" : "Total Work (OT)"}</th>
-                  <th>{isKhmer ? "ស្ថានភាព" : "Status"}</th>
-                  <th style={{ textAlign: "center" }}>{isKhmer ? "សកម្មភាព" : "Action"}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {records.length === 0 ? (
-                  <tr>
-                    <td colSpan={10}>
-                      <div className="empty-table-state">
-                        <FaClock size={40} />
-                        <p>{isKhmer ? "មិនមានកំណត់ត្រាវត្តមានតាមលក្ខខណ្ឌស្វែងរកនេះទេ" : "No attendance records found matching filters."}</p>
-                      </div>
-                    </td>
-                  </tr>
+      {isMobile ? (
+        /* KANBAN BOARD VIEW (Mobile Only) */
+        <div className="attendance-kanban-board">
+          {kanbanColumns.map((col) => (
+            <div key={col.id} className="kanban-column">
+              <div className="kanban-column-header">
+                <div className="kanban-col-title">
+                  <span className="kanban-col-icon">{col.icon}</span>
+                  <h4>{col.title}</h4>
+                </div>
+                <span className={`kanban-col-count ${col.badgeClass}`}>
+                  {col.records.length}
+                </span>
+              </div>
+
+              <div className="kanban-cards-list">
+                {col.records.length === 0 ? (
+                  <div className="kanban-empty-col">
+                    <p>{isKhmer ? "គ្មានបុគ្គលិក" : "No staff"}</p>
+                  </div>
                 ) : (
-                  records.map((r) => {
-                    const loc = r.checkInLocation;
+                  col.records.map((item) => {
+                    const isAttendanceRec = col.type === "attendance";
+                    const loc = isAttendanceRec ? item.checkInLocation : null;
                     const isInside = loc ? loc.isWithinGeofence : true;
                     const distMeters = loc?.distanceMeters || 0;
                     const mapUrl = loc?.latitude
                       ? `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`
                       : null;
-
                     return (
-                      <tr key={r.id}>
-                        {/* Staff Cell */}
-                        <td>
-                          <div className="staff-cell">
-                            <img
-                              src={r.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"}
-                              alt={r.employeeName}
-                              className="staff-cell-avatar"
-                            />
-                            <div className="staff-cell-meta">
-                              <h5>{r.employeeName}</h5>
-                              <p>{r.employeeId} {r.khmerName && `• ${r.khmerName}`}</p>
+                      <div
+                        key={isAttendanceRec ? item.id : item.id}
+                        className={`kanban-card ${isAttendanceRec ? `status-${item.status?.toLowerCase().replace(/\s+/g, "-")}` : "status-not-in"}`}
+                      >
+                        {/* Top: Avatar & Info */}
+                        <div className="kanban-card-top">
+                          <img
+                            src={
+                              item.avatar ||
+                              "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+                            }
+                            alt={isAttendanceRec ? item.employeeName : item.name}
+                            className="kanban-card-avatar"
+                          />
+                          <div className="kanban-card-info">
+                            <h5>{isAttendanceRec ? item.employeeName : item.name}</h5>
+                            <p>
+                              {isAttendanceRec ? item.employeeId : item.id} • {item.role}
+                            </p>
+                            <span className="kanban-dept-badge">{item.department}</span>
+                          </div>
+                        </div>
+
+                        {/* Middle: Shift & Times if Attendance */}
+                        {isAttendanceRec ? (
+                          <div className="kanban-card-metrics">
+                            <div className="kanban-metric-item">
+                              <span className="metric-label">{isKhmer ? "ម៉ោងចូល:" : "Check In:"}</span>
+                              <span className="metric-val in">
+                                <FaSignInAlt size={10} /> {item.checkInTime || "--:--"}
+                              </span>
+                            </div>
+                            <div className="kanban-metric-item">
+                              <span className="metric-label">{isKhmer ? "ម៉ោងចេញ:" : "Check Out:"}</span>
+                              <span className="metric-val out">
+                                <FaSignOutAlt size={10} /> {item.checkOutTime || "--:--"}
+                              </span>
+                            </div>
+                            {item.totalWorkHours > 0 && (
+                              <div className="kanban-metric-item full-row">
+                                <span className="metric-label">{isKhmer ? "ម៉ោងបំពេញការងារ:" : "Hours:"}</span>
+                                <span className="metric-val bold">
+                                  {item.totalWorkHours}h {item.overtimeHours > 0 ? `(+${item.overtimeHours}h OT)` : ""}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="kanban-card-metrics">
+                            <div className="kanban-metric-item full-row">
+                              <span className="metric-label">{isKhmer ? "វេនកំណត់:" : "Assigned Shift:"}</span>
+                              <span className="metric-val">
+                                {shifts.find((s) => s.id === item.defaultShiftId)?.name || "Morning Shift"}
+                              </span>
+                            </div>
+                            <div className="kanban-metric-item full-row">
+                              <span className="metric-label">{isKhmer ? "ទំនាក់ទំនង:" : "Contact:"}</span>
+                              <span className="metric-val">
+                                {item.phone || item.email || "Store Staff"}
+                              </span>
                             </div>
                           </div>
-                        </td>
+                        )}
 
-                        {/* Department / Role */}
-                        <td>
-                          <span className="dept-badge">{r.department}</span>
-                          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "3px" }}>{r.role}</div>
-                        </td>
-
-                        {/* Date & Shift */}
-                        <td>
-                          <div style={{ fontWeight: "600", fontSize: "13px" }}>{r.date}</div>
-                          <span className="shift-badge" style={{ marginTop: "3px" }}>
-                            {r.shiftName ? r.shiftName.split(" ")[0] : "Shift"}
-                          </span>
-                        </td>
-
-                        {/* Check In Time */}
-                        <td>
-                          <div className="time-chip">
-                            <FaSignInAlt style={{ color: "#10b981" }} />
-                            <span>{r.checkInTime || "--:--:--"}</span>
-                          </div>
-                          <div style={{ marginTop: "4px" }}>
-                            {r.checkInStatus === "Late" ? (
-                              <span className="status-subchip late">
-                                Late +{r.lateMinutes}m
-                              </span>
+                        {/* Location Tag */}
+                        {isAttendanceRec && (
+                          <div className="kanban-card-location">
+                            {mapUrl ? (
+                              <a
+                                href={mapUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={`kanban-loc-chip ${isInside ? "inside" : "outside"}`}
+                              >
+                                <FaMapMarkerAlt />
+                                <span>{isInside ? `Mall (${distMeters}m)` : `Outside (${(distMeters / 1000).toFixed(1)}km)`}</span>
+                                <FaExternalLinkAlt size={9} />
+                              </a>
                             ) : (
-                              <span className="status-subchip ontime">
-                                On Time
+                              <span className="kanban-loc-chip inside">
+                                <FaMapMarkerAlt />
+                                <span>Mall Center</span>
                               </span>
                             )}
-                            <span className="method-tag" style={{ marginLeft: "4px" }}>
-                              {r.checkInMethod || "Web"}
-                            </span>
                           </div>
-                        </td>
+                        )}
 
-                        {/* GPS Location Column */}
-                        <td>
-                          {mapUrl ? (
-                            <a
-                              href={mapUrl}
-                              target="_blank"
-                              rel="noreferrer"
-                              className={`location-table-chip ${isInside ? "inside" : "outside"}`}
-                              title={loc?.address || "View on Google Maps"}
-                            >
-                              <FaMapMarkerAlt />
-                              <span>{isInside ? `Mall (${distMeters}m)` : `${(distMeters / 1000).toFixed(1)}km`}</span>
-                              <FaExternalLinkAlt size={9} />
-                            </a>
+                        {/* Bottom: Action Buttons */}
+                        <div className="kanban-card-actions">
+                          {isAttendanceRec ? (
+                            <>
+                              <button
+                                className="btn-kanban-action view"
+                                title="View GPS & Timeline"
+                                onClick={() => {
+                                  setSelectedRecord(item);
+                                  setIsDetailModalOpen(true);
+                                }}
+                              >
+                                <FaEye /> <span>{isKhmer ? "ព័ត៌មាន" : "Details"}</span>
+                              </button>
+                              <button
+                                className="btn-kanban-action edit"
+                                title="Edit Record"
+                                onClick={() => {
+                                  setSelectedRecord(item);
+                                  setIsEditModalOpen(true);
+                                }}
+                              >
+                                <FaEdit />
+                              </button>
+                              <button
+                                className="btn-kanban-action delete"
+                                title="Delete Record"
+                                onClick={() => handleDeleteRecord(item)}
+                              >
+                                <FaTrash />
+                              </button>
+                            </>
                           ) : (
-                            <span className="location-table-chip inside">
-                              <FaMapMarkerAlt />
-                              <span>Mall Center</span>
-                            </span>
+                            <div style={{ display: "flex", gap: "6px", width: "100%" }}>
+                              <button
+                                className="btn-kanban-punch-now"
+                                onClick={() => {
+                                  setSelectedStaffId(item.id);
+                                  handleKioskCheckIn();
+                                }}
+                              >
+                                <FaSignInAlt />
+                                <span>{isKhmer ? "ចុះវត្តមាន" : "Clock In"}</span>
+                              </button>
+                              <button
+                                className="btn-kanban-action"
+                                style={{ color: "#0284c7", background: "rgba(2, 132, 199, 0.08)", border: "1px solid rgba(2, 132, 199, 0.2)" }}
+                                onClick={() => handleOpenLeaveModal(item.id)}
+                                title="Ask Leave Permission"
+                              >
+                                <FaUmbrellaBeach />
+                              </button>
+                            </div>
                           )}
-                        </td>
-
-                        {/* Check Out Time */}
-                        <td>
-                          <div className="time-chip">
-                            <FaSignOutAlt style={{ color: r.checkOutTime ? "#3b82f6" : "#94a3b8" }} />
-                            <span>{r.checkOutTime || "--:--:--"}</span>
-                          </div>
-                          <div style={{ marginTop: "4px" }}>
-                            <span
-                              className="status-subchip"
-                              style={{
-                                background: r.checkOutTime ? "#eff6ff" : "#f8fafc",
-                                color: r.checkOutTime ? "#2563eb" : "#94a3b8"
-                              }}
-                            >
-                              {r.checkOutStatus || (r.checkOutTime ? "Completed" : "On Shift")}
-                            </span>
-                          </div>
-                        </td>
-
-                        {/* Break */}
-                        <td>
-                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                            <FaCoffee style={{ color: r.breakStatus === "On Break" ? "#f59e0b" : "#94a3b8" }} />
-                            <span>{r.totalBreakMinutes || 0} mins</span>
-                          </div>
-                          {r.breakStatus === "On Break" && (
-                            <span className="status-subchip late" style={{ marginTop: "3px", display: "inline-block" }}>
-                              Break Active
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Total Work Hours & OT */}
-                        <td>
-                          <span className="hours-pill">
-                            {r.totalWorkHours ? `${r.totalWorkHours}h` : "In Progress"}
-                          </span>
-                          {r.overtimeHours > 0 && (
-                            <span className="overtime-pill">
-                              +{r.overtimeHours}h OT
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Overall Status */}
-                        <td>
-                          <span
-                            className={`staff-live-badge ${r.status === "Present" || r.status === "On Shift"
-                                ? "checked-in"
-                                : r.status === "On Break"
-                                  ? "on-break"
-                                  : r.status === "Late"
-                                    ? "on-break"
-                                    : "checked-out"
-                              }`}
-                          >
-                            ● {r.status}
-                          </span>
-                        </td>
-
-                        {/* Actions */}
-                        <td>
-                          <div className="table-action-btns">
-                            <button
-                              className="btn-tbl-action"
-                              title="View Details & GPS Audit"
-                              onClick={() => {
-                                setSelectedRecord(r);
-                                setIsDetailModalOpen(true);
-                              }}
-                            >
-                              <FaEye />
-                            </button>
-
-                            <button
-                              className="btn-tbl-action edit"
-                              title="Edit Attendance Record"
-                              onClick={() => {
-                                setSelectedRecord(r);
-                                setIsEditModalOpen(true);
-                              }}
-                            >
-                              <FaEdit />
-                            </button>
-
-                            <button
-                              className="btn-tbl-action delete"
-                              title="Delete Record"
-                              onClick={() => handleDeleteRecord(r)}
-                            >
-                              <FaTrash />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     );
                   })
                 )}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        /* TABLE VIEW */
+        <div className="attendance-table-card">
+          {loading ? (
+            <TableSkeleton rows={6} cols={9} />
+          ) : (
+            <div className="table-responsive-wrapper">
+              <table className="attendance-table">
+                <thead>
+                  <tr>
+                    <th>{isKhmer ? "បុគ្គលិក" : "Employee"}</th>
+                    <th>{isKhmer ? "ផ្នែក & តួនាទី" : "Department / Role"}</th>
+                    <th>{isKhmer ? "កាលបរិច្ឆេទ & វេន" : "Date & Shift"}</th>
+                    <th>{isKhmer ? "ម៉ោងចូល (Check In)" : "Check In"}</th>
+                    <th>{isKhmer ? "ទីតាំង GPS" : "GPS Location"}</th>
+                    <th>{isKhmer ? "ម៉ោងចេញ (Check Out)" : "Check Out"}</th>
+                    <th>{isKhmer ? "សម្រាក" : "Break"}</th>
+                    <th>{isKhmer ? "ម៉ោងសរុប & OT" : "Total Work (OT)"}</th>
+                    <th>{isKhmer ? "ស្ថានភាព" : "Status"}</th>
+                    <th style={{ textAlign: "center" }}>{isKhmer ? "សកម្មភាព" : "Action"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedRecords.length === 0 ? (
+                    <tr>
+                      <td colSpan={10}>
+                        <div className="empty-table-state">
+                          <FaClock size={40} />
+                          <p>{isKhmer ? "មិនមានកំណត់ត្រាវត្តមានតាមលក្ខខណ្ឌស្វែងរកនេះទេ" : "No attendance records found matching filters."}</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    sortedRecords.map((r) => {
+                      const loc = r.checkInLocation;
+                      const isInside = loc ? loc.isWithinGeofence : true;
+                      const distMeters = loc?.distanceMeters || 0;
+                      const mapUrl = loc?.latitude
+                        ? `https://www.google.com/maps?q=${loc.latitude},${loc.longitude}`
+                        : null;
+
+                      return (
+                        <tr key={r.id}>
+                          {/* Staff Column */}
+                          <td>
+                            <div className="staff-cell">
+                              <img
+                                src={
+                                  r.avatar ||
+                                  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+                                }
+                                alt={r.employeeName}
+                                className="staff-avatar-sm"
+                              />
+                              <div className="staff-cell-meta">
+                                <h5>{r.employeeName}</h5>
+                                <p>
+                                  {r.khmerName && <span style={{ marginRight: "4px" }}>{r.khmerName} •</span>}
+                                  ID: {r.employeeId}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Role / Dept */}
+                          <td>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                              <span style={{ fontWeight: 600, fontSize: "13px" }}>{r.role}</span>
+                              <span className="dept-badge">{r.department}</span>
+                            </div>
+                          </td>
+
+                          {/* Date & Shift */}
+                          <td>
+                            <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                              <span style={{ fontSize: "12px", fontWeight: 600 }}>{r.date}</span>
+                              <span className="shift-badge">{r.shiftName || "Morning Shift"}</span>
+                            </div>
+                          </td>
+
+                          {/* Check In Time */}
+                          <td>
+                            <div className="time-chip">
+                              <FaSignInAlt style={{ color: "#10b981" }} />
+                              <span>{r.checkInTime || "--:--:--"}</span>
+                            </div>
+                            <div style={{ marginTop: "4px" }}>
+                              <span
+                                className={`status-subchip ${r.checkInStatus === "Late"
+                                    ? "late"
+                                    : r.checkInStatus === "On Time"
+                                      ? "ontime"
+                                      : r.checkInStatus === "On Leave"
+                                        ? "on-break"
+                                        : ""
+                                  }`}
+                              >
+                                {r.checkInStatus === "Late" && r.lateMinutes > 0
+                                  ? `Late (+${r.lateMinutes}m)`
+                                  : r.checkInStatus}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* GPS Location Column */}
+                          <td>
+                            {mapUrl ? (
+                              <a
+                                href={mapUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={`location-table-chip ${isInside ? "inside" : "outside"}`}
+                                title={loc?.address || "View on Google Maps"}
+                              >
+                                <FaMapMarkerAlt />
+                                <span>{isInside ? `Mall (${distMeters}m)` : `${(distMeters / 1000).toFixed(1)}km`}</span>
+                                <FaExternalLinkAlt size={9} />
+                              </a>
+                            ) : (
+                              <span className="location-table-chip inside">
+                                <FaMapMarkerAlt />
+                                <span>Mall Center</span>
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Check Out Time */}
+                          <td>
+                            <div className="time-chip">
+                              <FaSignOutAlt style={{ color: r.checkOutTime ? "#3b82f6" : "#94a3b8" }} />
+                              <span>{r.checkOutTime || "--:--:--"}</span>
+                            </div>
+                            <div style={{ marginTop: "4px" }}>
+                              <span
+                                className="status-subchip"
+                                style={{
+                                  background: r.checkOutTime ? "#eff6ff" : "#f8fafc",
+                                  color: r.checkOutTime ? "#2563eb" : "#94a3b8"
+                                }}
+                              >
+                                {r.checkOutStatus || (r.checkOutTime ? "Completed" : "On Shift")}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Break */}
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                              <FaCoffee style={{ color: r.breakStatus === "On Break" ? "#f59e0b" : "#94a3b8" }} />
+                              <span>{r.totalBreakMinutes || 0} mins</span>
+                            </div>
+                            {r.breakStatus === "On Break" && (
+                              <span className="status-subchip late" style={{ marginTop: "3px", display: "inline-block" }}>
+                                Break Active
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Total Work Hours & OT */}
+                          <td>
+                            <span className="hours-pill">
+                              {r.totalWorkHours ? `${r.totalWorkHours}h` : "In Progress"}
+                            </span>
+                            {r.overtimeHours > 0 && (
+                              <span className="overtime-pill">
+                                +{r.overtimeHours}h OT
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Overall Status */}
+                          <td>
+                            <span
+                              className={`staff-live-badge ${r.status === "Present" || r.status === "On Shift"
+                                  ? "checked-in"
+                                  : r.status === "On Break"
+                                    ? "on-break"
+                                    : r.status === "On Leave"
+                                      ? "on-break"
+                                      : r.status === "Late"
+                                        ? "on-break"
+                                        : "checked-out"
+                                }`}
+                              style={r.status === "On Leave" ? { background: "#fef3c7", color: "#b45309" } : {}}
+                            >
+                              ● {r.status}
+                            </span>
+                          </td>
+
+                          {/* Actions */}
+                          <td>
+                            <div className="table-action-btns">
+                              <button
+                                className="btn-tbl-action"
+                                title="View Details & GPS Audit"
+                                onClick={() => {
+                                  setSelectedRecord(r);
+                                  setIsDetailModalOpen(true);
+                                }}
+                              >
+                                <FaEye />
+                              </button>
+
+                              <button
+                                className="btn-tbl-action edit"
+                                title="Edit Attendance Record"
+                                onClick={() => {
+                                  setSelectedRecord(r);
+                                  setIsEditModalOpen(true);
+                                }}
+                              >
+                                <FaEdit />
+                              </button>
+
+                              <button
+                                className="btn-tbl-action delete"
+                                title="Delete Record"
+                                onClick={() => handleDeleteRecord(r)}
+                              >
+                                <FaTrash />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ===================================================================
-          MODAL 1: PIN Keypad Clock Terminal
+          MODAL 1: Request Leave Permission (ពាក្យសុំច្បាប់ឈប់សម្រាក)
           =================================================================== */}
       <Modal
-        isOpen={isPinModalOpen}
-        onClose={() => {
-          setIsPinModalOpen(false);
-          setPinInput("");
-        }}
-        title={isKhmer ? "ស្ថានីយ៍ចុះវត្តមានដោយលេខកូដ PIN" : "PIN Keypad Punch Terminal"}
-        size="sm"
+        isOpen={isLeaveModalOpen}
+        onClose={() => setIsLeaveModalOpen(false)}
+        title={isKhmer ? "ពាក្យសុំច្បាប់ឈប់សម្រាក (Ask Permission Leave)" : "Staff Leave Permission Request"}
+        size="md"
       >
-        <div className="pin-modal-content">
-          <div className="pin-modal-header">
-            <h3>{isKhmer ? "បញ្ចូលលេខកូដសម្ងាត់បុគ្គលិក" : "Enter 4-Digit Staff PIN"}</h3>
-            <p>
-              {isKhmer ? "លេខកូដបុគ្គលិកក្នុងប្រព័ន្ធ API:" : "Active Staff PINs (from API):"}
-              <br />
-              {staffList && staffList.length > 0
-                ? staffList.slice(0, 5).map((s) => `${s.name} (${s.pin || s.id})`).join(" • ")
-                : (isKhmer ? "កំពុងទាញយកទិន្នន័យពី API..." : "Loading staff from API...")}
-            </p>
-          </div>
-
-          <div className="pin-action-selector">
-            <button
-              className={`pin-action-btn ${pinAction === "check_in" ? "active in" : ""}`}
-              onClick={() => setPinAction("check_in")}
-            >
-              <FaSignInAlt /> Check In
-            </button>
-            <button
-              className={`pin-action-btn ${pinAction === "break" ? "active" : ""}`}
-              onClick={() => setPinAction("break")}
-            >
-              <FaCoffee /> Break
-            </button>
-            <button
-              className={`pin-action-btn ${pinAction === "check_out" ? "active out" : ""}`}
-              onClick={() => setPinAction("check_out")}
-            >
-              <FaSignOutAlt /> Check Out
-            </button>
-          </div>
-
-          <div className="pin-display-dots">
-            {[0, 1, 2, 3].map((idx) => (
-              <div
-                key={idx}
-                className={`pin-dot ${pinInput.length > idx ? "filled" : ""}`}
-              />
-            ))}
-          </div>
-
-          <div className="pin-keypad-grid">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-              <button
-                key={num}
-                className="btn-pin-key"
-                onClick={() => handlePinKeyClick(String(num))}
+        <form onSubmit={handleSubmitLeave}>
+          <div className="attendance-form-grid">
+            <div className="form-group-field" style={{ gridColumn: "1 / -1" }}>
+              <label>
+                {isKhmer ? "ជ្រើសរើសបុគ្គលិកសុំច្បាប់ *" : "Select Staff Member *"}
+                {!isManager ? (
+                  <span className="kiosk-locked-tag" style={{ marginLeft: "8px" }}>
+                    🔒 {isKhmer ? "(គណនីរបស់អ្នក)" : "(Your Account)"}
+                  </span>
+                ) : (
+                  <span className="kiosk-current-user-tag" style={{ marginLeft: "8px" }}>
+                    👑 {isKhmer ? "(សិទ្ធិ Manager)" : "(Manager Mode)"}
+                  </span>
+                )}
+              </label>
+              <select
+                required
+                disabled={!isManager}
+                className={!isManager ? "locked-user-select" : ""}
+                value={leaveForm.employeeId}
+                onChange={(e) => {
+                  if (!isManager) return;
+                  const s = selectableStaffList.find((st) => st.id === e.target.value);
+                  setLeaveForm({
+                    ...leaveForm,
+                    employeeId: e.target.value,
+                    contactNumber: s?.phone || leaveForm.contactNumber
+                  });
+                }}
               >
-                {num}
+                {selectableStaffList.map((s) => {
+                  const isCurrent = currentUser && (
+                    String(s.id) === String(currentUser.id || currentUser.user_id) ||
+                    (currentUser.email && s.email === currentUser.email)
+                  );
+                  return (
+                    <option key={s.id} value={s.id}>
+                      {s.name} {s.khmerName ? `(${s.khmerName})` : ""} - {s.role} ({s.department}) {isCurrent ? " ★ (You)" : ""}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+
+            <div className="form-group-field">
+              <label>{isKhmer ? "ប្រភេទច្បាប់ឈប់សម្រាក *" : "Leave Type *"}</label>
+              <select
+                required
+                value={leaveForm.leaveType}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  let kh = "ច្បាប់ឈប់សម្រាក";
+                  if (val === "Sick Leave") kh = "ច្បាប់ឈឺ (Sick Leave)";
+                  else if (val === "Annual Leave") kh = "ច្បាប់ប្រចាំឆ្នាំ (Annual Vacation)";
+                  else if (val === "Personal Leave") kh = "កិច្ចការផ្ទាល់ខ្លួន (Personal Affairs)";
+                  else if (val === "Urgent Leave") kh = "ច្បាប់បន្ទាន់ (Urgent Emergency)";
+                  else if (val === "Half Day Morning") kh = "ច្បាប់កន្លះថ្ងៃព្រឹក (Half Day AM)";
+                  else if (val === "Half Day Afternoon") kh = "ច្បាប់កន្លះថ្ងៃរសៀល (Half Day PM)";
+                  else if (val === "Maternity/Paternity") kh = "ច្បាប់សម្រាលកូន (Maternity/Paternity)";
+                  else if (val === "Unpaid Leave") kh = "ច្បាប់អត់ប្រាក់ខែ (Unpaid Leave)";
+
+                  setLeaveForm({ ...leaveForm, leaveType: val, leaveTypeKh: kh });
+                }}
+              >
+                <option value="Sick Leave">🩺 {isKhmer ? "ច្បាប់ឈឺ (Sick Leave)" : "Sick Leave"}</option>
+                <option value="Annual Leave">🏖️ {isKhmer ? "ច្បាប់ប្រចាំឆ្នាំ (Annual Leave)" : "Annual Vacation Leave"}</option>
+                <option value="Personal Leave">🏃 {isKhmer ? "កិច្ចការផ្ទាល់ខ្លួន (Personal Leave)" : "Personal Business"}</option>
+                <option value="Urgent Leave">🚨 {isKhmer ? "ច្បាប់បន្ទាន់ (Urgent Leave)" : "Urgent Family Emergency"}</option>
+                <option value="Half Day Morning">⏱️ {isKhmer ? "ច្បាប់កន្លះថ្ងៃព្រឹក (Half Day AM)" : "Half Day (Morning)"}</option>
+                <option value="Half Day Afternoon">⏱️ {isKhmer ? "ច្បាប់កន្លះថ្ងៃរសៀល (Half Day PM)" : "Half Day (Afternoon)"}</option>
+                <option value="Maternity/Paternity">🍼 {isKhmer ? "ច្បាប់សម្រាលកូន (Maternity/Paternity)" : "Maternity / Paternity"}</option>
+                <option value="Unpaid Leave">📋 {isKhmer ? "ច្បាប់អត់ប្រាក់ខែ (Unpaid Leave)" : "Unpaid Leave"}</option>
+              </select>
+            </div>
+
+            <div className="form-group-field">
+              <label>{isKhmer ? "លេខទូរស័ព្ទទាក់ទងពេលឈប់" : "Emergency Contact Phone"}</label>
+              <input
+                type="text"
+                placeholder="e.g. 012 345 678"
+                value={leaveForm.contactNumber}
+                onChange={(e) => setLeaveForm({ ...leaveForm, contactNumber: e.target.value })}
+              />
+            </div>
+
+            <div className="form-group-field">
+              <label>{isKhmer ? "ចាប់ពីថ្ងៃទី *" : "Start Date *"}</label>
+              <input
+                type="date"
+                required
+                value={leaveForm.startDate}
+                onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })}
+              />
+            </div>
+
+            <div className="form-group-field">
+              <label>{isKhmer ? "រហូតដល់ថ្ងៃទី *" : "End Date *"}</label>
+              <input
+                type="date"
+                required
+                value={leaveForm.endDate}
+                min={leaveForm.startDate}
+                onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })}
+              />
+            </div>
+
+            <div className="form-group-field" style={{ gridColumn: "1 / -1" }}>
+              <label>{isKhmer ? "មូលហេតុនៃការសុំច្បាប់ *" : "Reason / Justification *"}</label>
+              <textarea
+                rows={3}
+                required
+                placeholder={isKhmer ? "បញ្ជាក់មូលហេតុលម្អិតនៃការសុំច្បាប់..." : "Please describe the reason for your leave request..."}
+                value={leaveForm.reason}
+                onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="form-footer-buttons">
+            <button
+              type="button"
+              className="btn-action-secondary"
+              onClick={() => setIsLeaveModalOpen(false)}
+            >
+              {isKhmer ? "បោះបង់" : "Cancel"}
+            </button>
+            <button type="submit" className="btn-action-primary">
+              <FaCheckCircle />
+              <span>{isKhmer ? "ដាក់ពាក្យសុំច្បាប់" : "Submit Leave Request"}</span>
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ===================================================================
+          MODAL 2: Leave Requests Manager (គ្រប់គ្រងការសុំច្បាប់បុគ្គលិក)
+          =================================================================== */}
+      <Modal
+        isOpen={isLeaveManagerOpen}
+        onClose={() => setIsLeaveManagerOpen(false)}
+        title={isKhmer ? "បញ្ជីគ្រប់គ្រងការសុំច្បាប់បុគ្គលិក (Staff Leave Requests)" : "Staff Leave Permission Management"}
+        size="lg"
+      >
+        <div className="leave-manager-content">
+          <div className="leave-filter-tabs-row">
+            {[
+              { id: "all", label: isKhmer ? "ទាំងអស់" : "All Requests", count: leaveRequests.length },
+              { id: "pending", label: isKhmer ? "រង់ចាំការអនុម័ត" : "Pending Review", count: leaveRequests.filter((l) => l.status === "Pending").length },
+              { id: "approved", label: isKhmer ? "បានអនុម័ត" : "Approved", count: leaveRequests.filter((l) => l.status === "Approved").length },
+              { id: "rejected", label: isKhmer ? "បានបដិសេធ" : "Rejected", count: leaveRequests.filter((l) => l.status === "Rejected").length }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`leave-tab-btn ${leaveFilterTab === tab.id ? "active" : ""}`}
+                onClick={() => setLeaveFilterTab(tab.id)}
+              >
+                <span>{tab.label}</span>
+                <span className="leave-tab-pill">{tab.count}</span>
               </button>
             ))}
-            <button className="btn-pin-key" onClick={handlePinClear}>
-              C
-            </button>
-            <button className="btn-pin-key" onClick={() => handlePinKeyClick("0")}>
-              0
-            </button>
-            <button className="btn-pin-key" onClick={handlePinBackspace}>
-              <FaBackspace />
-            </button>
           </div>
 
-          <button
-            className="btn-action-primary"
-            style={{ width: "100%", justifyContent: "center", padding: "14px" }}
-            onClick={handlePinSubmit}
-            disabled={pinInput.length < 4}
-          >
-            {isKhmer ? "បញ្ជាក់វត្តមាន" : "Submit PIN Punch"}
-          </button>
+          <div className="leave-requests-list">
+            {leaveRequests.filter((l) => {
+              if (leaveFilterTab === "all") return true;
+              return l.status.toLowerCase() === leaveFilterTab.toLowerCase();
+            }).length === 0 ? (
+              <div className="leave-empty-state">
+                <FaUmbrellaBeach size={36} style={{ color: "#94a3b8", marginBottom: "8px" }} />
+                <p>{isKhmer ? "មិនមានពាក្យសុំច្បាប់ក្នុងស្ថានភាពនេះទេ" : "No leave requests found in this category."}</p>
+              </div>
+            ) : (
+              leaveRequests
+                .filter((l) => {
+                  if (leaveFilterTab === "all") return true;
+                  return l.status.toLowerCase() === leaveFilterTab.toLowerCase();
+                })
+                .map((req) => (
+                  <div key={req.id} className={`leave-request-card status-${req.status.toLowerCase()}`}>
+                    <div className="leave-card-header">
+                      <div className="leave-staff-profile">
+                        <img src={req.avatar} alt={req.employeeName} className="leave-staff-avatar" />
+                        <div>
+                          <h5>{req.employeeName} {req.khmerName && `(${req.khmerName})`}</h5>
+                          <p>{req.employeeId} • {req.role} ({req.department})</p>
+                        </div>
+                      </div>
+                      <span className={`leave-status-badge ${req.status.toLowerCase()}`}>
+                        {req.status === "Pending" && "⏳ Pending"}
+                        {req.status === "Approved" && "✓ Approved"}
+                        {req.status === "Rejected" && "✕ Rejected"}
+                      </span>
+                    </div>
+
+                    <div className="leave-card-details-grid">
+                      <div>
+                        <strong>{isKhmer ? "ប្រភេទច្បាប់:" : "Leave Type:"}</strong>
+                        <span>{req.leaveTypeKh || req.leaveType}</span>
+                      </div>
+                      <div>
+                        <strong>{isKhmer ? "កាលបរិច្ឆេទ:" : "Duration:"}</strong>
+                        <span>{req.startDate} {req.endDate !== req.startDate ? `to ${req.endDate}` : ""} ({req.durationDays} day{req.durationDays > 1 ? "s" : ""})</span>
+                      </div>
+                      <div style={{ gridColumn: "1 / -1" }}>
+                        <strong>{isKhmer ? "មូលហេតុ:" : "Reason:"}</strong>
+                        <p className="leave-reason-text">{req.reason}</p>
+                      </div>
+                      {req.contactNumber && (
+                        <div>
+                          <strong>{isKhmer ? "លេខទូរស័ព្ទ:" : "Contact:"}</strong>
+                          <span>{req.contactNumber}</span>
+                        </div>
+                      )}
+                      {req.reviewedBy && (
+                        <div>
+                          <strong>{isKhmer ? "អ្នកពិនិត្យ:" : "Reviewed By:"}</strong>
+                          <span>{req.reviewedBy} {req.reviewNotes && `("${req.reviewNotes}")`}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="leave-card-actions">
+                      {isManager && req.status === "Pending" && (
+                        <>
+                          <button
+                            type="button"
+                            className="btn-leave-approve"
+                            onClick={() => handleApproveLeave(req)}
+                          >
+                            <FaCheck /> <span>{isKhmer ? "អនុម័តច្បាប់ (Approve)" : "Approve"}</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-leave-reject"
+                            onClick={() => handleRejectLeave(req)}
+                          >
+                            <FaBan /> <span>{isKhmer ? "បដិសេធ (Reject)" : "Reject"}</span>
+                          </button>
+                        </>
+                      )}
+                      {(isManager || String(req.employeeId) === String(activeLoggedInStaff?.id)) && (
+                        <button
+                          type="button"
+                          className="btn-leave-delete"
+                          onClick={() => handleDeleteLeave(req.id)}
+                          title="Delete Request"
+                        >
+                          <FaTrash />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+            )}
+          </div>
         </div>
       </Modal>
 
@@ -1337,7 +2059,7 @@ function AttendancePage() {
                 onChange={(e) => setManualForm({ ...manualForm, employeeId: e.target.value })}
               >
                 <option value="">-- {isKhmer ? "ជ្រើសរើសបុគ្គលិក" : "Select Staff"} --</option>
-                {staffList.map((s) => (
+                {selectableStaffList.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name} ({s.role} - {s.department})
                   </option>

@@ -35,9 +35,11 @@ import { CustomersApi } from "../../services/customerService";
 import { productsApi } from "../../services/productsService";
 import Modal from "../../components/Modal";
 import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
+import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import "./style/OrderPage.css";
 
 function OrderPage() {
+  const { can } = usePermissions();
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
@@ -381,6 +383,10 @@ function OrderPage() {
     setIsItemsModalOpen(true);
   };
 
+  if (!can("orders", "view")) {
+    return <AccessDeniedView moduleName="Orders & Invoicing" />;
+  }
+
   return (
     <div className="order-page">
       {/* Page Header */}
@@ -393,9 +399,11 @@ function OrderPage() {
           <button className="refresh-btn" onClick={fetchOrders} title="Refresh Orders">
             <FaSync className={loading ? "spin" : ""} /> Refresh
           </button>
-          <button className="add-btn" onClick={openCreateModal}>
-            <FaPlus /> Place New Order
-          </button>
+          {can("orders", "process") && (
+            <button className="add-btn" onClick={openCreateModal}>
+              <FaPlus /> Place New Order
+            </button>
+          )}
         </div>
       </div>
 
@@ -614,18 +622,20 @@ function OrderPage() {
                         <td>
                           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                             {renderStatusPill(ord.status)}
-                            <select
-                              className="status-select-inline"
-                              value={ord.status}
-                              onChange={(e) => handleStatusChange(ord.id, e.target.value)}
-                            >
-                              <option value="pending">Pending</option>
-                              <option value="paid">Paid</option>
-                              <option value="shipped">Shipped</option>
-                              <option value="completed">Completed</option>
-                              <option value="cancelled">Cancelled</option>
-                              <option value="failed">Failed</option>
-                            </select>
+                            {(can("orders", "process") || can("orders", "cancel")) && (
+                              <select
+                                className="status-select-inline"
+                                value={ord.status}
+                                onChange={(e) => handleStatusChange(ord.id, e.target.value)}
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="paid">Paid</option>
+                                <option value="shipped">Shipped</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
+                                <option value="failed">Failed</option>
+                              </select>
+                            )}
                           </div>
                         </td>
                       )}
@@ -640,13 +650,15 @@ function OrderPage() {
                             >
                               <FaEye />
                             </button>
-                            <button
-                              className="action-btn delete"
-                              title="Delete Order"
-                              onClick={() => handleDeleteOrder(ord.id)}
-                            >
-                              <FaTrash />
-                            </button>
+                            {(can("orders", "delete") || can("orders", "cancel")) && (
+                              <button
+                                className="action-btn delete"
+                                title="Delete Order"
+                                onClick={() => handleDeleteOrder(ord.id)}
+                              >
+                                <FaTrash />
+                              </button>
+                            )}
                           </div>
                         </td>
                       )}

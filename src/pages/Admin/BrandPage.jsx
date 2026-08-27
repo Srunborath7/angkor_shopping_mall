@@ -16,9 +16,11 @@ import {
 } from "../../services/brandsService";
 import Modal from "../../components/Modal";
 import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
+import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import "./style/BrandPage.css";
 
 function BrandPage() {
+    const { can } = usePermissions();
     const [brands, setBrands] = useState([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(false);
@@ -133,6 +135,10 @@ function BrandPage() {
         item.description?.toLowerCase().includes(search.toLowerCase())
     );
 
+    if (!can("brands", "view")) {
+        return <AccessDeniedView moduleName="Brands & Partners" />;
+    }
+
     return (
         <div className="brand-page">
             <div className="page-header">
@@ -140,9 +146,11 @@ function BrandPage() {
                     <h1>Brands</h1>
                     <p>Manage your product brands</p>
                 </div>
-                <button className="add-btn" onClick={openCreateModal}>
-                    <FaPlus /> Add Brand
-                </button>
+                {can("brands", "create") && (
+                    <button className="add-btn" onClick={openCreateModal}>
+                        <FaPlus /> Add Brand
+                    </button>
+                )}
             </div>
 
             <div className="brand-card">
@@ -216,12 +224,16 @@ function BrandPage() {
                                         {visibleColumns.actions && (
                                             <td>
                                                 <div className="table-row-actions">
-                                                    <button className="edit-btn" onClick={() => openEditModal(item)} title="Edit">
-                                                        <FaEdit />
-                                                    </button>
-                                                    <button className="delete-btn" onClick={() => deleteBrand(item.id)} title="Delete">
-                                                        <FaTrash />
-                                                    </button>
+                                                    {can("brands", "edit") && (
+                                                        <button className="edit-btn" onClick={() => openEditModal(item)} title="Edit">
+                                                            <FaEdit />
+                                                        </button>
+                                                    )}
+                                                    {can("brands", "delete") && (
+                                                        <button className="delete-btn" onClick={() => deleteBrand(item.id)} title="Delete">
+                                                            <FaTrash />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         )}
@@ -254,12 +266,16 @@ function BrandPage() {
                                             </div>
                                         )}
                                         <div className="mobile-card-actions">
-                                            <button className="edit-btn" onClick={() => openEditModal(item)}>
-                                                <FaEdit /> Edit
-                                            </button>
-                                            <button className="delete-btn" onClick={() => deleteBrand(item.id)}>
-                                                <FaTrash /> Delete
-                                            </button>
+                                            {can("brands", "edit") && (
+                                                <button className="edit-btn" onClick={() => openEditModal(item)}>
+                                                    <FaEdit /> Edit
+                                                </button>
+                                            )}
+                                            {can("brands", "delete") && (
+                                                <button className="delete-btn" onClick={() => deleteBrand(item.id)}>
+                                                    <FaTrash /> Delete
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

@@ -29,6 +29,7 @@ import { useTheme } from "../../context/ThemeContext";
 import { getAdminOrdersApi } from "../../services/orderService";
 import { productsApi } from "../../services/productsService";
 import { KpiCardSkeleton, TableSkeleton } from "../../components/loading/LoadingSkeleton";
+import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import "./style/ReportsPage.css";
 
 // Mock Sample Report Datasets
@@ -207,7 +208,11 @@ function ReportsPage() {
     });
   };
 
-  const maxMonthRev = Math.max(...MOCK_MONTHLY_REVENUE.map((m) => m.revenue));
+  const { can } = usePermissions();
+
+  if (!can("reports", "view")) {
+    return <AccessDeniedView moduleName="Financial Reports & Analytics" />;
+  }
 
   return (
     <div className="reports-page-wrapper">

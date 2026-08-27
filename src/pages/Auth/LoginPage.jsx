@@ -58,7 +58,12 @@ function LoginAdmin() {
       const accessToken = res.data.accessToken;
       const refreshToken = res.data.refreshToken || res.data.refresh_token || null;
 
-      const role = user.roles?.[0]?.name || "customer";
+      const role =
+        user?.roles?.[0]?.name ||
+        user?.role ||
+        user?.role_name ||
+        (Array.isArray(user?.roles) ? user.roles.map((r) => r.name || r).join(" ") : "") ||
+        "customer";
 
       dispatch(
         setAuth({
@@ -77,8 +82,21 @@ function LoginAdmin() {
         showConfirmButton: false,
       });
 
-      // Redirect by role
-      if (role === "admin" || role === "sale") {
+      // Redirect by role: managers, admins, staff go to dashboard; customers go to shop homepage
+      const lowerRole = String(role).toLowerCase();
+      const isStaffOrAdmin =
+        lowerRole !== "customer" &&
+        lowerRole !== "customers" &&
+        (lowerRole.includes("admin") ||
+          lowerRole.includes("manager") ||
+          lowerRole.includes("sale") ||
+          lowerRole.includes("staff") ||
+          lowerRole.includes("cashier") ||
+          lowerRole.includes("inventory") ||
+          lowerRole.includes("security") ||
+          lowerRole.includes("super"));
+
+      if (isStaffOrAdmin) {
         navigate("/admin/dashboard");
       } else {
         navigate("/");
@@ -107,7 +125,12 @@ function LoginAdmin() {
         const user = res.data?.user || res.data;
         const accessToken = res.data?.accessToken;
         const refreshToken = res.data?.refreshToken || null;
-        const role = user?.roles?.[0]?.name || "customer";
+        const role =
+          user?.roles?.[0]?.name ||
+          user?.role ||
+          user?.role_name ||
+          (Array.isArray(user?.roles) ? user.roles.map((r) => r.name || r).join(" ") : "") ||
+          "customer";
 
         dispatch(
           setAuth({
@@ -127,7 +150,20 @@ function LoginAdmin() {
           showConfirmButton: false,
         });
 
-        if (role === "admin" || role === "sale") {
+        const lowerRole = String(role).toLowerCase();
+        const isStaffOrAdmin =
+          lowerRole !== "customer" &&
+          lowerRole !== "customers" &&
+          (lowerRole.includes("admin") ||
+            lowerRole.includes("manager") ||
+            lowerRole.includes("sale") ||
+            lowerRole.includes("staff") ||
+            lowerRole.includes("cashier") ||
+            lowerRole.includes("inventory") ||
+            lowerRole.includes("security") ||
+            lowerRole.includes("super"));
+
+        if (isStaffOrAdmin) {
           navigate("/admin/dashboard");
         } else {
           navigate("/");

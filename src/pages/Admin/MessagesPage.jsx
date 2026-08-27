@@ -28,9 +28,11 @@ import {
   getSupportStatsApi
 } from "../../services/supportMessageService";
 import { MessageListSkeleton, KpiCardSkeleton } from "../../components/loading/LoadingSkeleton";
+import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import "./style/MessagesPage.css";
 
 function MessagesPage() {
+  const { can } = usePermissions();
   const [messages, setMessages] = useState([]);
   const [stats, setStats] = useState({ total: 0, unread: 0, in_progress: 0, replied: 0 });
   const [selectedMessage, setSelectedMessage] = useState(null);
@@ -200,6 +202,10 @@ function MessagesPage() {
       setIsDrafting(false);
     }
   };
+
+  if (!can("messages", "view")) {
+    return <AccessDeniedView moduleName="Customer Support & Chat" />;
+  }
 
   return (
     <div className="messages-page container">
@@ -468,33 +474,39 @@ function MessagesPage() {
                 )}
 
                 {/* Reply Composer */}
-                <div className="reply-composer-card">
-                  <h4>Reply to {selectedMessage.sender_name}</h4>
-                  <textarea
-                    className="reply-textarea"
-                    placeholder="Type your response to the customer here, or use the AI draft above..."
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                  />
-                  <div className="reply-actions-row">
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
-                      onClick={handleGenerateAiDraft}
-                      disabled={isDrafting}
-                    >
-                      <Sparkles size={13} /> {isDrafting ? "Drafting..." : "Ask AI to Write"}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn-send-reply"
-                      onClick={handleSendReply}
-                      disabled={isReplying || !replyText.trim()}
-                    >
-                      <Send size={15} /> {isReplying ? "Sending..." : "Send Reply to Customer"}
-                    </button>
+                {can("messages", "reply") ? (
+                  <div className="reply-composer-card">
+                    <h4>Reply to {selectedMessage.sender_name}</h4>
+                    <textarea
+                      className="reply-textarea"
+                      placeholder="Type your response to the customer here, or use the AI draft above..."
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                    />
+                    <div className="reply-actions-row">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
+                        onClick={handleGenerateAiDraft}
+                        disabled={isDrafting}
+                      >
+                        <Sparkles size={13} /> {isDrafting ? "Drafting..." : "Ask AI to Write"}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-send-reply"
+                        onClick={handleSendReply}
+                        disabled={isReplying || !replyText.trim()}
+                      >
+                        <Send size={15} /> {isReplying ? "Sending..." : "Send Reply to Customer"}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div style={{ padding: "16px", background: "rgba(100, 116, 139, 0.08)", borderRadius: "8px", color: "#64748b", fontSize: "0.9rem", textAlign: "center", marginTop: "16px" }}>
+                    🔒 You have view-only access to customer support messages. Replying is restricted for your role.
+                  </div>
+                )}
               </div>
             </>
           ) : (

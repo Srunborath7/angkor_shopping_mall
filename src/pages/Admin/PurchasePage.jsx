@@ -26,9 +26,11 @@ import { suppliersApi } from "../../services/supplierService";
 import { productsApi } from "../../services/productsService";
 import Modal from "../../components/Modal";
 import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
+import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import "./style/PurchasePage.css";
 
 function PurchasePage() {
+    const { can } = usePermissions();
     const [purchaseOrders, setPurchaseOrders] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
     const [products, setProducts] = useState([]);
@@ -305,6 +307,10 @@ function PurchasePage() {
     const receivedCount = purchaseOrders.filter(po => po.status === "received").length;
     const cancelledCount = purchaseOrders.filter(po => po.status === "cancelled").length;
 
+    if (!can("purchases", "view")) {
+        return <AccessDeniedView moduleName="Purchase Orders & Stock Procurement" />;
+    }
+
     return (
         <div className="purchase-page">
             {/* Page Header */}
@@ -313,9 +319,11 @@ function PurchasePage() {
                     <h1>Purchase Orders</h1>
                     <p>Manage procurement, stock restocking, and supplier invoice orders</p>
                 </div>
-                <button className="add-btn" onClick={openCreateModal}>
-                    <FaPlus /> Create Purchase Order
-                </button>
+                {can("purchases", "create") && (
+                    <button className="add-btn" onClick={openCreateModal}>
+                        <FaPlus /> Create Purchase Order
+                    </button>
+                )}
             </div>
 
             {/* KPI Stats */}
@@ -547,13 +555,15 @@ function PurchasePage() {
                                                     >
                                                         <FaEye />
                                                     </button>
-                                                    <button
-                                                        className="btn-icon delete"
-                                                        title="Delete PO"
-                                                        onClick={() => handleDeletePO(po.id, po.status)}
-                                                    >
-                                                        <FaTrash />
-                                                    </button>
+                                                    {can("purchases", "delete") && (
+                                                        <button
+                                                            className="btn-icon delete"
+                                                            title="Delete PO"
+                                                            onClick={() => handleDeletePO(po.id, po.status)}
+                                                        >
+                                                            <FaTrash />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         )}

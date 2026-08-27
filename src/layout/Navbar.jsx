@@ -11,7 +11,8 @@ import {
   FaEnvelope,
   FaClock,
   FaCheckDouble,
-  FaCog
+  FaCog,
+  FaTachometerAlt
 } from "react-icons/fa";
 import {
   Sparkles,
@@ -71,7 +72,7 @@ function Navbar({ setOpen, user, logout }) {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 10000);
+    const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -364,70 +365,92 @@ function Navbar({ setOpen, user, logout }) {
         </div>
 
         {/* Profile Dropdown */}
-        <div className="profile-wrapper" ref={dropdownRef}>
-          <div
-            className="profile"
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            title="Profile options"
-          >
-            <FaUserCircle className="profile-icon" />
+        {(() => {
+          const currentRoleName =
+            user?.role_name ||
+            (Array.isArray(user?.roles) ? user.roles.map((r) => r.name || r).join(", ") : null) ||
+            (typeof user?.role === "string" ? user.role : null) ||
+            (user?.role_id === "1" || user?.role_id === 1 ? "Super Administrator" : null) ||
+            "Administrator";
 
-            <div>
-              <strong>{user?.name || "Super Admin"}</strong>
-              <small>{user?.role || "Administrator"}</small>
-            </div>
+          return (
+            <div className="profile-wrapper" ref={dropdownRef}>
+              <div
+                className="profile"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                title="Profile options"
+              >
+                <FaUserCircle className="profile-icon" />
 
-            <FaChevronDown className={`profile-arrow ${dropdownOpen ? "open" : ""}`} />
-          </div>
+                <div>
+                  <strong>{user?.name || "Administrator"}</strong>
+                  <small>{currentRoleName}</small>
+                </div>
 
-          {dropdownOpen && (
-            <div className="profile-dropdown-card">
-              <div className="dropdown-user-info">
-                <span className="info-name">{user?.name || "Super Admin"}</span>
-                <span className="info-email">{user?.email || "admin@angkor.com"}</span>
-                <span className="info-role">{user?.role?.toUpperCase() || "ADMINISTRATOR"}</span>
+                <FaChevronDown className={`profile-arrow ${dropdownOpen ? "open" : ""}`} />
               </div>
 
-              <button
-                className="dropdown-item"
-                onClick={() => {
-                  setDropdownOpen(false);
-                  navigate("/");
-                }}
-              >
-                <FaStore className="dropdown-icon" />
-                <span>{isKhmer ? "ទៅកាន់គេហទំព័រទិញទំនិញ" : "Go to E-commerce"}</span>
-              </button>
+              {dropdownOpen && (
+                <div className="profile-dropdown-card">
+                  <div className="dropdown-user-info">
+                    <span className="info-name">{user?.name || "Administrator"}</span>
+                    <span className="info-email">{user?.email || "admin@angkor.com"}</span>
+                    <span className="info-role">{currentRoleName.toUpperCase()}</span>
+                  </div>
 
-              <button
-                className="dropdown-item"
-                onClick={() => {
-                  setDropdownOpen(false);
-                  navigate("/admin/settings");
-                }}
-              >
-                <FaCog className="dropdown-icon" />
-                <span>{isKhmer ? "ការកំណត់ Admin Settings" : "Admin Settings"}</span>
-              </button>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      navigate("/admin/dashboard");
+                    }}
+                  >
+                    <FaTachometerAlt className="dropdown-icon" />
+                    <span>{isKhmer ? "ផ្ទាំងគ្រប់គ្រង Admin" : "Admin Dashboard"}</span>
+                  </button>
 
-              <button
-                className="dropdown-item"
-                onClick={() => {
-                  setDropdownOpen(false);
-                  navigate("/admin/messages");
-                }}
-              >
-                <FaEnvelope className="dropdown-icon" />
-                <span>{isKhmer ? "សារពីអតិថិជន" : "Customer Messages"}</span>
-              </button>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      navigate("/");
+                    }}
+                  >
+                    <FaStore className="dropdown-icon" />
+                    <span>{isKhmer ? "ទៅកាន់គេហទំព័រទិញទំនិញ" : "Go to E-commerce"}</span>
+                  </button>
 
-              <button className="dropdown-item logout-item" onClick={handleLogout}>
-                <FaSignOutAlt className="dropdown-icon" />
-                <span>{isKhmer ? "ចាកចេញពីប្រព័ន្ធ" : "Logout"}</span>
-              </button>
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      navigate("/admin/settings");
+                    }}
+                  >
+                    <FaCog className="dropdown-icon" />
+                    <span>{isKhmer ? "ការកំណត់ Admin Settings" : "Admin Settings"}</span>
+                  </button>
+
+                  <button
+                    className="dropdown-item"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      navigate("/admin/messages");
+                    }}
+                  >
+                    <FaEnvelope className="dropdown-icon" />
+                    <span>{isKhmer ? "សារពីអតិថិជន" : "Customer Messages"}</span>
+                  </button>
+
+                  <button className="dropdown-item logout-item" onClick={handleLogout}>
+                    <FaSignOutAlt className="dropdown-icon" />
+                    <span>{isKhmer ? "ចាកចេញពីប្រព័ន្ធ" : "Logout"}</span>
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          );
+        })()}
 
         <button className="logout" onClick={handleLogout} title={isKhmer ? "ចាកចេញ" : "Logout"}>
           <FaSignOutAlt className="logout-icon" />

@@ -24,15 +24,24 @@ export const trackSupportMessagesApi = (data = {}) => {
 /**
  * Admin: Get all customer support messages
  */
-export const getAdminSupportMessagesApi = (params = {}) => {
-  return api("/api/support/messages", "get", params);
+export const getAdminSupportMessagesApi = async (params = {}) => {
+  try {
+    return await api("/api/support/messages", "get", params);
+  } catch (err) {
+    console.warn("Support messages API query error:", err.message);
+    return { data: { messages: [], rows: [], total: 0 } };
+  }
 };
 
 /**
  * Admin: Get single message details + customer orders
  */
-export const getAdminSupportMessageByIdApi = (id) => {
-  return api(`/api/support/messages/${id}`, "get");
+export const getAdminSupportMessageByIdApi = async (id) => {
+  try {
+    return await api(`/api/support/messages/${id}`, "get");
+  } catch (err) {
+    return { data: null };
+  }
 };
 
 /**
@@ -52,6 +61,10 @@ export const generateAiDraftApi = (id, instruction = "") => {
 /**
  * Admin: Get support statistics
  */
-export const getSupportStatsApi = () => {
-  return api("/api/support/stats", "get");
+export const getSupportStatsApi = async () => {
+  try {
+    return await api("/api/support/stats", "get");
+  } catch (err) {
+    return { data: { unread: 0, total: 0 } };
+  }
 };

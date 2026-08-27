@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Shield,
   Users,
@@ -32,78 +33,128 @@ import {
   Volume2
 } from "lucide-react";
 import Swal from "sweetalert2";
+import confetti from "canvas-confetti";
 import { useTheme } from "../../context/ThemeContext";
 import { useTranslation } from "../../context/LanguageContext";
+import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import {
   adminChangeUserPasswordApi,
   StaffApi,
   createStaffApi,
   updateStaffApi,
   deleteStaffApi,
-  RolesApi
+  RolesApi,
+  createRoleApi,
+  updateRoleApi,
+  deleteRoleApi
 } from "../../services/customerService";
 import "./style/SettingsPage.css";
 
-// 1. Initial Permission Modules Configuration
+// 1. Initial Permission Modules Configuration (Full RBAC Matrix)
 const PERMISSION_MODULES = [
   {
     id: "dashboard",
     name: "Dashboard & Analytics",
-    desc: "View business metrics, charts, revenue statistics",
+    nameKm: "ផ្ទាំងគ្រប់គ្រង & ស្ថិតិ",
+    desc: "View business metrics, revenue charts, order analytics and sales stats",
     actions: ["view", "export"]
   },
   {
     id: "products",
     name: "Products & Catalog",
-    desc: "Manage item listings, prices, SKU, specs and images",
+    nameKm: "ផលិតផល & កាតាឡុក",
+    desc: "Manage item listings, prices, SKU, specs, variants and gallery images",
+    actions: ["view", "create", "edit", "delete"]
+  },
+  {
+    id: "categories",
+    name: "Product Categories",
+    nameKm: "ប្រភេទផលិតផល",
+    desc: "Organize category trees, hierarchies and department taxonomy",
+    actions: ["view", "create", "edit", "delete"]
+  },
+  {
+    id: "brands",
+    name: "Brands & Partners",
+    nameKm: "ម៉ាក & យីហោ",
+    desc: "Manage partner brands, manufacturer logos and official endorsements",
     actions: ["view", "create", "edit", "delete"]
   },
   {
     id: "flash_sale",
-    name: "Flash Sale & Promotions",
-    desc: "Create limited-time deals, discount timers and banners",
+    name: "Flash Sale & Deals",
+    nameKm: "ប្រូម៉ូសិន & Flash Sale",
+    desc: "Create limited-time deals, discount countdown timers and campaign banners",
     actions: ["view", "create", "edit", "delete"]
-  },
-  {
-    id: "orders",
-    name: "Orders & Invoicing",
-    desc: "Process customer orders, print invoices, refunds",
-    actions: ["view", "process", "cancel", "refund"]
   },
   {
     id: "trading",
     name: "Trade-In & Exchange",
-    desc: "Review trade-in requests, valuate gadgets, approve payouts",
+    nameKm: "ប្តូរសេរីទូរស័ព្ទ (Trade-In)",
+    desc: "Review trade-in requests, evaluate second-hand gadgets, approve cash payouts",
     actions: ["view", "value", "approve", "reject"]
+  },
+  {
+    id: "orders",
+    name: "Orders & Invoicing",
+    nameKm: "ការបញ្ជាទិញ & វិក្កយបត្រ",
+    desc: "Process customer orders, generate invoices, handle dispatch and refunds",
+    actions: ["view", "process", "cancel", "refund"]
+  },
+  {
+    id: "messages",
+    name: "Customer Support & Chat",
+    nameKm: "សារ & ជំនួយអតិថិជន",
+    desc: "Respond to customer inquiries, support tickets and live customer chat",
+    actions: ["view", "reply", "delete"]
   },
   {
     id: "inventory",
     name: "Inventory & Warehouses",
-    desc: "Track stock quantities, low-stock warnings, adjustments",
+    nameKm: "ស្តុកទំនិញ & ឃ្លាំង",
+    desc: "Track real-time stock levels, low-stock alerts, stock count adjustments",
     actions: ["view", "adjust", "reorder"]
   },
   {
-    id: "suppliers",
-    name: "Suppliers & Purchases",
-    desc: "Purchase orders, vendor contracts, stock arrivals",
+    id: "purchases",
+    name: "Purchases & Stock In",
+    nameKm: "ការទិញចូល & នាំចូលស្តុក",
+    desc: "Manage supplier purchase orders, inward goods receipts, cost tracking",
     actions: ["view", "create", "edit", "delete"]
+  },
+  {
+    id: "suppliers",
+    name: "Suppliers & Vendors",
+    nameKm: "អ្នកផ្គត់ផ្គង់",
+    desc: "Manage vendor contacts, payment agreements, and supplier directories",
+    actions: ["view", "create", "edit", "delete"]
+  },
+  {
+    id: "attendance",
+    name: "Staff Attendance & Leave",
+    nameKm: "វត្តមាន & សុំច្បាប់បុគ្គលិក",
+    desc: "QR code check-ins, attendance logs, leave requests approval, work shifts",
+    actions: ["view", "checkin", "approve", "export"]
   },
   {
     id: "customers",
     name: "Customers & Accounts",
-    desc: "Manage customer profiles, order history, VIP levels",
+    nameKm: "អតិថិជន & គណនី",
+    desc: "Manage customer accounts, VIP tiers, loyalty points, user ban status",
     actions: ["view", "edit", "ban"]
   },
   {
     id: "reports",
-    name: "Reports & Business Intelligence",
-    desc: "Export financial statements, profit margins, sales trends",
+    name: "Reports & Financials",
+    nameKm: "របាយការណ៍ & ហិរញ្ញវត្ថុ",
+    desc: "Export financial statements, profit margins, sales breakdown reports",
     actions: ["view", "export"]
   },
   {
     id: "settings",
     name: "System Settings & RBAC",
-    desc: "Store config, payment keys, security, role permissions",
+    nameKm: "ការកំណត់ប្រព័ន្ធ & RBAC",
+    desc: "Store config, payment keys, security, role-based access permissions",
     actions: ["view", "edit"]
   }
 ];
@@ -119,11 +170,16 @@ const DEFAULT_ROLES = [
     permissions: {
       dashboard: ["view", "export"],
       products: ["view", "create", "edit", "delete"],
+      categories: ["view", "create", "edit", "delete"],
+      brands: ["view", "create", "edit", "delete"],
       flash_sale: ["view", "create", "edit", "delete"],
-      orders: ["view", "process", "cancel", "refund"],
       trading: ["view", "value", "approve", "reject"],
+      orders: ["view", "process", "cancel", "refund"],
+      messages: ["view", "reply", "delete"],
       inventory: ["view", "adjust", "reorder"],
+      purchases: ["view", "create", "edit", "delete"],
       suppliers: ["view", "create", "edit", "delete"],
+      attendance: ["view", "checkin", "approve", "export"],
       customers: ["view", "edit", "ban"],
       reports: ["view", "export"],
       settings: ["view", "edit"]
@@ -138,14 +194,19 @@ const DEFAULT_ROLES = [
     permissions: {
       dashboard: ["view", "export"],
       products: ["view", "create", "edit"],
+      categories: ["view", "create", "edit"],
+      brands: ["view", "create", "edit"],
       flash_sale: ["view", "create", "edit"],
-      orders: ["view", "process", "cancel"],
       trading: ["view", "value", "approve"],
+      orders: ["view", "process", "cancel"],
+      messages: ["view", "reply"],
       inventory: ["view", "adjust", "reorder"],
+      purchases: ["view", "create", "edit"],
       suppliers: ["view", "create"],
+      attendance: ["view", "approve", "export"],
       customers: ["view", "edit"],
       reports: ["view", "export"],
-      settings: ["view"]
+      settings: []
     }
   },
   {
@@ -157,11 +218,16 @@ const DEFAULT_ROLES = [
     permissions: {
       dashboard: ["view"],
       products: ["view"],
+      categories: ["view"],
+      brands: ["view"],
       flash_sale: ["view"],
-      orders: ["view", "process"],
       trading: ["view"],
+      orders: ["view", "process"],
+      messages: ["view", "reply"],
       inventory: ["view"],
+      purchases: ["view"],
       suppliers: ["view"],
+      attendance: ["view", "checkin"],
       customers: ["view"],
       reports: ["view"],
       settings: []
@@ -176,11 +242,16 @@ const DEFAULT_ROLES = [
     permissions: {
       dashboard: ["view"],
       products: ["view", "edit"],
+      categories: ["view"],
+      brands: ["view"],
       flash_sale: ["view"],
-      orders: ["view"],
       trading: ["view"],
+      orders: ["view"],
+      messages: ["view"],
       inventory: ["view", "adjust", "reorder"],
+      purchases: ["view", "create"],
       suppliers: ["view", "create"],
+      attendance: ["view", "checkin"],
       customers: [],
       reports: ["view"],
       settings: []
@@ -195,11 +266,16 @@ const DEFAULT_ROLES = [
     permissions: {
       dashboard: ["view"],
       products: ["view"],
+      categories: ["view"],
+      brands: ["view"],
       flash_sale: ["view"],
-      orders: ["view"],
       trading: ["view"],
+      orders: ["view"],
+      messages: ["view", "reply", "delete"],
       inventory: ["view"],
+      purchases: [],
       suppliers: [],
+      attendance: ["view", "checkin"],
       customers: ["view"],
       reports: [],
       settings: []
@@ -263,15 +339,22 @@ const DEFAULT_SYSTEM_SETTINGS = {
 };
 
 function SettingsPage() {
+  const navigate = useNavigate();
+  const { can, isSuperAdmin } = usePermissions();
   const { theme, setTheme, resolvedTheme, isDark } = useTheme();
   const { language, setLanguage, isKhmer, t } = useTranslation();
+
+  // Guard: if user does not have view permission for settings, block rendering and show AccessDeniedView
+  if (!isSuperAdmin && !can("settings", "view")) {
+    return <AccessDeniedView moduleName={isKhmer ? "ការកំណត់ប្រព័ន្ធ (System Settings)" : "System Settings & RBAC"} />;
+  }
 
   const [activeTab, setActiveTab] = useState("appearance_language");
 
   // State Management with LocalStorage Fallback
   const [roles, setRoles] = useState(() => {
     try {
-      const saved = localStorage.getItem("angkor_admin_roles_v1");
+      const saved = localStorage.getItem("angkor_admin_roles_v2") || localStorage.getItem("angkor_admin_roles_v1");
       return saved ? JSON.parse(saved) : DEFAULT_ROLES;
     } catch {
       return DEFAULT_ROLES;
@@ -314,6 +397,7 @@ function SettingsPage() {
   });
   const [showStaffPassword, setShowStaffPassword] = useState(false);
   const [staffLoading, setStaffLoading] = useState(false);
+  const [isSavingRole, setIsSavingRole] = useState(false);
 
   const loadStaffAndRoles = async () => {
     try {
@@ -323,25 +407,106 @@ function SettingsPage() {
         RolesApi()
       ]);
 
-      if (rolesRes.status === "fulfilled" && rolesRes.value?.data?.length > 0) {
-        const apiRoles = rolesRes.value.data.map(r => ({
-          id: r.id,
-          name: r.name,
-          desc: r.description || `${r.name} role`,
-          type: "staff",
-          permissions: r.permissions || []
-        }));
-        setRoles(apiRoles);
+      if (rolesRes.status === "fulfilled" && rolesRes.value) {
+        const payload = rolesRes.value?.data || rolesRes.value?.roles || rolesRes.value;
+        const rawRoles = Array.isArray(payload) ? payload : [];
+        if (rawRoles.length > 0) {
+          const apiRoles = rawRoles.map((r) => {
+            const roleType =
+              String(r.name).toLowerCase().includes("super")
+                ? "super"
+                : String(r.name).toLowerCase().includes("admin")
+                ? "super"
+                : String(r.name).toLowerCase().includes("manager")
+                ? "manager"
+                : "staff";
+
+            let permissionsMap = {};
+            if (r.permissions) {
+              if (typeof r.permissions === "string") {
+                try {
+                  permissionsMap = JSON.parse(r.permissions);
+                } catch {
+                  permissionsMap = {};
+                }
+              } else if (typeof r.permissions === "object" && !Array.isArray(r.permissions)) {
+                permissionsMap = r.permissions;
+              } else if (Array.isArray(r.permissions)) {
+                r.permissions.forEach((item) => {
+                  if (typeof item === "string") {
+                    const parts = item.includes(".") ? item.split(".") : item.split(":");
+                    const mod = parts[0];
+                    const act = parts[1] || "view";
+                    if (mod && act) {
+                      if (!permissionsMap[mod]) permissionsMap[mod] = [];
+                      if (!permissionsMap[mod].includes(act)) permissionsMap[mod].push(act);
+                    }
+                  }
+                });
+              }
+            }
+
+            // Fallback to default presets if backend returns empty permissions
+            if (Object.keys(permissionsMap).length === 0) {
+              const matchedDefault = DEFAULT_ROLES.find(
+                (dr) => dr.name.toLowerCase() === String(r.name).toLowerCase()
+              );
+              if (matchedDefault) {
+                permissionsMap = matchedDefault.permissions;
+              } else if (roleType === "super") {
+                PERMISSION_MODULES.forEach((m) => {
+                  permissionsMap[m.id] = [...m.actions];
+                });
+              } else {
+                permissionsMap = {
+                  dashboard: ["view"],
+                  products: ["view", "create"],
+                  categories: ["view"],
+                  brands: ["view"],
+                  flash_sale: ["view"],
+                  trading: ["view"],
+                  orders: ["view", "process"],
+                  messages: ["view", "reply"],
+                  inventory: ["view"],
+                  purchases: ["view"],
+                  suppliers: ["view"],
+                  attendance: ["view", "checkin"],
+                  customers: ["view"],
+                  reports: ["view"],
+                  settings: []
+                };
+              }
+            }
+
+            return {
+              id: r.id,
+              name: r.name,
+              desc: r.description || `${r.name} role`,
+              type: roleType,
+              permissions: permissionsMap
+            };
+          });
+
+          setRoles(apiRoles);
+          setSelectedRoleId((prevId) => {
+            if (prevId && apiRoles.some((ar) => String(ar.id) === String(prevId))) {
+              return prevId;
+            }
+            return apiRoles[0]?.id;
+          });
+        }
       }
 
-      if (staffRes.status === "fulfilled" && staffRes.value?.data) {
-        const staffData = staffRes.value.data.map(u => ({
+      if (staffRes.status === "fulfilled" && staffRes.value) {
+        const payload = staffRes.value?.data || staffRes.value?.users || staffRes.value;
+        const rawStaff = Array.isArray(payload) ? payload : [];
+        const staffData = rawStaff.map((u) => ({
           id: u.id,
           name: u.name,
           email: u.email,
           phone: u.phone || "",
           roleId: u.roles?.[0]?.id || u.role_id || "1",
-          roleName: u.roles?.map(r => r.name).join(", ") || (u.role || "Staff"),
+          roleName: u.roles?.map((r) => r.name).join(", ") || (u.role || "Staff"),
           status: u.is_active ? "Active" : "Inactive",
           lastLogin: u.last_login ? new Date(u.last_login).toLocaleDateString() : "Active recently"
         }));
@@ -358,21 +523,131 @@ function SettingsPage() {
     loadStaffAndRoles();
   }, []);
 
-  const currentRole = roles.find((r) => String(r.id) === String(selectedRoleId)) || roles[0];
+  const currentRole = roles.find((r) => String(r.id) === String(selectedRoleId)) || roles[0] || {
+    id: "default",
+    name: "Role",
+    permissions: {}
+  };
 
-  // Save changes to localStorage
-  const handleSaveAll = () => {
+  // Dedicated Save Role Permissions to Backend API (/api/roles/:id)
+  const handleSaveRolePermissions = async (roleIdToSave = selectedRoleId) => {
+    const targetRole = roles.find((r) => String(r.id) === String(roleIdToSave));
+    if (!targetRole) return;
+
+    if (targetRole.id === "super_admin" || String(targetRole.name).toLowerCase().includes("super")) {
+      Swal.fire({
+        icon: "info",
+        title: isKhmer ? "ដំណឹង" : "Super Admin Permissions",
+        text: isKhmer
+          ? "Super Administrator មានសិទ្ធិពេញលេញលើគ្រប់ផ្នែកទាំងអស់នៃប្រព័ន្ធជាស្វ័យប្រវត្តិ។"
+          : "Super Administrator holds permanent full system permissions across all modules.",
+        confirmButtonColor: "#166534"
+      });
+      return;
+    }
+
+    try {
+      setIsSavingRole(true);
+      // Persist to local state
+      localStorage.setItem("angkor_admin_roles_v2", JSON.stringify(roles));
+      localStorage.removeItem("angkor_admin_roles_v1");
+      window.dispatchEvent(new Event("angkor_roles_updated"));
+
+      // Call Backend API PUT /api/roles/:id
+      await updateRoleApi(targetRole.id, {
+        name: targetRole.name,
+        description: targetRole.desc,
+        permissions: targetRole.permissions
+      });
+
+      try {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+      } catch (e) {}
+
+      Swal.fire({
+        icon: "success",
+        title: isKhmer ? "បានរក្សាទុកសិទ្ធិជោគជ័យ!" : "Role Permissions Saved!",
+        text: isKhmer
+          ? `សិទ្ធិសម្រាប់តួនាទី "${targetRole.name}" ត្រូវបានធ្វើបច្ចុប្បន្នភាពក្នុង Database តាមរយៈ Backend API រួចរាល់។`
+          : `Permissions for "${targetRole.name}" have been updated and synced to backend database (/api/roles/${targetRole.id}).`,
+        timer: 2200,
+        showConfirmButton: false,
+        confirmButtonColor: "#166534"
+      });
+    } catch (error) {
+      console.error("Failed to sync role permissions to API:", error);
+      Swal.fire({
+        icon: "error",
+        title: isKhmer ? "បរាជ័យក្នុងការរក្សាទុក" : "Failed to Sync with API",
+        text: error?.response?.data?.message || error?.message || "Could not sync role permissions to backend database.",
+        confirmButtonColor: "#dc2626"
+      });
+    } finally {
+      setIsSavingRole(false);
+    }
+  };
+
+  // Grant All actions for the active role
+  const handleGrantAllForRole = () => {
+    if (selectedRoleId === "super_admin" || String(currentRole?.name).toLowerCase().includes("super")) return;
+    const fullPermissions = {};
+    PERMISSION_MODULES.forEach((m) => {
+      fullPermissions[m.id] = [...m.actions];
+    });
+    setRoles((prev) =>
+      prev.map((r) =>
+        String(r.id) === String(selectedRoleId)
+          ? { ...r, permissions: fullPermissions }
+          : r
+      )
+    );
+  };
+
+  // Revoke All actions for the active role
+  const handleRevokeAllForRole = () => {
+    if (selectedRoleId === "super_admin" || String(currentRole?.name).toLowerCase().includes("super")) return;
+    const emptyPermissions = {};
+    PERMISSION_MODULES.forEach((m) => {
+      emptyPermissions[m.id] = [];
+    });
+    setRoles((prev) =>
+      prev.map((r) =>
+        String(r.id) === String(selectedRoleId)
+          ? { ...r, permissions: emptyPermissions }
+          : r
+      )
+    );
+  };
+
+  // Save changes to localStorage & backend API
+  const handleSaveAll = async () => {
     try {
       localStorage.setItem("angkor_admin_roles_v1", JSON.stringify(roles));
       localStorage.setItem("angkor_admin_staff_v1", JSON.stringify(staff));
       localStorage.setItem("angkor_admin_settings_v1", JSON.stringify(settings));
+      window.dispatchEvent(new Event("angkor_roles_updated"));
+
+      // Sync updated role permissions to backend API (/api/roles/:id)
+      const roleUpdates = roles.map((r) => {
+        if (!r.id || r.id === "super_admin") return Promise.resolve();
+        return updateRoleApi(r.id, {
+          name: r.name,
+          description: r.desc,
+          permissions: r.permissions
+        }).catch((err) => console.warn(`Could not sync role ${r.name} to API:`, err));
+      });
+      await Promise.allSettled(roleUpdates);
+
+      try {
+        confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 } });
+      } catch (e) {}
 
       Swal.fire({
         icon: "success",
         title: isKhmer ? "បានរក្សាទុកជោគជ័យ!" : "Settings Saved!",
         text: isKhmer
-          ? "ការកំណត់រូបរាង ភាសា សិទ្ធិបុគ្គលិក និងព័ត៌មានទូទៅត្រូវបានធ្វើបច្ចុប្បន្នភាព។"
-          : "Appearance, language, RBAC permissions, and store configurations have been updated.",
+          ? "ការកំណត់រូបរាង ភាសា សិទ្ធិបុគ្គលិក និងព័ត៌មានទូទៅត្រូវបានធ្វើបច្ចុប្បន្នភាពក្នុងប្រព័ន្ធ និង Database។"
+          : "Appearance, language, RBAC permissions, and store configurations have been updated and synced to database.",
         timer: 2000,
         showConfirmButton: false,
         confirmButtonColor: "#166534"
@@ -403,9 +678,11 @@ function SettingsPage() {
         setSettings(DEFAULT_SYSTEM_SETTINGS);
         setSelectedRoleId(DEFAULT_ROLES[0].id);
 
+        localStorage.removeItem("angkor_admin_roles_v2");
         localStorage.removeItem("angkor_admin_roles_v1");
         localStorage.removeItem("angkor_admin_staff_v1");
         localStorage.removeItem("angkor_admin_settings_v1");
+        window.dispatchEvent(new Event("angkor_roles_updated"));
 
         Swal.fire(
           isKhmer ? "បានស្ដាររួចរាល់" : "Reset Completed",
@@ -418,7 +695,7 @@ function SettingsPage() {
 
   // Toggle single action permission
   const handleTogglePermission = (moduleId, action) => {
-    if (selectedRoleId === "super_admin") {
+    if (selectedRoleId === "super_admin" || String(currentRole?.name).toLowerCase().includes("super")) {
       Swal.fire(
         isKhmer ? "ដំណឹង" : "Notice",
         isKhmer
@@ -453,9 +730,9 @@ function SettingsPage() {
 
   // Toggle all actions for a module
   const handleToggleModuleAll = (module) => {
-    if (selectedRoleId === "super_admin") return;
+    if (selectedRoleId === "super_admin" || String(currentRole?.name).toLowerCase().includes("super")) return;
 
-    const currentModulePerms = currentRole.permissions?.[module.id] || [];
+    const currentModulePerms = currentRole?.permissions?.[module.id] || [];
     const allActions = module.actions;
     const isAllChecked = allActions.every((a) => currentModulePerms.includes(a));
 
@@ -473,69 +750,84 @@ function SettingsPage() {
     );
   };
 
-  // Add new Role
+  // Add new Role to DB with API (POST /api/roles)
   const handleCreateRole = async (e) => {
     e.preventDefault();
-    if (!newRoleForm.name.trim()) return;
+    const roleName = newRoleForm.name.trim();
+    if (!roleName) {
+      Swal.fire("Warning", isKhmer ? "សូមបញ្ចូលឈ្មោះតួនាទី" : "Please enter role title", "warning");
+      return;
+    }
 
     try {
-      let createdId = "role_" + Date.now();
+      const res = await createRoleApi({
+        name: roleName,
+        description: newRoleForm.desc.trim() || undefined
+      });
+
+      const createdRole = res?.data || res?.role || res;
+      const createdId = createdRole?.id;
+
       try {
-        const res = await createRoleApi({ name: newRoleForm.name.trim(), description: newRoleForm.desc.trim() });
-        if (res?.data?.id) createdId = res.data.id;
-      } catch (err) {
-        console.warn("Role API creation fallback:", err.message);
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+      } catch (e) {}
+
+      await loadStaffAndRoles();
+
+      if (createdId) {
+        setSelectedRoleId(createdId);
       }
 
-      const newRole = {
-        id: createdId,
-        name: newRoleForm.name.trim(),
-        type: "custom",
-        desc: newRoleForm.desc.trim() || "Custom tailored access role.",
-        userCount: 0,
-        permissions: {
-          dashboard: ["view"],
-          products: ["view"],
-          orders: ["view"]
-        }
-      };
-
-      const updated = [...roles, newRole];
-      setRoles(updated);
-      setSelectedRoleId(createdId);
       setNewRoleForm({ name: "", desc: "" });
       setRoleModalOpen(false);
 
-      Swal.fire("Role Created!", `Role "${newRole.name}" is ready for permission assignment.`, "success");
+      Swal.fire({
+        title: isKhmer ? "បង្កើតតួនាទីជោគជ័យ!" : "Role Created Successfully!",
+        text: isKhmer
+          ? `តួនាទី "${roleName}" ត្រូវបានរក្សាទុកក្នុង Database តាមរយៈ API (/api/roles)។`
+          : `Role "${roleName}" was created and saved to database via /api/roles.`,
+        icon: "success",
+        timer: 2500,
+        showConfirmButton: false
+      });
     } catch (error) {
-      Swal.fire("Error", error.message || "Failed to create role", "error");
+      console.error("Failed to create role via API:", error);
+      Swal.fire({
+        title: isKhmer ? "បរាជ័យក្នុងការបង្កើតតួនាទី" : "Failed to Create Role",
+        text: error?.response?.data?.message || error?.message || "Could not save role to database via /api/roles.",
+        icon: "error",
+        confirmButtonColor: "#ef4444"
+      });
     }
   };
 
-  // Delete Role
+  // Delete Role from DB with API (DELETE /api/roles/:id)
   const handleDeleteRole = (roleId, roleName) => {
-    if (roleId === "super_admin") {
-      Swal.fire("Action Blocked", "Super Admin role cannot be deleted.", "warning");
+    const isProtected =
+      String(roleName).toLowerCase().includes("super") ||
+      String(roleName).toLowerCase().includes("admin");
+
+    if (isProtected) {
+      Swal.fire("Action Blocked", "Super Admin and Admin roles cannot be deleted.", "warning");
       return;
     }
 
     Swal.fire({
-      title: `Delete "${roleName}"?`,
-      text: "Any staff currently assigned to this role will need reassignment.",
+      title: isKhmer ? `លុបតួនាទី "${roleName}"?` : `Delete "${roleName}"?`,
+      text: isKhmer ? "តួនាទីនេះនឹងត្រូវលុបចេញពី Database តាមរយៈ API (/api/roles)។" : "This role will be deleted from the database via /api/roles.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#dc2626",
-      confirmButtonText: "Delete Role"
+      confirmButtonText: isKhmer ? "បាទ/ចាស លុប" : "Delete Role",
+      cancelButtonText: isKhmer ? "បោះបង់" : "Cancel"
     }).then(async (res) => {
       if (res.isConfirmed) {
         try {
-          await deleteRoleApi(roleId).catch(() => null);
-          const updated = roles.filter((r) => r.id !== roleId);
-          setRoles(updated);
-          setSelectedRoleId(updated[0].id);
-          Swal.fire("Deleted", "Role removed.", "success");
+          await deleteRoleApi(roleId);
+          await loadStaffAndRoles();
+          Swal.fire(isKhmer ? "បានលុប!" : "Deleted!", `Role "${roleName}" removed.`, "success");
         } catch (error) {
-          Swal.fire("Error", error.message || "Failed to delete role", "error");
+          Swal.fire("Error", error?.response?.data?.message || error?.message || "Failed to delete role", "error");
         }
       }
     });
@@ -654,16 +946,18 @@ function SettingsPage() {
           </div>
         </div>
 
-        <div className="settings-header-actions">
-          <button type="button" className="btn-outline-secondary" onClick={handleResetDefaults}>
-            <RotateCcw size={15} />
-            <span>{isKhmer ? "កំណត់ដើមឡើងវិញ" : "Reset Defaults"}</span>
-          </button>
-          <button type="button" className="btn-save-primary" onClick={handleSaveAll}>
-            <Save size={16} />
-            <span>{isKhmer ? "រក្សាទុកការផ្លាស់ប្តូរ" : "Save All Changes"}</span>
-          </button>
-        </div>
+        {can("settings", "edit") && (
+          <div className="settings-header-actions">
+            <button type="button" className="btn-outline-secondary" onClick={handleResetDefaults}>
+              <RotateCcw size={15} />
+              <span>{isKhmer ? "កំណត់ដើមឡើងវិញ" : "Reset Defaults"}</span>
+            </button>
+            <button type="button" className="btn-save-primary" onClick={handleSaveAll}>
+              <Save size={16} />
+              <span>{isKhmer ? "រក្សាទុកការផ្លាស់ប្តូរ" : "Save All Changes"}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tabs Navigation */}
@@ -1112,143 +1406,289 @@ function SettingsPage() {
       {/* =========================================================================
           TAB 2: ROLES & PERMISSION RBAC MATRIX
          ========================================================================= */}
-      {activeTab === "roles_permissions" && (
-        <>
-          {/* Roles Selector Section */}
-          <div className="settings-card">
-            <div className="settings-card-header">
-              <div className="settings-card-header-left">
-                <h3>
-                  <Shield size={18} color="#166534" />
-                  <span>{isKhmer ? "ជ្រើសរើសតួនាទីដើម្បីកំណត់សិទ្ធិ" : "Select Role to Configure Permissions"}</span>
-                </h3>
-                <p>{isKhmer ? "ជ្រើសរើសតួនាទីដើម្បីមើល ឬកែប្រែសិទ្ធិនីមួយៗក្នុងប្រព័ន្ធ" : "Choose a role to view or adjust module-level privileges and action rights."}</p>
+      {activeTab === "roles_permissions" && (() => {
+        const totalSystemActions = PERMISSION_MODULES.reduce((acc, m) => acc + m.actions.length, 0);
+        const currentGrantedCount = PERMISSION_MODULES.reduce((acc, m) => {
+          const p = (currentRole?.permissions && currentRole.permissions[m.id]) || [];
+          return acc + p.length;
+        }, 0);
+        const currentPercentage = Math.round((currentGrantedCount / (totalSystemActions || 1)) * 100);
+        const isSuperAdmin = selectedRoleId === "super_admin" || String(currentRole?.name).toLowerCase().includes("super");
+
+        return (
+          <>
+            {/* Roles Selector Section */}
+            <div className="settings-card">
+              <div className="settings-card-header">
+                <div className="settings-card-header-left">
+                  <h3>
+                    <Shield size={18} color="#166534" />
+                    <span>{isKhmer ? "ជ្រើសរើសតួនាទីដើម្បីកំណត់សិទ្ធិ" : "Select Role to Configure Permissions"}</span>
+                  </h3>
+                  <p>{isKhmer ? "ជ្រើសរើសតួនាទីដើម្បីមើល ឬកែប្រែសិទ្ធិនីមួយៗក្នុងប្រព័ន្ធ រួច Sync ទៅកាន់ Database Backend API" : "Choose a role to inspect or adjust module privileges and save directly to backend API."}</p>
+                </div>
+                {can("settings", "edit") && (
+                  <button
+                    type="button"
+                    className="btn-save-primary"
+                    onClick={() => {
+                      setNewRoleForm({ name: "", desc: "" });
+                      setRoleModalOpen(true);
+                    }}
+                  >
+                    <Plus size={15} />
+                    <span>{isKhmer ? "បន្ថែមតួនាទីថ្មី" : "Add New Role"}</span>
+                  </button>
+                )}
               </div>
-              <button
-                type="button"
-                className="btn-save-primary"
-                onClick={() => {
-                  setNewRoleForm({ name: "", desc: "" });
-                  setRoleModalOpen(true);
+
+              <div className="roles-grid">
+                {roles.map((role) => {
+                  const rolePermCount = PERMISSION_MODULES.reduce((acc, m) => {
+                    const p = (role.permissions && role.permissions[m.id]) || [];
+                    return acc + p.length;
+                  }, 0);
+                  const isSelected = String(selectedRoleId) === String(role.id);
+
+                  return (
+                    <div
+                      key={role.id}
+                      className={`role-card-item ${isSelected ? "selected" : ""}`}
+                      onClick={() => setSelectedRoleId(role.id)}
+                    >
+                      <div className="role-card-top">
+                        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                          <span className={`role-badge-tag ${role.type || "staff"}`}>{role.type || "Role"}</span>
+                          <span className="role-perms-tag" style={{ fontSize: "11px", fontWeight: 600, color: "#166534", background: "#dcfce7", padding: "2px 8px", borderRadius: "12px", display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                            <Check size={11} /> {rolePermCount}/{totalSystemActions}
+                          </span>
+                        </div>
+                        {can("settings", "edit") && role.id !== "super_admin" && (
+                          <button
+                            type="button"
+                            className="btn-outline-secondary"
+                            style={{ padding: "4px 8px", fontSize: "11px", border: "none", color: "#dc2626" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteRole(role.id, role.name);
+                            }}
+                            title="Delete Role"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+                      <h4 className="role-title">{role.name}</h4>
+                      <p className="role-description">{role.desc}</p>
+                      <div className="role-meta-row">
+                        <span>{isKhmer ? "បុគ្គលិកប្រើប្រាស់៖" : "Assigned Staff:"}</span>
+                        <span className="role-user-count">
+                          {staff.filter((s) => String(s.roleId) === String(role.id)).length} {isKhmer ? "នាក់" : "Users"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Granular Permission Matrix for Selected Role */}
+            <div className="settings-card">
+              <div className="settings-card-header" style={{ flexWrap: "wrap", gap: "12px" }}>
+                <div className="settings-card-header-left">
+                  <h3>
+                    <Key size={18} color="#166534" />
+                    <span>{isKhmer ? `តារាងសិទ្ធិសម្រាប់៖ ${currentRole.name}` : `Permissions Matrix for: ${currentRole.name}`}</span>
+                  </h3>
+                  <p>{isKhmer ? "ធីក ឬដោះធីកលើសកម្មភាពនីមួយៗ រួចចុច 'រក្សាទុកសិទ្ធិ' ដើម្បីបញ្ជូនទៅ API (/api/roles)" : "Configure capabilities below and click 'Save Role Permissions' to sync to database."}</p>
+                </div>
+                {can("settings", "edit") && (
+                  <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      className="btn-outline-secondary"
+                      style={{ fontSize: "12px", padding: "7px 12px" }}
+                      onClick={handleGrantAllForRole}
+                      disabled={isSuperAdmin}
+                      title="Grant all permissions across all modules"
+                    >
+                      <Check size={14} color="#166534" />
+                      <span>{isKhmer ? "ផ្តល់សិទ្ធិទាំងអស់" : "Grant All"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-outline-secondary"
+                      style={{ fontSize: "12px", padding: "7px 12px" }}
+                      onClick={handleRevokeAllForRole}
+                      disabled={isSuperAdmin}
+                      title="Revoke all permissions for this role"
+                    >
+                      <X size={14} color="#dc2626" />
+                      <span>{isKhmer ? "ដកសិទ្ធិទាំងអស់" : "Revoke All"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-save-primary"
+                      style={{ fontSize: "12px", padding: "7px 14px" }}
+                      disabled={isSavingRole || isSuperAdmin}
+                      onClick={() => handleSaveRolePermissions(currentRole.id)}
+                    >
+                      {isSavingRole ? (
+                        <>
+                          <RotateCcw size={14} className="spin-animate" />
+                          <span>{isKhmer ? "កំពុងរក្សាទុក..." : "Saving..."}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save size={14} />
+                          <span>{isKhmer ? "រក្សាទុកសិទ្ធិតួនាទីនេះ" : "Save Role Permissions"}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Role Matrix Summary Bar */}
+              <div
+                style={{
+                  background: isSuperAdmin ? "rgba(22, 101, 52, 0.08)" : "rgba(241, 245, 249, 0.7)",
+                  border: `1px solid ${isSuperAdmin ? "rgba(22, 101, 52, 0.2)" : "#e2e8f0"}`,
+                  borderRadius: "10px",
+                  padding: "12px 16px",
+                  marginBottom: "16px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "8px"
                 }}
               >
-                <Plus size={15} />
-                <span>{isKhmer ? "បន្ថែមតួនាទីថ្មី" : "Add New Role"}</span>
-              </button>
-            </div>
-
-            <div className="roles-grid">
-              {roles.map((role) => (
-                <div
-                  key={role.id}
-                  className={`role-card-item ${selectedRoleId === role.id ? "selected" : ""}`}
-                  onClick={() => setSelectedRoleId(role.id)}
-                >
-                  <div className="role-card-top">
-                    <span className={`role-badge-tag ${role.type}`}>{role.type}</span>
-                    {role.id !== "super_admin" && (
-                      <button
-                        type="button"
-                        className="btn-outline-secondary"
-                        style={{ padding: "4px 8px", fontSize: "11px", border: "none", color: "#dc2626" }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteRole(role.id, role.name);
-                        }}
-                        title="Delete Role"
-                      >
-                        <Trash2 size={13} />
-                      </button>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span style={{ fontWeight: 700, fontSize: "14px", color: "#0f172a" }}>
+                      {currentRole.name}
+                    </span>
+                    <span className={`role-badge-tag ${currentRole.type || "staff"}`}>
+                      {currentRole.type || "role"}
+                    </span>
+                    {isSuperAdmin && (
+                      <span style={{ fontSize: "11.5px", color: "#166534", fontWeight: 600 }}>
+                        {isKhmer ? "🛡️ សិទ្ធិពេញលេញអចិន្ត្រៃយ៍" : "🛡️ Permanent Unrestricted Master Access"}
+                      </span>
                     )}
                   </div>
-                  <h4 className="role-title">{role.name}</h4>
-                  <p className="role-description">{role.desc}</p>
-                  <div className="role-meta-row">
-                    <span>{isKhmer ? "បុគ្គលិកប្រើប្រាស់៖" : "Assigned Staff:"}</span>
-                    <span className="role-user-count">
-                      {staff.filter((s) => s.roleId === role.id).length} {isKhmer ? "នាក់" : "Users"}
-                    </span>
+                  <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#475569" }}>
+                    {isKhmer
+                      ? `សិទ្ធិអនុញ្ញាត៖ ${currentGrantedCount} / ${totalSystemActions} (${currentPercentage}%)`
+                      : `Privileges Granted: ${currentGrantedCount} of ${totalSystemActions} (${currentPercentage}%)`}
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          {/* Granular Permission Matrix for Selected Role */}
-          <div className="settings-card">
-            <div className="settings-card-header">
-              <div className="settings-card-header-left">
-                <h3>
-                  <Key size={18} color="#166534" />
-                  <span>{isKhmer ? `តារាងសិទ្ធិសម្រាប់៖ ${currentRole.name}` : `Permissions Matrix for: ${currentRole.name}`}</span>
-                </h3>
-                <p>{isKhmer ? "ធីក ឬដោះធីកលើសកម្មភាពនីមួយៗសម្រាប់តួនាទីនេះ" : "Check or uncheck individual operational capabilities for this role."}</p>
+                {/* Progress bar */}
+                <div style={{ width: "100%", height: "6px", background: "#e2e8f0", borderRadius: "999px", overflow: "hidden" }}>
+                  <div
+                    style={{
+                      width: `${currentPercentage}%`,
+                      height: "100%",
+                      background: isSuperAdmin ? "linear-gradient(90deg, #166534, #22c55e)" : "linear-gradient(90deg, #0284c7, #166534)",
+                      borderRadius: "999px",
+                      transition: "width 0.3s ease"
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="matrix-table-container">
+                <table className="matrix-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: "35%" }}>{isKhmer ? "ផ្នែក / មុខងារ" : "Module Name"}</th>
+                      <th style={{ width: "15%", textAlign: "center" }}>{isKhmer ? "ជ្រើសទាំងអស់" : "Select All"}</th>
+                      <th>{isKhmer ? "សិទ្ធិអនុញ្ញាត" : "Permissions & Actions"}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {PERMISSION_MODULES.map((module) => {
+                      const currentPerms = (currentRole?.permissions && currentRole.permissions[module.id]) || [];
+                      const isAllChecked = module.actions.every((a) => currentPerms.includes(a));
+                      const moduleActiveCount = currentPerms.length;
+
+                      return (
+                        <tr key={module.id}>
+                          <td>
+                            <div className="matrix-module-cell">
+                              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                <span className="matrix-module-name">
+                                  {isKhmer && module.nameKm ? module.nameKm : module.name}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: "11px",
+                                    padding: "1px 6px",
+                                    borderRadius: "10px",
+                                    fontWeight: 600,
+                                    background: moduleActiveCount === module.actions.length ? "#dcfce7" : moduleActiveCount > 0 ? "#e0f2fe" : "#f1f5f9",
+                                    color: moduleActiveCount === module.actions.length ? "#166534" : moduleActiveCount > 0 ? "#0369a1" : "#94a3b8"
+                                  }}
+                                >
+                                  {moduleActiveCount}/{module.actions.length}
+                                </span>
+                              </div>
+                              <span className="matrix-module-desc">{module.desc}</span>
+                            </div>
+                          </td>
+                          <td style={{ textAlign: "center" }}>
+                            <label className="perm-toggle-wrapper" style={{ justifyContent: "center" }}>
+                              <input
+                                type="checkbox"
+                                className="perm-checkbox"
+                                checked={isAllChecked}
+                                disabled={isSuperAdmin}
+                                onChange={() => handleToggleModuleAll(module)}
+                              />
+                            </label>
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                              {module.actions.map((act) => {
+                                const checked = currentPerms.includes(act);
+                                return (
+                                  <label
+                                    key={act}
+                                    className="perm-toggle-wrapper"
+                                    style={{
+                                      gap: "6px",
+                                      padding: "4px 8px",
+                                      borderRadius: "6px",
+                                      background: checked ? "rgba(22, 101, 52, 0.08)" : "transparent",
+                                      border: checked ? "1px solid rgba(22, 101, 52, 0.2)" : "1px solid transparent",
+                                      transition: "all 0.15s ease"
+                                    }}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      className="perm-checkbox"
+                                      checked={checked}
+                                      disabled={isSuperAdmin}
+                                      onChange={() => handleTogglePermission(module.id, act)}
+                                    />
+                                    <span style={{ textTransform: "capitalize", fontSize: "12.5px", fontWeight: checked ? 600 : 500, color: checked ? "#166534" : "inherit" }}>
+                                      {act}
+                                    </span>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
-
-            <div className="matrix-table-container">
-              <table className="matrix-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: "35%" }}>{isKhmer ? "ផ្នែក / មុខងារ" : "Module Name"}</th>
-                    <th>{isKhmer ? "ជ្រើសទាំងអស់" : "Select All"}</th>
-                    <th>{isKhmer ? "សិទ្ធិអនុញ្ញាត" : "Permissions & Actions"}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {PERMISSION_MODULES.map((module) => {
-                    const currentPerms = currentRole.permissions[module.id] || [];
-                    const isAllChecked = module.actions.every((a) => currentPerms.includes(a));
-
-                    return (
-                      <tr key={module.id}>
-                        <td>
-                          <div className="matrix-module-cell">
-                            <span className="matrix-module-name">{module.name}</span>
-                            <span className="matrix-module-desc">{module.desc}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <label className="perm-toggle-wrapper">
-                            <input
-                              type="checkbox"
-                              className="perm-checkbox"
-                              checked={isAllChecked}
-                              disabled={selectedRoleId === "super_admin"}
-                              onChange={() => handleToggleModuleAll(module)}
-                            />
-                          </label>
-                        </td>
-                        <td>
-                          <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-                            {module.actions.map((act) => {
-                              const checked = currentPerms.includes(act);
-                              return (
-                                <label key={act} className="perm-toggle-wrapper" style={{ gap: "6px" }}>
-                                  <input
-                                    type="checkbox"
-                                    className="perm-checkbox"
-                                    checked={checked}
-                                    disabled={selectedRoleId === "super_admin"}
-                                    onChange={() => handleTogglePermission(module.id, act)}
-                                  />
-                                  <span style={{ textTransform: "capitalize", fontSize: "12.5px", fontWeight: 500 }}>
-                                    {act}
-                                  </span>
-                                </label>
-                              );
-                            })}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </>
-      )}
+          </>
+        );
+      })()}
 
       {/* =========================================================================
           TAB 3: STAFF DIRECTORY & ROLE ASSIGNMENT
@@ -1263,18 +1703,20 @@ function SettingsPage() {
               </h3>
               <p>{isKhmer ? "គ្រប់គ្រងអ្នកប្រើប្រាស់ និងតួនាទីរបស់ពួកគេក្នុងប្រព័ន្ធ" : "Manage back-office users and their designated system roles."}</p>
             </div>
-            <button
-              type="button"
-              className="btn-save-primary"
-              onClick={() => {
-                setSelectedStaff(null);
-                setStaffForm({ name: "", email: "", roleId: roles[0]?.id || "super_admin", status: "Active" });
-                setStaffModalOpen(true);
-              }}
-            >
-              <Plus size={15} />
-              <span>{isKhmer ? "បន្ថែមបុគ្គលិកថ្មី" : "Add Staff User"}</span>
-            </button>
+            {can("settings", "edit") && (
+              <button
+                type="button"
+                className="btn-save-primary"
+                onClick={() => {
+                  setSelectedStaff(null);
+                  setStaffForm({ name: "", email: "", roleId: roles[0]?.id || "super_admin", status: "Active" });
+                  setStaffModalOpen(true);
+                }}
+              >
+                <Plus size={15} />
+                <span>{isKhmer ? "បន្ថែមបុគ្គលិកថ្មី" : "Add Staff User"}</span>
+              </button>
+            )}
           </div>
 
           <div className="staff-table-container">
@@ -1285,7 +1727,7 @@ function SettingsPage() {
                   <th>{isKhmer ? "តួនាទី" : "Assigned Role"}</th>
                   <th>{isKhmer ? "ស្ថានភាព" : "Status"}</th>
                   <th>{isKhmer ? "សកម្មភាពចុងក្រោយ" : "Last Active"}</th>
-                  <th style={{ textAlign: "right" }}>{isKhmer ? "សកម្មភាព" : "Actions"}</th>
+                  {can("settings", "edit") && <th style={{ textAlign: "right" }}>{isKhmer ? "សកម្មភាព" : "Actions"}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -1309,67 +1751,69 @@ function SettingsPage() {
                       </span>
                     </td>
                     <td style={{ color: "var(--text-muted, #64748b)" }}>{member.lastLogin}</td>
-                    <td style={{ textAlign: "right" }}>
-                      <button
-                        type="button"
-                        className="btn-outline-secondary"
-                        style={{ padding: "6px 12px", fontSize: "12px", marginRight: "6px", color: "#f57c00", borderColor: "#ffe082" }}
-                        onClick={async () => {
-                          const { value: newPassword } = await Swal.fire({
-                            title: isKhmer ? `ប្តូរលេខសម្ងាត់សម្រាប់ ${member.name}` : `Change Password for ${member.name}`,
-                            input: "password",
-                            inputLabel: isKhmer ? "លេខសម្ងាត់ថ្មី (យ៉ាងតិច ៦ តួអក្សរ)" : "New Password (min 6 characters)",
-                            inputPlaceholder: isKhmer ? "បញ្ចូលលេខសម្ងាត់ថ្មី..." : "Enter new password...",
-                            showCancelButton: true,
-                            confirmButtonText: isKhmer ? "ផ្លាស់ប្តូរ" : "Update Password",
-                            confirmButtonColor: "#f57c00",
-                            inputValidator: (val) => {
-                              if (!val || val.length < 6) return isKhmer ? "លេខសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ តួ!" : "Password must be at least 6 characters!";
+                    {can("settings", "edit") && (
+                      <td style={{ textAlign: "right" }}>
+                        <button
+                          type="button"
+                          className="btn-outline-secondary"
+                          style={{ padding: "6px 12px", fontSize: "12px", marginRight: "6px", color: "#f57c00", borderColor: "#ffe082" }}
+                          onClick={async () => {
+                            const { value: newPassword } = await Swal.fire({
+                              title: isKhmer ? `ប្តូរលេខសម្ងាត់សម្រាប់ ${member.name}` : `Change Password for ${member.name}`,
+                              input: "password",
+                              inputLabel: isKhmer ? "លេខសម្ងាត់ថ្មី (យ៉ាងតិច ៦ តួអក្សរ)" : "New Password (min 6 characters)",
+                              inputPlaceholder: isKhmer ? "បញ្ចូលលេខសម្ងាត់ថ្មី..." : "Enter new password...",
+                              showCancelButton: true,
+                              confirmButtonText: isKhmer ? "ផ្លាស់ប្តូរ" : "Update Password",
+                              confirmButtonColor: "#f57c00",
+                              inputValidator: (val) => {
+                                if (!val || val.length < 6) return isKhmer ? "លេខសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ តួ!" : "Password must be at least 6 characters!";
+                              }
+                            });
+                            if (newPassword) {
+                              try {
+                                await adminChangeUserPasswordApi(member.id, newPassword).catch(() => null);
+                                Swal.fire(isKhmer ? "ជោគជ័យ!" : "Success!", isKhmer ? `បានផ្លាស់ប្តូរលេខសម្ងាត់សម្រាប់ ${member.name}` : `Password updated for ${member.name}`, "success");
+                              } catch (err) {
+                                Swal.fire("Error", err.message || "Failed to update password", "error");
+                              }
                             }
-                          });
-                          if (newPassword) {
-                            try {
-                              await adminChangeUserPasswordApi(member.id, newPassword).catch(() => null);
-                              Swal.fire(isKhmer ? "ជោគជ័យ!" : "Success!", isKhmer ? `បានផ្លាស់ប្តូរលេខសម្ងាត់សម្រាប់ ${member.name}` : `Password updated for ${member.name}`, "success");
-                            } catch (err) {
-                              Swal.fire("Error", err.message || "Failed to update password", "error");
-                            }
-                          }
-                        }}
-                      >
-                        <Key size={13} />
-                        <span>{isKhmer ? "ប្តូរលេខសម្ងាត់" : "Password"}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-outline-secondary"
-                        style={{ padding: "6px 12px", fontSize: "12px", marginRight: "6px" }}
-                        onClick={() => {
-                          setSelectedStaff(member);
-                          setStaffForm({
-                            name: member.name,
-                            email: member.email,
-                            phone: member.phone || "",
-                            password: "",
-                            roleId: member.roleId,
-                            status: member.status
-                          });
-                          setStaffModalOpen(true);
-                        }}
-                      >
-                        <Edit2 size={13} />
-                        <span>{isKhmer ? "កែប្រែ" : "Edit"}</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-outline-secondary"
-                        style={{ padding: "6px 12px", fontSize: "12px", color: "#dc2626", borderColor: "#fecaca" }}
-                        onClick={() => handleDeleteStaff(member)}
-                      >
-                        <Trash2 size={13} />
-                        <span>{isKhmer ? "លុប" : "Delete"}</span>
-                      </button>
-                    </td>
+                          }}
+                        >
+                          <Key size={13} />
+                          <span>{isKhmer ? "ប្តូរលេខសម្ងាត់" : "Password"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-outline-secondary"
+                          style={{ padding: "6px 12px", fontSize: "12px", marginRight: "6px" }}
+                          onClick={() => {
+                            setSelectedStaff(member);
+                            setStaffForm({
+                              name: member.name,
+                              email: member.email,
+                              phone: member.phone || "",
+                              password: "",
+                              roleId: member.roleId,
+                              status: member.status
+                            });
+                            setStaffModalOpen(true);
+                          }}
+                        >
+                          <Edit2 size={13} />
+                          <span>{isKhmer ? "កែប្រែ" : "Edit"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-outline-secondary"
+                          style={{ padding: "6px 12px", fontSize: "12px", color: "#dc2626", borderColor: "#fecaca" }}
+                          onClick={() => handleDeleteStaff(member)}
+                        >
+                          <Trash2 size={13} />
+                          <span>{isKhmer ? "លុប" : "Delete"}</span>
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

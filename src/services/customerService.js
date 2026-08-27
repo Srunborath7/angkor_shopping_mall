@@ -113,4 +113,11 @@ export const changeOwnPasswordApi = (data) => {
         data
     );
 };
-
+
+// Permissions API
+export const getPermissionsApi = () => {
+    return api(
+        "/api/roles/permissions",
+        "get"
+    );
+};

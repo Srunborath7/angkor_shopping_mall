@@ -22,6 +22,7 @@ import {
 import { categoriesApi } from "../../services/categoriesService";
 import Modal from "../../components/Modal";
 import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
+import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import "./style/TradingPage.css";
 
 const NO_IMG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23E2E8F0"/><text x="50%" y="50%" font-size="12" fill="%2394A3B8" text-anchor="middle" dominant-baseline="middle">No Image</text></svg>`;
@@ -38,6 +39,7 @@ function formatCondition(condition) {
 }
 
 function TradingPage() {
+  const { can } = usePermissions();
   const [tradeProducts, setTradeProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -283,6 +285,10 @@ function TradingPage() {
   const negotiatingCount = tradeProducts.filter(p => p.status === "in_negotiation").length;
   const tradedCount = tradeProducts.filter(p => p.status === "traded").length;
 
+  if (!can("trading", "view")) {
+    return <AccessDeniedView moduleName="Trade-In & Exchange" />;
+  }
+
   return (
     <div className="trading-page-container">
       {/* Header */}
@@ -296,9 +302,11 @@ function TradingPage() {
             Manage customer-to-customer trading listings, peer exchange requests, and status lifecycles.
           </p>
         </div>
-        <button className="btn btn-primary" onClick={handleOpenCreate}>
-          <FaPlus style={{ marginRight: 6 }} /> Create Trade Item
-        </button>
+        {(can("trading", "value") || can("trading", "create") || can("trading", "approve")) && (
+          <button className="btn btn-primary" onClick={handleOpenCreate}>
+            <FaPlus style={{ marginRight: 6 }} /> Create Trade Item
+          </button>
+        )}
       </div>
 
       {/* Stats Cards */}
@@ -494,8 +502,13 @@ function TradingPage() {
                       <select
                         value={item.status || "available"}
                         onChange={(e) => handleQuickStatusChange(item, e.target.value)}
+                        disabled={!can("trading", "approve") && !can("trading", "reject")}
                         className={`status-badge badge-${item.status || "available"}`}
-                        style={{ border: "none", cursor: "pointer", outline: "none" }}
+                        style={{
+                          border: "none",
+                          cursor: can("trading", "approve") || can("trading", "reject") ? "pointer" : "not-allowed",
+                          outline: "none"
+                        }}
                       >
                         <option value="available">Available</option>
                         <option value="in_negotiation">In Negotiation</option>
@@ -513,20 +526,24 @@ function TradingPage() {
                         >
                           <FaEye />
                         </button>
-                        <button
-                          className="btn-icon btn-secondary"
-                          title="Edit Listing"
-                          onClick={() => handleOpenEdit(item)}
-                        >
-                          <FaEdit />
-                        </button>
-                        <button
-                          className="btn-icon btn-danger"
-                          title="Delete Listing"
-                          onClick={() => handleDelete(item)}
-                        >
-                          <FaTrash />
-                        </button>
+                        {(can("trading", "value") || can("trading", "edit")) && (
+                          <button
+                            className="btn-icon btn-secondary"
+                            title="Edit Listing"
+                            onClick={() => handleOpenEdit(item)}
+                          >
+                            <FaEdit />
+                          </button>
+                        )}
+                        {(can("trading", "reject") || can("trading", "delete")) && (
+                          <button
+                            className="btn-icon btn-danger"
+                            title="Delete Listing"
+                            onClick={() => handleDelete(item)}
+                          >
+                            <FaTrash />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -645,21 +662,25 @@ function TradingPage() {
                     <div style={{ display: "flex", gap: 6 }}>
                       {offer.status === "pending" && (
                         <>
-                          <button
-                            className="btn btn-sm btn-primary"
-                            onClick={() => handleOfferStatusChange(offer.id, "accepted")}
-                          >
-                            Accept
-                          </button>
-                          <button
-                            className="btn btn-sm btn-secondary"
-                            onClick={() => handleOfferStatusChange(offer.id, "rejected")}
-                          >
-                            Reject
-                          </button>
+                          {can("trading", "approve") && (
+                            <button
+                              className="btn btn-sm btn-primary"
+                              onClick={() => handleOfferStatusChange(offer.id, "accepted")}
+                            >
+                              Accept
+                            </button>
+                          )}
+                          {can("trading", "reject") && (
+                            <button
+                              className="btn btn-sm btn-secondary"
+                              onClick={() => handleOfferStatusChange(offer.id, "rejected")}
+                            >
+                              Reject
+                            </button>
+                          )}
                         </>
                       )}
-                      {offer.status === "accepted" && (
+                      {offer.status === "accepted" && can("trading", "approve") && (
                         <button
                           className="btn btn-sm btn-primary"
                           onClick={() => handleOfferStatusChange(offer.id, "completed")}

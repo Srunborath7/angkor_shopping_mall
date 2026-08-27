@@ -23,6 +23,7 @@ import {
 import { productsApi, productsPagedApi } from "../../services/productsService";
 import Modal from "../../components/Modal";
 import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
+import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import "./style/FlashSalePage.css";
 
 function getCategoryName(cat) {
@@ -33,6 +34,7 @@ function getCategoryName(cat) {
 }
 
 function FlashSalePage() {
+  const { can } = usePermissions();
   const [flashSales, setFlashSales] = useState([]);
   const [availableProducts, setAvailableProducts] = useState([]);
   const [search, setSearch] = useState("");
@@ -247,6 +249,10 @@ function FlashSalePage() {
     ? Math.round(flashSales.reduce((acc, s) => acc + (s.discount || 0), 0) / flashSales.length)
     : 0;
 
+  if (!can("flash_sale", "view")) {
+    return <AccessDeniedView moduleName="Flash Sale & Deals" />;
+  }
+
   return (
     <div className="flash-sale-page-container">
       {/* Header */}
@@ -257,9 +263,11 @@ function FlashSalePage() {
           </h2>
           <p>Configure live flash sale items, timer durations, and discount rates for Homepage display</p>
         </div>
-        <button className="add-btn" onClick={openCreateModal}>
-          <FaPlus /> New Flash Sale Deal
-        </button>
+        {can("flash_sale", "create") && (
+          <button className="add-btn" onClick={openCreateModal}>
+            <FaPlus /> New Flash Sale Deal
+          </button>
+        )}
       </div>
 
       {/* Stats row */}
@@ -407,12 +415,16 @@ function FlashSalePage() {
                     {visibleColumns.actions && (
                       <td>
                         <div className="table-row-actions">
-                          <button className="edit-btn" onClick={() => openEditModal(item)} title="Edit">
-                            <FaEdit />
-                          </button>
-                          <button className="delete-btn" onClick={() => handleDelete(item.id)} title="Delete">
-                            <FaTrash />
-                          </button>
+                          {can("flash_sale", "edit") && (
+                            <button className="edit-btn" onClick={() => openEditModal(item)} title="Edit">
+                              <FaEdit />
+                            </button>
+                          )}
+                          {can("flash_sale", "delete") && (
+                            <button className="delete-btn" onClick={() => handleDelete(item.id)} title="Delete">
+                              <FaTrash />
+                            </button>
+                          )}
                         </div>
                       </td>
                     )}

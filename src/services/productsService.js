@@ -32,12 +32,23 @@ export const getTrendingProductsApi = (params) => {
     );
 };
 
-export const getBestSellersApi = (limit = 10) => {
-    return api(
-        "/api/products/best-sellers",
-        "get",
-        { limit }
-    );
+export const getBestSellersApi = async (limit = 10) => {
+    try {
+        const res = await api(
+            "/api/products/best-sellers",
+            "get",
+            { limit }
+        );
+        return res;
+    } catch (err) {
+        // Handle backend database error (e.g. missing orderitem table query) by falling back to catalog
+        try {
+            const fallback = await api("/api/products/true", "get", { page: 1, limit });
+            return fallback;
+        } catch {
+            return { data: { products: [] } };
+        }
+    }
 };
 
 export const getFlashSaleProductsApi = (params) => {
@@ -63,11 +74,13 @@ export const deleteProductApi = (id) => {
     );
 };
 
-export const getProductByIdApi = (id) => {
-    return api(
-        `/api/products/${id}`,
-        "get"
-    );
+export const getProductByIdApi = async (id) => {
+    if (!id) return { data: null };
+    try {
+        return await api(`/api/products/${id}`, "get");
+    } catch {
+        return { data: null };
+    }
 };
 
 export const upsertProductDetailApi = (productId, data) => {

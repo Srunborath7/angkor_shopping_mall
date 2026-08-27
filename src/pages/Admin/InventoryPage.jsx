@@ -23,9 +23,11 @@ import {
 } from "../../services/productsService";
 import { categoriesApi } from "../../services/categoriesService";
 import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
+import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import "./style/InventoryPage.css";
 
 function InventoryPage() {
+    const { can } = usePermissions();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [search, setSearch] = useState("");
@@ -222,6 +224,10 @@ function InventoryPage() {
 
         return matchesSearch && matchesCategory && matchesStock;
     });
+
+    if (!can("inventory", "view")) {
+        return <AccessDeniedView moduleName="Inventory & Warehouses" />;
+    }
 
     return (
         <div className="inventory-page">
@@ -421,7 +427,7 @@ function InventoryPage() {
                                                         <span className="variants-notice-badge" onClick={() => toggleExpand(p.id)}>
                                                             Manage via Variants ({details.variants.length})
                                                         </span>
-                                                    ) : (
+                                                    ) : can("inventory", "adjust") ? (
                                                         <div className="quick-adjust-control">
                                                             <button
                                                                 type="button"
@@ -464,6 +470,8 @@ function InventoryPage() {
                                                                 {savingStock[editKey] ? <FaSpinner className="row-spinner" /> : <FaCheck />}
                                                             </button>
                                                         </div>
+                                                    ) : (
+                                                        <span style={{ fontSize: "12px", color: "#94a3b8" }}>Fixed ({p.stock_quantity})</span>
                                                     )}
                                                 </td>
                                             </tr>
@@ -524,38 +532,42 @@ function InventoryPage() {
                                                                                         <span className="variant-stock-qty">{v.stock_quantity}</span>
                                                                                     </td>
                                                                                     <td>
-                                                                                        <div className="quick-adjust-control">
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                className="adjust-btn minus"
-                                                                                                onClick={() => handleDecrement(vEditKey)}
-                                                                                            >
-                                                                                                <FaMinus />
-                                                                                            </button>
-                                                                                            <input
-                                                                                                type="number"
-                                                                                                className="adjust-input"
-                                                                                                value={currentVEditValue}
-                                                                                                onChange={e => handleStockChange(vEditKey, e.target.value)}
-                                                                                                min="0"
-                                                                                            />
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                className="adjust-btn plus"
-                                                                                                onClick={() => handleIncrement(vEditKey)}
-                                                                                            >
-                                                                                                <FaPlus />
-                                                                                            </button>
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                className="save-adjust-btn"
-                                                                                                onClick={() => handleSaveStock("variant", v.id, p.id)}
-                                                                                                disabled={savingStock[vEditKey] || Number(currentVEditValue) === Number(v.stock_quantity)}
-                                                                                                title="Save quantity"
-                                                                                            >
-                                                                                                {savingStock[vEditKey] ? <FaSpinner className="row-spinner" /> : <FaCheck />}
-                                                                                            </button>
-                                                                                        </div>
+                                                                                        {can("inventory", "adjust") ? (
+                                                                                            <div className="quick-adjust-control">
+                                                                                                <button
+                                                                                                    type="button"
+                                                                                                    className="adjust-btn minus"
+                                                                                                    onClick={() => handleDecrement(vEditKey)}
+                                                                                                >
+                                                                                                    <FaMinus />
+                                                                                                </button>
+                                                                                                <input
+                                                                                                    type="number"
+                                                                                                    className="adjust-input"
+                                                                                                    value={currentVEditValue}
+                                                                                                    onChange={e => handleStockChange(vEditKey, e.target.value)}
+                                                                                                    min="0"
+                                                                                                />
+                                                                                                <button
+                                                                                                    type="button"
+                                                                                                    className="adjust-btn plus"
+                                                                                                    onClick={() => handleIncrement(vEditKey)}
+                                                                                                >
+                                                                                                    <FaPlus />
+                                                                                                </button>
+                                                                                                <button
+                                                                                                    type="button"
+                                                                                                    className="save-adjust-btn"
+                                                                                                    onClick={() => handleSaveStock("variant", v.id, p.id)}
+                                                                                                    disabled={savingStock[vEditKey] || Number(currentVEditValue) === Number(v.stock_quantity)}
+                                                                                                    title="Save quantity"
+                                                                                                >
+                                                                                                    {savingStock[vEditKey] ? <FaSpinner className="row-spinner" /> : <FaCheck />}
+                                                                                                </button>
+                                                                                            </div>
+                                                                                        ) : (
+                                                                                            <span style={{ fontSize: "12px", color: "#94a3b8" }}>Fixed ({v.stock_quantity})</span>
+                                                                                        )}
                                                                                     </td>
                                                                                 </tr>
                                                                             );

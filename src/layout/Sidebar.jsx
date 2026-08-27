@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   FaTachometerAlt,
   FaBox,
@@ -21,6 +21,7 @@ import logo from "../assets/logo.jpg";
 import { NavLink, useLocation } from "react-router-dom";
 import { X, Sparkles } from "lucide-react";
 import { useTranslation } from "../context/LanguageContext";
+import { usePermissions } from "../hooks/usePermissions.jsx";
 import { getSupportStatsApi } from "../services/supportMessageService";
 import "./style/Sidebar.css";
 
@@ -30,6 +31,8 @@ function Sidebar({ open, setOpen }) {
   const menuRef = useRef(null);
   const location = useLocation();
   const [unreadMessages, setUnreadMessages] = useState(0);
+
+  const { can, permissions, isSuperAdmin } = usePermissions();
 
   // Fetch unread customer messages count
   const fetchUnreadCount = async () => {
@@ -44,8 +47,8 @@ function Sidebar({ open, setOpen }) {
 
   useEffect(() => {
     fetchUnreadCount();
-    // Poll unread support count every 10 seconds
-    const interval = setInterval(fetchUnreadCount, 10000);
+    // Poll unread support count every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -95,7 +98,8 @@ function Sidebar({ open, setOpen }) {
         {
           name: isKhmer ? "ផ្ទាំងគ្រប់គ្រង" : "Dashboard",
           icon: <FaTachometerAlt />,
-          path: "/admin/dashboard"
+          path: "/admin/dashboard",
+          moduleId: "dashboard"
         }
       ]
     },
@@ -106,28 +110,33 @@ function Sidebar({ open, setOpen }) {
           name: isKhmer ? "ប្រូម៉ូសិនពិសេស" : "Flash Sale",
           icon: <FaBolt />,
           path: "/admin/flash-sale",
-          badge: "HOT"
+          badge: "HOT",
+          moduleId: "flash_sale"
         },
         {
           name: isKhmer ? "ផលិតផលទាំងអស់" : "Products",
           icon: <FaBox />,
-          path: "/admin/products"
+          path: "/admin/products",
+          moduleId: "products"
         },
         {
           name: isKhmer ? "ប្តូរសេរីទូរស័ព្ទ" : "Trading / Trade-In",
           icon: <FaExchangeAlt />,
-          path: "/admin/trading"
+          path: "/admin/trading",
+          moduleId: "trading"
         },
         {
           name: isKhmer ? "ការបញ្ជាទិញ" : "Orders",
           icon: <FaShoppingCart />,
-          path: "/admin/orders"
+          path: "/admin/orders",
+          moduleId: "orders"
         },
         {
           name: isKhmer ? "សារពីអតិថិជន" : "Customer Messages",
           icon: <FaEnvelope />,
           path: "/admin/messages",
-          badgeCount: unreadMessages
+          badgeCount: unreadMessages,
+          moduleId: "messages"
         }
       ]
     },
@@ -137,17 +146,20 @@ function Sidebar({ open, setOpen }) {
         {
           name: isKhmer ? "ស្តុកទំនិញ" : "Inventory",
           icon: <FaBoxes />,
-          path: "/admin/inventory"
+          path: "/admin/inventory",
+          moduleId: "inventory"
         },
         {
           name: isKhmer ? "ការទិញចូល" : "Purchases",
           icon: <FaFileInvoiceDollar />,
-          path: "/admin/purchases"
+          path: "/admin/purchases",
+          moduleId: "purchases"
         },
         {
           name: isKhmer ? "អ្នកផ្គត់ផ្គង់" : "Suppliers",
           icon: <FaTruck />,
-          path: "/admin/suppliers"
+          path: "/admin/suppliers",
+          moduleId: "suppliers"
         }
       ]
     },
@@ -157,22 +169,26 @@ function Sidebar({ open, setOpen }) {
         {
           name: isKhmer ? "ប្រភេទផលិតផល" : "Categories",
           icon: <FaTh />,
-          path: "/admin/categories"
+          path: "/admin/categories",
+          moduleId: "categories"
         },
         {
           name: isKhmer ? "ម៉ាកយីហោ" : "Brands",
           icon: <FaBookmark />,
-          path: "/admin/brands"
+          path: "/admin/brands",
+          moduleId: "brands"
         },
         {
           name: isKhmer ? "វត្តមានបុគ្គលិក" : "Staff Attendance",
           icon: <FaUserClock />,
-          path: "/admin/attendance"
+          path: "/admin/attendance",
+          moduleId: "attendance"
         },
         {
           name: isKhmer ? "អតិថិជន" : "Customers",
           icon: <FaUsers />,
-          path: "/admin/customers"
+          path: "/admin/customers",
+          moduleId: "customers"
         }
       ]
     },
@@ -182,11 +198,25 @@ function Sidebar({ open, setOpen }) {
         {
           name: isKhmer ? "ការកំណត់ប្រព័ន្ធ" : "Settings",
           icon: <FaCog />,
-          path: "/admin/settings"
+          path: "/admin/settings",
+          moduleId: "settings"
         }
       ]
     }
   ];
+
+  // Filter menu items strictly by active user role permissions
+  const filteredMenuSections = useMemo(() => {
+    return menuSections
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) => {
+          if (!item.moduleId) return true;
+          return can(item.moduleId, "view");
+        })
+      }))
+      .filter((section) => section.items.length > 0);
+  }, [menuSections, can, permissions, isSuperAdmin]);
 
   return (
     <>
@@ -223,7 +253,7 @@ function Sidebar({ open, setOpen }) {
         {/* Scrollable Navigation List */}
         <div ref={menuRef} className="sidebar-menu-wrapper">
           <ul className="sidebar-menu">
-            {menuSections.map((section, sIdx) => (
+            {filteredMenuSections.map((section, sIdx) => (
               <li key={sIdx} className="sidebar-section">
                 <span className="sidebar-section-title">{section.title}</span>
                 <ul className="sidebar-section-items">
