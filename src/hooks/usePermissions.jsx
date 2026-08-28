@@ -37,7 +37,7 @@ export const DEFAULT_ROLE_PRESETS = {
     attendance: ["view", "checkin", "approve", "export"],
     customers: ["view", "edit", "ban"],
     reports: ["view", "export"],
-    settings: []
+    settings: ["view", "edit"]
   },
   mall_manager: {
     dashboard: ["view", "export"],
@@ -276,8 +276,9 @@ export function usePermissions() {
             if (Array.isArray(matched.permissions)) {
               activePerms = parseArrayPerms(matched.permissions);
             }
-            // Strip settings permission if role is not super admin
-            if (!isSuperAdmin && String(matched.id) !== "super_admin") {
+            // Strip settings permission if role is not super admin or admin
+            const isAdm = isSuperAdmin || String(matched.id) === "super_admin" || String(matched.id) === "admin" || userRoleStr === "admin" || userRoleStr === "administrator";
+            if (!isAdm) {
               activePerms = { ...activePerms, settings: activePerms.settings || [] };
             }
             return activePerms;

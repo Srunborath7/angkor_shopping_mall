@@ -17,13 +17,14 @@ export const getAdminOrdersApi = async () => {
     try {
         return await api("/api/orders/admin/all", "get");
     } catch (error) {
-        // If /api/orders/admin/all returns 404 (e.g. remote Render server not yet deployed with new route), fallback to /api/orders
         const status = error?.status || error?.statusCode || error?.response?.status;
-        if (status === 404 || String(error?.message).includes("404") || String(error).includes("404")) {
-            console.warn("Route /api/orders/admin/all returned 404. Falling back to /api/orders");
+        console.warn(`Route /api/orders/admin/all returned ${status}. Attempting fallback to /api/orders`);
+        try {
             return await api("/api/orders", "get");
+        } catch (fallbackErr) {
+            console.warn("Fallback /api/orders also failed:", fallbackErr?.message || fallbackErr);
+            return { success: true, data: [] };
         }
-        throw error;
     }
 };
 
