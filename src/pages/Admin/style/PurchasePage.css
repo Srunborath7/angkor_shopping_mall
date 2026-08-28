@@ -290,6 +290,19 @@
     margin-top: 8px;
 }
 
+[data-theme="dark"] .items-builder-header h4 {
+    color: white;
+}
+
+[data-theme="dark"] .items-builder-container {
+    background: #090d16;
+    border: #090d16;
+}
+
+[data-theme="dark"] .po-total-summary .label {
+    color: white;
+}
+
 .items-builder-header {
     display: flex;
     justify-content: space-between;
@@ -342,7 +355,8 @@
     vertical-align: middle;
 }
 
-.item-select, .item-input {
+.item-select,
+.item-input {
     width: 100%;
     padding: 8px 10px;
     border-radius: 8px;
@@ -352,7 +366,8 @@
     outline: none;
 }
 
-.item-select:focus, .item-input:focus {
+.item-select:focus,
+.item-input:focus {
     border-color: #2563eb;
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
 }

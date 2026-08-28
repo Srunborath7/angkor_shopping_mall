@@ -495,3 +495,15 @@
     color: var(--text-light);
     font-style: italic;
 }
+
+@media (max-width: 470px) {
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .inventory-select {
+        width: 100%;
+    }
+}

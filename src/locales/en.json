@@ -188,5 +188,20 @@
     "onTime": "On Time Check-ins",
     "late": "Late Arrivals",
     "totalWorkOt": "Total Work & OT"
+  },
+  "pin": {
+    "title": "Enter Security PIN",
+    "subtitle": "Enter your 4-digit PIN code to unlock staff terminal & admin portal",
+    "verified": "PIN Verified!",
+    "incorrect": "Incorrect PIN code",
+    "attemptsLeft": "attempts remaining",
+    "locked": "Terminal Locked",
+    "showPin": "Show PIN",
+    "hidePin": "Hide PIN",
+    "switchAccount": "Switch Account",
+    "forgotPin": "Forgot PIN?",
+    "lockScreen": "Lock Screen (PIN)",
+    "defaultHint": "Default Master PIN: 1234",
+    "quickFill": "Auto Fill"
   }
 }

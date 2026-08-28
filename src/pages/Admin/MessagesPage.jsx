@@ -43,6 +43,7 @@ function MessagesPage() {
   const [loading, setLoading] = useState(false);
   const [isReplying, setIsReplying] = useState(false);
   const [isDrafting, setIsDrafting] = useState(false);
+  const [mobileView, setMobileView] = useState("list");
 
   // Robust data extraction helpers
   const extractMessages = (res) => {
@@ -126,8 +127,8 @@ function MessagesPage() {
       setSelectedMessage(msg);
       setRecentOrders(data.recentOrders || []);
       setReplyText(msg?.ai_suggested_reply || "");
+      setMobileView("detail");
 
-      // Update in local list if status changed from unread to in_progress
       setMessages((prev) =>
         prev.map((m) =>
           m.id === id && m.status === "unread" ? { ...m, status: "in_progress" } : m
@@ -137,6 +138,11 @@ function MessagesPage() {
       console.error("Select error:", error);
       toast.error("Failed to fetch message details.");
     }
+  };
+
+  const handleBackToList = () => {
+    setMobileView("list");
+    setSelectedMessage(null);
   };
 
   // Send Reply to Customer
@@ -273,7 +279,7 @@ function MessagesPage() {
       {/* Main Inbox Workspace */}
       <div className="inbox-container">
         {/* Left Side: Messages List */}
-        <div className="inbox-list-pane">
+        <div className={`inbox-list-pane${mobileView === "detail" ? " mobile-hidden" : ""}`}>
           <div className="inbox-search-bar">
             <form onSubmit={handleSearch} className="search-input-wrap">
               <Search size={15} />
@@ -357,12 +363,20 @@ function MessagesPage() {
         </div>
 
         {/* Right Side: Message Thread & Reply Pane */}
-        <div className="inbox-detail-pane">
+        <div className={`inbox-detail-pane${mobileView === "list" ? " mobile-hidden" : ""}`}>
           {selectedMessage ? (
             <>
               {/* Customer Header */}
               <div className="detail-header">
                 <div className="detail-customer-block">
+                  <button
+                    type="button"
+                    className="btn-back-mobile"
+                    onClick={handleBackToList}
+                    aria-label="Back to messages"
+                  >
+                    ←
+                  </button>
                   <div className="detail-avatar-large">
                     {selectedMessage.sender_name?.[0]?.toUpperCase() || "C"}
                   </div>

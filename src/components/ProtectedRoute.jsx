@@ -3,7 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 function ProtectedRoute() {
-    const { token, role, user } = useSelector(
+    const { token, role, user, isPinVerified } = useSelector(
         (state) => state.auth
     );
 
@@ -28,6 +28,11 @@ function ProtectedRoute() {
 
     if (isCustomer) {
         return <Navigate to="/" replace />;
+    }
+
+    // If staff/admin has not passed PIN verification, redirect to PIN challenge page
+    if (!isPinVerified) {
+        return <Navigate to="/auth/pin" replace />;
     }
 
     return <Outlet />;

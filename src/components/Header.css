@@ -280,6 +280,21 @@
   animation: dropdownFadeIn 0.2s ease-out;
 }
 
+[data-theme="dark"] .user-notif-header {
+  background: #090d16;
+  color: white;
+}
+
+[data-theme="dark"] .user-notif-title {
+  background: #090d16;
+  color: white;
+}
+
+[data-theme="dark"] .user-notif-footer {
+  background: #090d16;
+  color: white;
+}
+
 .user-notif-header {
   display: flex;
   align-items: center;
@@ -816,6 +831,11 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+[data-theme="dark"] .mobile-lang-btn-group button {
+  background: #090d16;
+  color: white;
 }
 
 .mobile-lang-title {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import {
   Shield,
   Users,
@@ -46,7 +47,9 @@ import {
   RolesApi,
   createRoleApi,
   updateRoleApi,
-  deleteRoleApi
+  deleteRoleApi,
+  enableStaff2FAApi,
+  disableStaff2FAApi
 } from "../../services/customerService";
 import "./style/SettingsPage.css";
 
@@ -398,6 +401,114 @@ function SettingsPage() {
   const [showStaffPassword, setShowStaffPassword] = useState(false);
   const [staffLoading, setStaffLoading] = useState(false);
   const [isSavingRole, setIsSavingRole] = useState(false);
+
+  // 6-Digit Security PIN States
+  const auth = useSelector((state) => state.auth);
+  const currentUser = auth?.user;
+  const [pinForm, setPinForm] = useState({
+    pin: "",
+    confirmPin: "",
+  });
+  const [showPinInput, setShowPinInput] = useState(false);
+  const [isUpdatingPin, setIsUpdatingPin] = useState(false);
+
+  const handleSavePin = async () => {
+    if (!currentUser?.id) {
+      Swal.fire({
+        icon: "error",
+        title: isKhmer ? "មិនស្គាល់អ្នកប្រើប្រាស់" : "User Not Found",
+        text: isKhmer ? "សូមចូលប្រើប្រាស់ម្តងទៀត" : "Please re-login to update security PIN",
+      });
+      return;
+    }
+
+    const cleanPin = String(pinForm.pin || "").trim();
+    if (!/^\d{6}$/.test(cleanPin)) {
+      Swal.fire({
+        icon: "warning",
+        title: isKhmer ? "កូដ PIN ត្រូវតែមាន ៦ ខ្ទង់" : "6-Digit PIN Required",
+        text: isKhmer ? "កូដ PIN សុវត្ថិភាពត្រូវតែជាលេខ ៦ ខ្ទង់គត់ (ឧ. 123456)" : "Security PIN must be exactly 6 numeric digits (e.g. 123456).",
+      });
+      return;
+    }
+
+    if (pinForm.pin !== pinForm.confirmPin) {
+      Swal.fire({
+        icon: "warning",
+        title: isKhmer ? "កូដ PIN មិនត្រូវគ្នា" : "PINs Do Not Match",
+        text: isKhmer ? "សូមផ្ទៀងផ្ទាត់កូដ PIN ទាំងពីរប្រអប់ឱ្យដូចគ្នា" : "Please ensure both PIN fields match exactly.",
+      });
+      return;
+    }
+
+    try {
+      setIsUpdatingPin(true);
+      await enableStaff2FAApi(currentUser.id, cleanPin);
+      localStorage.setItem("angkor_staff_pin", cleanPin);
+
+      try {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+      } catch (e) {}
+
+      Swal.fire({
+        icon: "success",
+        title: isKhmer ? "បានកំណត់កូដ PIN ៦ ខ្ទង់ជោគជ័យ!" : "6-Digit Security PIN Saved!",
+        text: isKhmer
+          ? "កូដ PIN ៦ ខ្ទង់ត្រូវបានបើកដំណើរការសម្រាប់គណនីរបស់អ្នករួចរាល់។"
+          : "Your 6-digit security PIN has been activated for this account.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      setPinForm({ pin: "", confirmPin: "" });
+      loadStaffAndRoles();
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: isKhmer ? "បរាជ័យក្នុងការកំណត់ PIN" : "Failed to Set PIN",
+        text: err?.response?.data?.message || err?.message || "Could not configure security PIN.",
+      });
+    } finally {
+      setIsUpdatingPin(false);
+    }
+  };
+
+  const handleDisablePin = async () => {
+    if (!currentUser?.id) return;
+
+    Swal.fire({
+      title: isKhmer ? "បិទកូដ PIN សុវត្ថិភាព?" : "Disable Security PIN?",
+      text: isKhmer ? "តើអ្នកចង់បិទការទាមទារកូដ PIN ពេលចូលប្រើប្រាស់មែនទេ?" : "Are you sure you want to remove 2FA PIN protection from this account?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#64748b",
+      confirmButtonText: isKhmer ? "បាទ/ចាស បិទ PIN" : "Yes, Disable PIN",
+      cancelButtonText: isKhmer ? "បោះបង់" : "Cancel",
+    }).then(async (res) => {
+      if (res.isConfirmed) {
+        try {
+          setIsUpdatingPin(true);
+          await disableStaff2FAApi(currentUser.id);
+          localStorage.removeItem("angkor_staff_pin");
+          Swal.fire({
+            icon: "success",
+            title: isKhmer ? "បានបិទ PIN រួចរាល់" : "PIN Disabled",
+            text: isKhmer ? "ការផ្ទៀងផ្ទាត់ PIN ត្រូវបានបិទដោយជោគជ័យ។" : "Security PIN verification has been disabled.",
+          });
+          loadStaffAndRoles();
+        } catch (err) {
+          Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: err?.response?.data?.message || err?.message || "Could not disable PIN.",
+          });
+        } finally {
+          setIsUpdatingPin(false);
+        }
+      }
+    });
+  };
 
   const loadStaffAndRoles = async () => {
     try {
@@ -1806,6 +1917,59 @@ function SettingsPage() {
                         <button
                           type="button"
                           className="btn-outline-secondary"
+                          style={{ padding: "6px 12px", fontSize: "12px", marginRight: "6px" }}
+                          onClick={async () => {
+                            const action = await Swal.fire({
+                              title: isKhmer ? `គ្រប់គ្រង 2FA សម្រាប់ ${member.name}` : `Manage 2FA for ${member.name}`,
+                              text: isKhmer ? "ជ្រើសរើសសកម្មភាព 2FA ដែលអ្នកចង់អនុវត្ត" : "Choose a 2FA action to perform",
+                              icon: "question",
+                              showCancelButton: true,
+                              confirmButtonText: isKhmer ? "បន្ថែម/កែប្រែ PIN" : "Set / Update PIN",
+                              cancelButtonText: isKhmer ? "បិទ" : "Cancel",
+                              showDenyButton: true,
+                              denyButtonText: isKhmer ? "បិទផ្អាក 2FA" : "Disable 2FA",
+                              confirmButtonColor: "#f57c00",
+                              denyButtonColor: "#dc2626"
+                            });
+
+                            if (action.isConfirmed) {
+                              const { value: pin } = await Swal.fire({
+                                title: isKhmer ? `កំណត់ 2FA PIN សម្រាប់ ${member.name}` : `Set 2FA PIN for ${member.name}`,
+                                input: "password",
+                                inputLabel: isKhmer ? "PIN (យ៉ាងតិច ៤ តួខ្ទង់)" : "PIN (min 4 digits)",
+                                inputPlaceholder: isKhmer ? "បញ្ចូល PIN..." : "Enter PIN...",
+                                showCancelButton: true,
+                                confirmButtonText: isKhmer ? "រក្សាទុក" : "Save PIN",
+                                confirmButtonColor: "#f57c00",
+                                inputValidator: (val) => {
+                                  if (!val || val.length < 4) return isKhmer ? "PIN ត្រូវមានយ៉ាងតិច ៤ តួ!" : "PIN must be at least 4 digits!";
+                                }
+                              });
+
+                              if (pin) {
+                                try {
+                                  await enableStaff2FAApi(member.id, pin);
+                                  Swal.fire(isKhmer ? "ជោគជ័យ!" : "Success!", isKhmer ? `2FA PIN ត្រូវបានកំណត់សម្រាប់ ${member.name}` : `2FA PIN configured for ${member.name}`, "success");
+                                } catch (err) {
+                                  Swal.fire("Error", err.message || "Failed to enable 2FA", "error");
+                                }
+                              }
+                            } else if (action.isDenied) {
+                              try {
+                                await disableStaff2FAApi(member.id);
+                                Swal.fire(isKhmer ? "ជោគជ័យ!" : "Success!", isKhmer ? `2FA ត្រូវបានបិទសម្រាប់ ${member.name}` : `2FA disabled for ${member.name}`, "success");
+                              } catch (err) {
+                                Swal.fire("Error", err.message || "Failed to disable 2FA", "error");
+                              }
+                            }
+                          }}
+                        >
+                          <Shield size={13} />
+                          <span>{isKhmer ? "2FA" : "2FA"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-outline-secondary"
                           style={{ padding: "6px 12px", fontSize: "12px", color: "#dc2626", borderColor: "#fecaca" }}
                           onClick={() => handleDeleteStaff(member)}
                         >
@@ -2195,6 +2359,117 @@ function SettingsPage() {
                 />
                 <span className="toggle-slider" />
               </label>
+            </div>
+
+            {/* 6-Digit Staff Security PIN Configuration */}
+            <div className="security-pin-card" style={{
+              background: isDark ? "rgba(245, 158, 11, 0.06)" : "#fffbeb",
+              border: "1px solid rgba(245, 158, 11, 0.3)",
+              borderRadius: "16px",
+              padding: "20px",
+              marginTop: "4px"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px", flexWrap: "wrap", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <div style={{
+                    width: "38px",
+                    height: "38px",
+                    borderRadius: "10px",
+                    background: "rgba(245, 158, 11, 0.2)",
+                    color: "#f59e0b",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}>
+                    <Key size={20} />
+                  </div>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a" }}>
+                      {isKhmer ? "កូដ PIN សុវត្ថិភាព ៦ ខ្ទង់ (6-Digit Security PIN)" : "6-Digit Staff Security PIN"}
+                    </h4>
+                    <small style={{ color: isDark ? "#94a3b8" : "#64748b" }}>
+                      {isKhmer
+                        ? "កំណត់ ឬប្តូរកូដ PIN ៦ ខ្ទង់សម្រាប់ផ្ទៀងផ្ទាត់ពេលចូលប្រព័ន្ធ Admin"
+                        : "Set or update your 6-digit PIN required during staff authentication"}
+                    </small>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    padding: "4px 10px",
+                    borderRadius: "999px",
+                    background: currentUser?.two_fa_enabled ? "rgba(16, 185, 129, 0.15)" : "rgba(148, 163, 184, 0.15)",
+                    color: currentUser?.two_fa_enabled ? "#10b981" : "#64748b",
+                    border: currentUser?.two_fa_enabled ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(148, 163, 184, 0.3)"
+                  }}>
+                    {currentUser?.two_fa_enabled
+                      ? (isKhmer ? "● កំពុងបើកដំណើរការ PIN ៦ ខ្ទង់" : "● 6-Digit PIN Active")
+                      : (isKhmer ? "○ មិនទាន់កំណត់ PIN" : "○ No PIN Active")}
+                  </span>
+
+                  {currentUser?.two_fa_enabled && (
+                    <button
+                      type="button"
+                      className="btn-outline-secondary"
+                      style={{ fontSize: "12px", padding: "4px 10px", color: "#ef4444", borderColor: "rgba(239, 68, 68, 0.4)" }}
+                      onClick={handleDisablePin}
+                      disabled={isUpdatingPin}
+                    >
+                      {isKhmer ? "បិទ PIN" : "Disable PIN"}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px", marginTop: "14px" }}>
+                <div>
+                  <label className="form-label" style={{ fontSize: "13px" }}>
+                    {isKhmer ? "បញ្ចូលកូដ PIN ថ្មី (៦ ខ្ទង់)" : "New 6-Digit PIN"}
+                  </label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    className="settings-input"
+                    placeholder="e.g. 123456"
+                    value={pinForm.pin}
+                    onChange={(e) => setPinForm({ ...pinForm, pin: e.target.value.replace(/\D/g, "").slice(0, 6) })}
+                  />
+                </div>
+
+                <div>
+                  <label className="form-label" style={{ fontSize: "13px" }}>
+                    {isKhmer ? "ផ្ទៀងផ្ទាត់កូដ PIN ម្តងទៀត" : "Confirm 6-Digit PIN"}
+                  </label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={6}
+                    className="settings-input"
+                    placeholder="Confirm 6 digits"
+                    value={pinForm.confirmPin}
+                    onChange={(e) => setPinForm({ ...pinForm, confirmPin: e.target.value.replace(/\D/g, "").slice(0, 6) })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "14px" }}>
+                <button
+                  type="button"
+                  className="btn-save-primary"
+                  onClick={handleSavePin}
+                  disabled={isUpdatingPin || pinForm.pin.length !== 6}
+                  style={{ fontSize: "13px", padding: "8px 18px" }}
+                >
+                  <Key size={14} />
+                  <span>{isUpdatingPin ? (isKhmer ? "កំពុងរក្សាទុក..." : "Saving...") : (isKhmer ? "រក្សាទុកកូដ PIN ៦ ខ្ទង់" : "Save 6-Digit Security PIN")}</span>
+                </button>
+              </div>
             </div>
 
             {/* Maintenance Mode */}

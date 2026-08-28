@@ -4,6 +4,7 @@ import { ThemeProvider } from "./context/ThemeContext";
 import LoginAdmin from "./pages/Auth/LoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
 import ForgotPassword from "./pages/Auth/ForgotPasswordPage";
+import PinPage from "./pages/Auth/PinPage";
 import HomePage from "./pages/website/HomePage";
 import ShopPage from "./pages/website/ShopPage";
 import OrderPage from "./pages/website/OrderPage";
@@ -27,7 +28,7 @@ import AdminOrderPage from "./pages/Admin/OrderPage";
 import FlashSalePage from "./pages/Admin/FlashSalePage";
 import SettingsPage from "./pages/Admin/SettingsPage";
 import MessagesPage from "./pages/Admin/MessagesPage";
-import ReportsPage from "./pages/Admin/ReportsPage";
+import ReportPage from "./pages/Admin/ReportPage";
 import AttendancePage from "./pages/Admin/AttendancePage";
 import ChatBot from "./components/ChatBot";
 
@@ -47,6 +48,7 @@ function App() {
           <Route path="/auth/login" element={<LoginAdmin />} />
           <Route path="/auth/register" element={<RegisterPage />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+          <Route path="/auth/pin" element={<PinPage />} />
           <Route path="*" element={<NotFound />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/admin" element={<MainLayout />}>
@@ -63,7 +65,7 @@ function App() {
               <Route path="purchases" element={<PurchasePage />} />
               <Route path="orders" element={<AdminOrderPage />} />
               <Route path="messages" element={<MessagesPage />} />
-              <Route path="reports" element={<ReportsPage />} />
+              <Route path="reports" element={<ReportPage />} />
               <Route path="settings" element={<SettingsPage />} />
             </Route>
           </Route>

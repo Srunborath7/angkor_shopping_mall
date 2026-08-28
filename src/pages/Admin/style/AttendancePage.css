@@ -15,6 +15,7 @@
     opacity: 0;
     transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -162,8 +163,17 @@
 }
 
 @keyframes liveBlink {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.4; transform: scale(0.85); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
 }
 
 .kiosk-time-display {
@@ -448,6 +458,7 @@
   color: #ffffff;
   box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
 }
+
 .btn-punch-in:hover:not(:disabled) {
   background: linear-gradient(135deg, #059669 0%, #047857 100%);
   box-shadow: 0 6px 18px rgba(16, 185, 129, 0.45);
@@ -458,6 +469,7 @@
   color: #ffffff;
   box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
 }
+
 .btn-punch-break:hover:not(:disabled) {
   background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
 }
@@ -467,6 +479,7 @@
   color: #ffffff;
   box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
 }
+
 .btn-punch-out:hover:not(:disabled) {
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
 }
@@ -476,6 +489,7 @@
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.16);
 }
+
 .btn-punch-pin:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.18);
   border-color: #38bdf8;
@@ -546,6 +560,7 @@
 .kpi-present {
   border-left: 4px solid #10b981;
 }
+
 .kpi-present .attendance-kpi-icon {
   background: #ecfdf5;
   color: #10b981;
@@ -554,6 +569,7 @@
 .kpi-ontime {
   border-left: 4px solid #0284c7;
 }
+
 .kpi-ontime .attendance-kpi-icon {
   background: #e0f2fe;
   color: #0284c7;
@@ -562,6 +578,7 @@
 .kpi-late {
   border-left: 4px solid #f59e0b;
 }
+
 .kpi-late .attendance-kpi-icon {
   background: #fef3c7;
   color: #f59e0b;
@@ -570,6 +587,7 @@
 .kpi-overtime {
   border-left: 4px solid #8b5cf6;
 }
+
 .kpi-overtime .attendance-kpi-icon {
   background: #f5f3ff;
   color: #8b5cf6;
@@ -1089,6 +1107,11 @@
   justify-content: flex-end;
   gap: 10px;
   margin-top: 20px;
+}
+
+[data-theme="dark"] .form-footer-buttons button {
+  color: white;
+  background: none !important;
 }
 
 /* ==========================================================================
@@ -2300,6 +2323,7 @@
    Print Sheet Styling
    ========================================================================== */
 @media print {
+
   .attendance-kiosk-card,
   .attendance-filter-card,
   .header-actions,
@@ -3096,5 +3120,3 @@ body.dark-theme .btn-leave-delete,
   border-color: #1e293b !important;
   color: #94a3b8 !important;
 }
-
-

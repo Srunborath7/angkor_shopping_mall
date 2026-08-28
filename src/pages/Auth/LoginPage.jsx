@@ -11,11 +11,12 @@ import {
   FaSignInAlt,
   FaShieldAlt,
   FaTruck,
-  FaCheckCircle
+  FaCheckCircle,
+  FaKey
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { api } from "../../api/api";
-import { googleLoginApi } from "../../services/authService";
+import { googleLoginApi, verify2FAApi } from "../../services/authService";
 import { setAuth } from "../../store/authSlice";
 import "./style/LoginPage.css";
 import logo from "../../assets/logo.jpg";
@@ -33,6 +34,21 @@ function LoginAdmin() {
     remember: true,
   });
 
+  // 2FA States
+  const [requires2FA, setRequires2FA] = useState(false);
+  const [tempToken, setTempToken] = useState(null);
+  const [pin, setPin] = useState("");
+  const [isVerifying2FA, setIsVerifying2FA] = useState(false);
+
+  const getSettings = () => {
+    try {
+      const saved = localStorage.getItem("angkor_admin_settings_v1");
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  };
+
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -41,6 +57,64 @@ function LoginAdmin() {
           ? e.target.checked
           : e.target.value,
     });
+  };
+
+  const completeLogin = (user, accessToken, refreshToken, role, tempToken = null) => {
+    const lowerRole = String(role).toLowerCase();
+    const isStaffOrAdmin =
+      lowerRole !== "customer" &&
+      lowerRole !== "customers" &&
+      (lowerRole.includes("admin") ||
+        lowerRole.includes("manager") ||
+        lowerRole.includes("sale") ||
+        lowerRole.includes("staff") ||
+        lowerRole.includes("cashier") ||
+        lowerRole.includes("inventory") ||
+        lowerRole.includes("security") ||
+        lowerRole.includes("super"));
+
+    const hasPinChallenge = Boolean(tempToken);
+
+    dispatch(
+      setAuth({
+        token: accessToken || null,
+        tempToken: tempToken || null,
+        refreshToken: refreshToken || null,
+        role,
+        user,
+        remember: form.remember,
+        isPinVerified: !hasPinChallenge,
+      })
+    );
+
+    if (hasPinChallenge) {
+      Swal.fire({
+        icon: "info",
+        title: "Security PIN Required",
+        text: `Welcome ${user?.name || "Staff"}. Please enter your 6-digit PIN to unlock.`,
+        timer: 1500,
+        showConfirmButton: false,
+      });
+      navigate("/auth/pin");
+    } else if (isStaffOrAdmin) {
+      Swal.fire({
+        icon: "success",
+        title: "Login Successful",
+        text: `Welcome ${user?.name || "Staff"}`,
+        timer: 1800,
+        showConfirmButton: false,
+      });
+      navigate("/admin/dashboard");
+    } else {
+      Swal.fire({
+        icon: "success",
+        title: "Login Successful",
+        text: `Welcome ${user?.name || "Customer"}`,
+        timer: 1800,
+        showConfirmButton: false,
+      });
+      navigate("/");
+    }
   };
 
   const handleLogin = async (e) => {
@@ -54,9 +128,10 @@ function LoginAdmin() {
         password: form.password,
       });
 
-      const user = res.data.user;
-      const accessToken = res.data.accessToken;
-      const refreshToken = res.data.refreshToken || res.data.refresh_token || null;
+      const user = res.data?.user || res.user;
+      const accessToken = res.data?.accessToken || res.accessToken || null;
+      const refreshToken = res.data?.refreshToken || res.refresh_token || null;
+      const tempToken = res.data?.temp_token || res.temp_token || null;
 
       const role =
         user?.roles?.[0]?.name ||
@@ -65,42 +140,7 @@ function LoginAdmin() {
         (Array.isArray(user?.roles) ? user.roles.map((r) => r.name || r).join(" ") : "") ||
         "customer";
 
-      dispatch(
-        setAuth({
-          token: accessToken,
-          refreshToken,
-          role,
-          user,
-          remember: form.remember,
-        })
-      );
-      Swal.fire({
-        icon: "success",
-        title: "Login Successful",
-        text: `Welcome ${user.name}`,
-        timer: 1800,
-        showConfirmButton: false,
-      });
-
-      // Redirect by role: managers, admins, staff go to dashboard; customers go to shop homepage
-      const lowerRole = String(role).toLowerCase();
-      const isStaffOrAdmin =
-        lowerRole !== "customer" &&
-        lowerRole !== "customers" &&
-        (lowerRole.includes("admin") ||
-          lowerRole.includes("manager") ||
-          lowerRole.includes("sale") ||
-          lowerRole.includes("staff") ||
-          lowerRole.includes("cashier") ||
-          lowerRole.includes("inventory") ||
-          lowerRole.includes("security") ||
-          lowerRole.includes("super"));
-
-      if (isStaffOrAdmin) {
-        navigate("/admin/dashboard");
-      } else {
-        navigate("/");
-      }
+      completeLogin(user, accessToken, refreshToken, role, tempToken);
 
     } catch (error) {
       Swal.fire({
@@ -111,6 +151,61 @@ function LoginAdmin() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerify2FA = async (e) => {
+    e.preventDefault();
+    if (!pin || pin.length < 4) {
+      Swal.fire({
+        icon: "warning",
+        title: "PIN Required",
+        text: "Please enter your 2FA PIN code.",
+      });
+      return;
+    }
+
+    try {
+      setIsVerifying2FA(true);
+      const res = await verify2FAApi(tempToken, pin);
+
+      const user = res.data?.user || res.user;
+      const accessToken = res.data?.accessToken || res.accessToken;
+      const refreshToken = res.data?.refreshToken || res.refresh_token || null;
+
+      const role =
+        user?.roles?.[0]?.name ||
+        user?.role ||
+        user?.role_name ||
+        (Array.isArray(user?.roles) ? user.roles.map((r) => r.name || r).join(" ") : "") ||
+        "customer";
+
+      setRequires2FA(false);
+      setTempToken(null);
+      setPin("");
+
+      completeLogin(user, accessToken, refreshToken, role);
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Verification Failed",
+        text: error?.message || "Invalid 2FA PIN. Please try again.",
+      });
+    } finally {
+      setIsVerifying2FA(false);
+    }
+  };
+
+  const handlePinChange = (e) => {
+    const value = e.target.value.replace(/\D/g, "").slice(0, 8);
+    setPin(value);
+  };
+
+  const handleBackToLogin = () => {
+    setRequires2FA(false);
+    setTempToken(null);
+    setPin("");
+    setLoading(false);
+    setIsVerifying2FA(false);
   };
 
   // Google OAuth Handler
@@ -132,24 +227,6 @@ function LoginAdmin() {
           (Array.isArray(user?.roles) ? user.roles.map((r) => r.name || r).join(" ") : "") ||
           "customer";
 
-        dispatch(
-          setAuth({
-            token: accessToken,
-            refreshToken,
-            role,
-            user,
-            remember: true,
-          })
-        );
-
-        Swal.fire({
-          icon: "success",
-          title: "Google Login Successful",
-          text: `Welcome ${user.name}!`,
-          timer: 1800,
-          showConfirmButton: false,
-        });
-
         const lowerRole = String(role).toLowerCase();
         const isStaffOrAdmin =
           lowerRole !== "customer" &&
@@ -163,11 +240,21 @@ function LoginAdmin() {
             lowerRole.includes("security") ||
             lowerRole.includes("super"));
 
-        if (isStaffOrAdmin) {
-          navigate("/admin/dashboard");
-        } else {
-          navigate("/");
+        const settings = getSettings();
+        const enforce2FA = settings.enforce2FA !== false;
+
+        if (isStaffOrAdmin && enforce2FA) {
+          const needs2FA = res.requires_2fa || res.data?.requires_2fa;
+          if (needs2FA) {
+            setRequires2FA(true);
+            setTempToken(res.temp_token || res.data?.temp_token || null);
+            setPin("");
+            setLoading(false);
+            return;
+          }
         }
+
+        completeLogin(user, accessToken, refreshToken, role);
       } catch (error) {
         Swal.fire({
           icon: "error",
@@ -263,83 +350,137 @@ function LoginAdmin() {
             <p>Welcome back! Please enter your details to access your account.</p>
           </div>
 
-          <form onSubmit={handleLogin} className="auth-form">
-            {/* Email Field */}
-            <div className="auth-input-wrapper">
-              <label className="auth-input-label">Email Address</label>
-              <div className="auth-input-group">
-                <FaEnvelope className="auth-field-icon" />
-                <input
-                  type="email"
-                  name="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="name@example.com"
-                  autoComplete="email"
-                  required
-                />
-              </div>
-            </div>
+          <form onSubmit={requires2FA ? handleVerify2FA : handleLogin} className="auth-form">
+            {requires2FA ? (
+              <>
+                {/* 2FA PIN Verification Step */}
+                <div className="auth-input-wrapper">
+                  <label className="auth-input-label">
+                    <FaKey style={{ marginRight: 6 }} />
+                    Enter 2FA PIN
+                  </label>
+                  <div className="auth-input-group">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={8}
+                      value={pin}
+                      onChange={handlePinChange}
+                      placeholder="Enter your 6-8 digit PIN"
+                      autoFocus
+                      required
+                    />
+                  </div>
+                  <p className="auth-2fa-hint">
+                    Enter the PIN configured in your admin security settings to verify your identity.
+                  </p>
+                </div>
 
-            {/* Password Field */}
-            <div className="auth-input-wrapper">
-              <label className="auth-input-label">Password</label>
-              <div className="auth-input-group">
-                <FaLock className="auth-field-icon" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  value={form.password}
-                  onChange={handleChange}
-                  placeholder="Enter your password"
-                  autoComplete="current-password"
-                  required
-                />
-                <span
-                  className="auth-password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
-                  title={showPassword ? "Hide password" : "Show password"}
+                <button
+                  type="submit"
+                  className="auth-primary-btn"
+                  disabled={isVerifying2FA || pin.length < 4}
                 >
-                  {showPassword ? <FaEyeSlash /> : <FaEye />}
-                </span>
-              </div>
-            </div>
+                  {isVerifying2FA ? (
+                    <span className="auth-spinner"></span>
+                  ) : (
+                    <>
+                      <FaShieldAlt />
+                      Verify & Continue
+                    </>
+                  )}
+                </button>
 
-            {/* Remember Me & Forgot Password */}
-            <div className="auth-options-row">
-              <label className="auth-remember-checkbox">
-                <input
-                  type="checkbox"
-                  name="remember"
-                  checked={form.remember}
-                  onChange={handleChange}
-                />
-                <span>Remember me</span>
-              </label>
+                <button
+                  type="button"
+                  className="auth-back-btn"
+                  onClick={handleBackToLogin}
+                  disabled={isVerifying2FA}
+                >
+                  ← Back to login
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Email Field */}
+                <div className="auth-input-wrapper">
+                  <label className="auth-input-label">Email Address</label>
+                  <div className="auth-input-group">
+                    <FaEnvelope className="auth-field-icon" />
+                    <input
+                      type="email"
+                      name="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      placeholder="name@example.com"
+                      autoComplete="email"
+                      required
+                    />
+                  </div>
+                </div>
 
-              <span
-                onClick={() => navigate("/auth/forgot-password")}
-                className="auth-forgot-link"
-              >
-                Forgot Password?
-              </span>
-            </div>
+                {/* Password Field */}
+                <div className="auth-input-wrapper">
+                  <label className="auth-input-label">Password</label>
+                  <div className="auth-input-group">
+                    <FaLock className="auth-field-icon" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      placeholder="Enter your password"
+                      autoComplete="current-password"
+                      required
+                    />
+                    <span
+                      className="auth-password-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                      title={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </span>
+                  </div>
+                </div>
 
-            {/* Sign In Button */}
-            <button
-              type="submit"
-              className="auth-primary-btn"
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="auth-spinner"></span>
-              ) : (
-                <>
-                  <FaSignInAlt />
-                  Sign In
-                </>
-              )}
-            </button>
+                {/* Remember Me & Forgot Password */}
+                <div className="auth-options-row">
+                  <label className="auth-remember-checkbox">
+                    <input
+                      type="checkbox"
+                      name="remember"
+                      checked={form.remember}
+                      onChange={handleChange}
+                    />
+                    <span>Remember me</span>
+                  </label>
+
+                  <span
+                    onClick={() => navigate("/auth/forgot-password")}
+                    className="auth-forgot-link"
+                  >
+                    Forgot Password?
+                  </span>
+                </div>
+
+                {/* Sign In Button */}
+                <button
+                  type="submit"
+                  className="auth-primary-btn"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="auth-spinner"></span>
+                  ) : (
+                    <>
+                      <FaSignInAlt />
+                      Sign In
+                    </>
+                  )}
+                </button>
+              </>
+            )}
           </form>
 
           {/* Divider */}

@@ -10,6 +10,7 @@
         opacity: 0;
         transform: translateY(6px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -407,6 +408,10 @@
     display: flex;
     align-items: center;
     gap: 12px;
+}
+
+[data-theme="dark"] .form_order_items {
+    background: #090d16 !important;
 }
 
 .customer-avatar {
@@ -1200,9 +1205,12 @@
     body * {
         visibility: hidden;
     }
-    .printable-invoice, .printable-invoice * {
+
+    .printable-invoice,
+    .printable-invoice * {
         visibility: visible;
     }
+
     .printable-invoice {
         position: absolute;
         left: 0;

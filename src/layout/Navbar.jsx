@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import {
   FaBell,
   FaSearch,
@@ -12,8 +13,10 @@ import {
   FaClock,
   FaCheckDouble,
   FaCog,
-  FaTachometerAlt
+  FaTachometerAlt,
+  FaLock
 } from "react-icons/fa";
+import { lockPin } from "../store/authSlice";
 import {
   Sparkles,
   MessageSquare,
@@ -36,6 +39,7 @@ import "./style/Navbar.css";
 
 function Navbar({ setOpen, user, logout }) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { theme, setTheme, resolvedTheme, isDark } = useTheme();
   const { language, setLanguage, isKhmer, t } = useTranslation();
 
@@ -116,6 +120,19 @@ function Navbar({ setOpen, user, logout }) {
         logout();
       }
     });
+  };
+
+  const handleLockTerminal = () => {
+    setDropdownOpen(false);
+    dispatch(lockPin());
+    Swal.fire({
+      icon: "info",
+      title: isKhmer ? "បានចាក់សោ Terminal" : "Terminal Locked",
+      text: isKhmer ? "សូមបញ្ចូលកូដ PIN ដើម្បីដោះសោផ្ទាំងគ្រប់គ្រង" : "Please enter your Security PIN to unlock",
+      timer: 1200,
+      showConfirmButton: false,
+    });
+    navigate("/auth/pin");
   };
 
   const handleOpenMessages = () => {
@@ -440,6 +457,15 @@ function Navbar({ setOpen, user, logout }) {
                   >
                     <FaEnvelope className="dropdown-icon" />
                     <span>{isKhmer ? "សារពីអតិថិជន" : "Customer Messages"}</span>
+                  </button>
+
+                  <button
+                    className="dropdown-item"
+                    onClick={handleLockTerminal}
+                    style={{ color: "#f59e0b" }}
+                  >
+                    <FaLock className="dropdown-icon" style={{ color: "#f59e0b" }} />
+                    <span>{isKhmer ? "ចាក់សោអេក្រង់ (PIN)" : "Lock Screen (PIN)"}</span>
                   </button>
 
                   <button className="dropdown-item logout-item" onClick={handleLogout}>

@@ -8,6 +8,7 @@
         opacity: 0;
         transform: translateY(6px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -405,7 +406,8 @@
 }
 
 /* Loading & Empty State */
-.loading-box, .empty-box {
+.loading-box,
+.empty-box {
     text-align: center;
     padding: 48px 20px;
     color: #6b7280;
@@ -422,7 +424,9 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Modal Form Controls */
@@ -444,7 +448,8 @@
     color: #374151;
 }
 
-.form-input, .form-textarea {
+.form-input,
+.form-textarea {
     width: 100%;
     padding: 10px 14px;
     border-radius: 10px;
@@ -455,7 +460,8 @@
     transition: all 0.2s ease;
 }
 
-.form-input:focus, .form-textarea:focus {
+.form-input:focus,
+.form-textarea:focus {
     border-color: #10b981;
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
 }
@@ -476,6 +482,11 @@
     border: 1px solid #e5e7eb;
 }
 
+[data-theme="dark"] .toggle-switch-container {
+    background: #090d16;
+    border: #090d16;
+}
+
 .toggle-switch {
     position: relative;
     display: inline-block;
@@ -492,7 +503,10 @@
 .slider {
     position: absolute;
     cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background-color: #ccc;
     transition: .3s;
     border-radius: 24px;
@@ -510,11 +524,11 @@
     border-radius: 50%;
 }
 
-input:checked + .slider {
+input:checked+.slider {
     background-color: #10b981;
 }
 
-input:checked + .slider:before {
+input:checked+.slider:before {
     transform: translateX(20px);
 }
 
@@ -629,4 +643,3 @@ input:checked + .slider:before {
     border-color: #1e293b;
     color: #cbd5e1;
 }
-

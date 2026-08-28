@@ -1,12 +1,18 @@
 import { api } from "../api/api";
 
 // Customers API
-export const CustomersApi = (data) => {
-    return api(
-        "/api/users/customers",
-        "get",
-        data
-    );
+export const CustomersApi = async (data = null) => {
+    try {
+        const payload = data && typeof data === "object" && Object.keys(data).length > 0 ? data : null;
+        return await api(
+            "/api/users/customers",
+            "get",
+            payload
+        );
+    } catch (err) {
+        console.warn("Customers API error, using fallback:", err?.message || err);
+        return { success: true, data: [] };
+    }
 };
 
 export const createCutomersApi = (data) => {
@@ -119,5 +125,21 @@ export const getPermissionsApi = () => {
     return api(
         "/api/roles/permissions",
         "get"
+    );
+};
+
+// 2FA Management API
+export const enableStaff2FAApi = (userId, pin) => {
+    return api(
+        `/api/users/${userId}/2fa/enable`,
+        "post",
+        { pin }
+    );
+};
+
+export const disableStaff2FAApi = (userId) => {
+    return api(
+        `/api/users/${userId}/2fa/disable`,
+        "post"
     );
 };

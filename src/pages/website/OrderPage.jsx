@@ -44,6 +44,17 @@ function OrderPage() {
     amount: 0
   });
 
+  const safeDate = (val) => {
+    try {
+      if (!val) return new Date().toISOString().split("T")[0];
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return new Date().toISOString().split("T")[0];
+      return d.toISOString().split("T")[0];
+    } catch {
+      return new Date().toISOString().split("T")[0];
+    }
+  };
+
   // Load orders from API & localStorage fallback
   const loadOrders = async () => {
     if (isLoggedIn) {
@@ -52,35 +63,47 @@ function OrderPage() {
         const res = await getOrdersApi();
         // Handle various Axios/fetch response wrappings
         const payload = res?.data?.data || res?.data || res || {};
-        const apiOrders = Array.isArray(payload) ? payload : (Array.isArray(payload.orders) ? payload.orders : []);
-        
-        if (apiOrders && apiOrders.length >= 0) {
-          const formattedOrders = apiOrders.map((order) => ({
-            id: `#ORD-${order.id}`,
-            rawId: order.id,
-            date: new Date(order.created_at || order.createdAt || Date.now()).toISOString().split("T")[0],
-            items: order.items?.reduce((acc, item) => acc + item.quantity, 0) || 0, // calculate total quantity
-            subtotal: parseFloat(order.subtotal_amount || order.total_amount || 0).toFixed(2),
-            tradeInDiscount: parseFloat(order.trade_in_discount || 0),
-            tradeInProduct: order.trade_in_product || null,
-            total: parseFloat(order.total_amount || 0).toFixed(2),
-            status: order.status ? (order.status.charAt(0).toUpperCase() + order.status.slice(1)) : "Pending",
-            paymentMethod: order.payment_intent_id ? "Online Pay (Paid)" : "ABA KHQR / COD",
-            shippingInfo: {
-              fullName: user?.name || "Customer",
-              email: user?.email || "",
-              phone: order.contact_phone || "099888777",
-              address: order.shipping_address || "Phnom Penh",
-              city: ""
-            },
-            products: (order.items || []).map((item) => ({
-              id: item.product?.id || item.product_id,
-              name: item.product?.name || "Product Item",
-              price: parseFloat(item.price || item.product?.price || 0),
-              image: item.images?.[0]?.image_url || item.product?.images?.[0]?.image_url || item.product?.image_url || item.product?.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
-              quantity: item.quantity
-            }))
-          }));
+        const apiOrders = Array.isArray(payload)
+          ? payload
+          : (Array.isArray(payload.orders)
+              ? payload.orders
+              : (Array.isArray(payload.data) ? payload.data : []));
+
+        if (Array.isArray(apiOrders) && apiOrders.length >= 0) {
+          const formattedOrders = apiOrders.map((order) => {
+            const rawItems = Array.isArray(order.items)
+              ? order.items
+              : (Array.isArray(order.order_items)
+                  ? order.order_items
+                  : (Array.isArray(order.products) ? order.products : []));
+
+            return {
+              id: order.id ? `#ORD-${order.id}` : `#ORD-${Math.floor(Math.random() * 9000 + 1000)}`,
+              rawId: order.id,
+              date: safeDate(order.created_at || order.createdAt),
+              items: rawItems.reduce((acc, item) => acc + (Number(item?.quantity) || 1), 0),
+              subtotal: (parseFloat(order.subtotal_amount || order.total_amount || 0) || 0).toFixed(2),
+              tradeInDiscount: parseFloat(order.trade_in_discount || 0) || 0,
+              tradeInProduct: order.trade_in_product || null,
+              total: (parseFloat(order.total_amount || 0) || 0).toFixed(2),
+              status: order.status ? (String(order.status).charAt(0).toUpperCase() + String(order.status).slice(1)) : "Pending",
+              paymentMethod: order.payment_intent_id ? "Online Pay (Paid)" : "ABA KHQR / COD",
+              shippingInfo: {
+                fullName: user?.name || order.user?.name || "Customer",
+                email: user?.email || order.user?.email || "",
+                phone: order.contact_phone || "099888777",
+                address: order.shipping_address || "Phnom Penh",
+                city: ""
+              },
+              products: rawItems.map((item) => ({
+                id: item?.product?.id || item?.product_id || item?.id || Math.random(),
+                name: item?.product?.name || item?.name || "Product Item",
+                price: parseFloat(item?.price || item?.product?.price || 0) || 0,
+                image: item?.images?.[0]?.image_url || item?.product?.images?.[0]?.image_url || item?.product?.image_url || item?.product?.image || item?.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=500",
+                quantity: Number(item?.quantity) || 1
+              }))
+            };
+          });
           setOrders(formattedOrders);
           localStorage.setItem("orders", JSON.stringify(formattedOrders));
           return;
@@ -95,7 +118,8 @@ function OrderPage() {
     const saved = localStorage.getItem("orders");
     if (saved) {
       try {
-        setOrders(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setOrders(Array.isArray(parsed) ? parsed : []);
       } catch {
         setOrders([]);
       }
@@ -109,8 +133,6 @@ function OrderPage() {
       loadOrders();
     }
   }, [isLoggedIn]);
-
-  // Mock order prepopulation removed to use API data only
 
   const toggleOrderDetails = (id) => {
     if (expandedOrderId === id) {
@@ -153,7 +175,7 @@ function OrderPage() {
 
   // Calculate stats
   const totalOrdersCount = orders.length;
-  const totalSpent = orders.reduce((acc, curr) => acc + parseFloat(curr.total), 0).toFixed(2);
+  const totalSpent = orders.reduce((acc, curr) => acc + (parseFloat(curr.total) || 0), 0).toFixed(2);
   
   let wishlistCount = 0;
   try {

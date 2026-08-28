@@ -100,6 +100,12 @@ function Sidebar({ open, setOpen }) {
           icon: <FaTachometerAlt />,
           path: "/admin/dashboard",
           moduleId: "dashboard"
+        },
+        {
+          name: isKhmer ? "របាយការណ៍" : "Reports",
+          icon: <FaChartBar />,
+          path: "/admin/reports",
+          moduleId: "reports"
         }
       ]
     },
@@ -120,7 +126,7 @@ function Sidebar({ open, setOpen }) {
           moduleId: "products"
         },
         {
-          name: isKhmer ? "ប្តូរសេរីទូរស័ព្ទ" : "Trading / Trade-In",
+          name: isKhmer ? "ប្តូរទំនិញ" : "Trading / Trade-In",
           icon: <FaExchangeAlt />,
           path: "/admin/trading",
           moduleId: "trading"

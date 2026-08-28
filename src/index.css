@@ -49,7 +49,7 @@ html[lang="km"],
 
 body {
   background-color: #f8fafc;
-  background-image: 
+  background-image:
     radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.035) 0px, transparent 50%),
     radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.025) 0px, transparent 50%),
     radial-gradient(at 50% 50%, rgba(245, 158, 11, 0.015) 0px, transparent 50%);
@@ -145,7 +145,7 @@ textarea:focus {
 body.dark-theme,
 [data-theme="dark"] body {
   background-color: #070a13;
-  background-image: 
+  background-image:
     radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 45%),
     radial-gradient(at 100% 0%, rgba(56, 189, 248, 0.06) 0px, transparent 40%),
     radial-gradient(at 50% 100%, rgba(99, 102, 241, 0.05) 0px, transparent 50%);
@@ -717,7 +717,7 @@ body.dark-theme,
 
 [data-theme="dark"] .swal2-popup {
   background-color: #0f172a !important;
-  color: #f8fafc !important;
+  color: #1e3e5e !important;
   border: 1px solid #1e293b !important;
 }
 
@@ -1150,6 +1150,7 @@ body.dark-theme,
 [data-theme="dark"] .page-title,
 [data-theme="dark"] .header-title h1,
 [data-theme="dark"] .dashboard-header-bar h1,
+[data-theme="dark"] .report-header-title h1,
 [data-theme="dark"] .reports-header-title h1,
 [data-theme="dark"] .settings-header-title h1,
 [data-theme="dark"] .brand-page h1,
@@ -1170,6 +1171,7 @@ body.dark-theme,
 [data-theme="dark"] .page-header p,
 [data-theme="dark"] .header-title p,
 [data-theme="dark"] .dashboard-header-bar p,
+[data-theme="dark"] .report-header-title p,
 [data-theme="dark"] .reports-header-title p,
 [data-theme="dark"] .settings-header-title p,
 [data-theme="dark"] .page-subtitle,
@@ -1325,6 +1327,7 @@ body.dark-theme,
 [data-theme="dark"] .brand-page,
 [data-theme="dark"] .category-page,
 [data-theme="dark"] .messages-page,
+[data-theme="dark"] .report-page,
 [data-theme="dark"] .reports-page-wrapper,
 [data-theme="dark"] .settings-page-wrapper {
   background-color: #070a12 !important;
@@ -1360,7 +1363,7 @@ body.dark-theme,
 
 [data-theme="dark"] .kanban-card,
 [data-theme="dark"] .product-card-item,
-[data-theme="dark"] .mobile-cards-container > div,
+[data-theme="dark"] .mobile-cards-container>div,
 [data-theme="dark"] .order-mobile-card,
 [data-theme="dark"] .customer-mobile-card {
   background-color: #0f172a !important;
@@ -1463,6 +1466,7 @@ body.dark-theme,
    ========================================================================== */
 
 @media (max-width: 1024px) {
+
   .home-layout,
   .shop-workspace-container,
   .product-detail-layout,
@@ -1522,13 +1526,87 @@ body.dark-theme,
 }
 
 [data-theme="dark"] .auth-input-wrapper {
-  background-color: #090d16;
+  background-color: #090d1600;
   border-color: #1e293b;
 }
 
 [data-theme="dark"] .auth-input-wrapper input {
   background-color: transparent;
   color: #f8fafc;
+}
+
+[data-theme="dark"] .testimonial-card {
+  background-color: #090d16;
+}
+
+[data-theme="dark"] .trading-page-container .card {
+  background-color: #090d16;
+}
+
+[data-theme="dark"] .trading-page-container .btn {
+  border: none;
+}
+
+[data-theme="dark"] .trading-page-container .card svg {
+  color: white;
+}
+
+[data-theme="dark"] .trading-page-container .card p {
+  color: white;
+}
+
+[data-theme="dark"] .trading-page-container .card p {
+  color: white;
+}
+
+[data-theme="dark"] .order-table-container {
+  background-color: #090d16;
+  border: 1px solid #090d16;
+}
+
+[data-theme="dark"] .order-table-container .table-responsive {
+  background-color: #090d16;
+  border: 1px solid #090d16;
+}
+
+[data-theme="dark"] .supplier-card {
+  background-color: #090d16;
+  border: 1px solid #090d16;
+}
+
+[data-theme="dark"] .supplier-card .table-responsive {
+  background-color: #090d16;
+  border: 1px solid #090d16;
+}
+
+[data-theme="dark"] .purchase-card {
+  background-color: #090d16;
+  border: 1px solid #090d16;
+}
+
+[data-theme="dark"] .purchase-card .table-responsive {
+  background-color: #090d16;
+  border: 1px solid #090d16;
+}
+
+[data-theme="dark"] .purchase-table .action-btns .view {
+  background: #e8f3ff;
+  color: #1976d2;
+}
+
+[data-theme="dark"] .purchase-table .action-btns .delete {
+  background: #e8f3ff;
+  color: #e53935;
+}
+
+[data-theme="dark"] .supplier-table .action-btns .edit {
+  background: #e8f3ff;
+  color: #1976d2;
+}
+
+[data-theme="dark"] .supplier-table .action-btns .delete {
+  background: #e8f3ff;
+  color: #e53935;
 }
 
 [data-theme="dark"] .auth-social-btn {

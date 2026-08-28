@@ -453,6 +453,12 @@ td {
     background: #f4faf6;
 }
 
+[data-theme="dark"] .image-upload-dropzone {
+    background-color: #090d16;
+    border-color: #1e293b;
+    color: #cbd5e1;
+}
+
 .file-input-hidden {
     display: none;
 }

@@ -8,14 +8,21 @@ const apiClient = axios.create({
     baseURL: config.base_url,
     headers: {
         Accept: "application/json",
-    }
+    },
+    timeout: 30000,
 });
+
+const pendingRequests = new Map();
+
+const getRequestKey = (axiosConfig) => {
+    return `${axiosConfig.method}-${axiosConfig.url}-${JSON.stringify(axiosConfig.params || {})}`;
+};
 
 // Request interceptor to inject accessToken
 apiClient.interceptors.request.use(
     (axiosConfig) => {
         let token = store.getState()?.auth?.token;
-        if (!token) {
+        if (!token || typeof token !== "string" || token === "undefined" || token === "null") {
             try {
                 const rootPersist = localStorage.getItem("persist:root");
                 if (rootPersist) {
@@ -25,23 +32,34 @@ apiClient.interceptors.request.use(
                         token = authObj.token;
                     }
                 }
-                if (!token) {
+                if (!token || typeof token !== "string" || token === "undefined" || token === "null") {
                     token = localStorage.getItem("token") || localStorage.getItem("accessToken");
                 }
             } catch (e) {}
         }
-        if (token) {
-            axiosConfig.headers.Authorization = `Bearer ${token}`;
+        if (token && typeof token === "string" && token !== "undefined" && token !== "null" && token.trim().length > 10) {
+            axiosConfig.headers.Authorization = `Bearer ${token.trim()}`;
         }
         
         // If data is not FormData, set Content-Type to application/json
         if (axiosConfig.data && !(axiosConfig.data instanceof FormData)) {
             axiosConfig.headers["Content-Type"] = "application/json";
         }
+        
         return axiosConfig;
     },
     (error) => Promise.reject(error)
 );
+
+const retryableStatuses = [408, 500, 502, 503, 504];
+
+const shouldRetry = (error, retryCount = 0) => {
+    if (retryCount >= 2) return false;
+    if (!error.response) return true;
+    return retryableStatuses.includes(error.response.status);
+};
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Response interceptor to handle token refresh gracefully
 let isRefreshing = false;
@@ -85,7 +103,6 @@ apiClient.interceptors.response.use(
                 
                 try {
                     let refreshRes = null;
-                    // Attempt token refresh if available
                     try {
                         refreshRes = await axios.post(`${config.base_url}/api/auth/refresh-token`, {
                             refreshToken: refreshToken
@@ -111,7 +128,6 @@ apiClient.interceptors.response.use(
                         isRefreshing = false;
                         return apiClient(originalRequest);
                     } else {
-                        // Refresh token expired or unavailable, clear stale token
                         processQueue(error, null);
                         isRefreshing = false;
                         store.dispatch(clearAuth());
@@ -124,9 +140,15 @@ apiClient.interceptors.response.use(
                     return Promise.reject(refreshError);
                 }
             } else {
-                // Token invalid or no refresh token, clear stale state safely
                 store.dispatch(clearAuth());
             }
+        }
+        
+        // Retry logic for server errors and network issues
+        if (shouldRetry(error, originalRequest._retryCount || 0)) {
+            originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
+            await delay(1000 * originalRequest._retryCount);
+            return apiClient(originalRequest);
         }
         
         return Promise.reject(error.response?.data || error);
@@ -149,5 +171,23 @@ export const api = async (
             configObj.data = data;
         }
     }
+    
+    // Deduplicate concurrent identical GET requests
+    const isGet = String(method).toUpperCase() === "GET";
+    if (isGet) {
+        const requestKey = getRequestKey(configObj);
+        const existing = pendingRequests.get(requestKey);
+        if (existing) {
+            return existing;
+        }
+        
+        const promise = apiClient(configObj)
+            .finally(() => {
+                pendingRequests.delete(requestKey);
+            });
+        pendingRequests.set(requestKey, promise);
+        return promise;
+    }
+    
     return apiClient(configObj);
 };

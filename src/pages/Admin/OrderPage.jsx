@@ -486,9 +486,9 @@ function OrderPage() {
                     onChange={() => toggleColumn(col)}
                   />
                   {col === "orderId" ? "Order ID" :
-                   col === "items" ? "Items Preview" :
-                   col === "total" ? "Total Amount" :
-                   col.charAt(0).toUpperCase() + col.slice(1)}
+                    col === "items" ? "Items Preview" :
+                      col === "total" ? "Total Amount" :
+                        col.charAt(0).toUpperCase() + col.slice(1)}
                 </label>
               ))}
             </div>
@@ -526,150 +526,150 @@ function OrderPage() {
                     </td>
                   </tr>
                 ) : (
-                filteredOrders.map((ord) => {
-                  const customerName = ord.user?.name || "Guest Customer";
-                  const initial = customerName.charAt(0).toUpperCase();
-                  const itemCount = ord.items ? ord.items.length : 0;
+                  filteredOrders.map((ord) => {
+                    const customerName = ord.user?.name || "Guest Customer";
+                    const initial = customerName.charAt(0).toUpperCase();
+                    const itemCount = ord.items ? ord.items.length : 0;
 
-                  return (
-                    <tr key={ord.id}>
-                      {visibleColumns.orderId && (
-                        <td>
-                          <span
-                            className="order-id-code"
-                            title={ord.id}
-                            onClick={() => { setSelectedOrder(ord); setIsViewModalOpen(true); }}
-                            style={{ cursor: "pointer" }}
-                          >
-                            #ORD-{ord.id.slice(-6).toUpperCase()}
-                          </span>
-                        </td>
-                      )}
+                    return (
+                      <tr key={ord.id}>
+                        {visibleColumns.orderId && (
+                          <td>
+                            <span
+                              className="order-id-code"
+                              title={ord.id}
+                              onClick={() => { setSelectedOrder(ord); setIsViewModalOpen(true); }}
+                              style={{ cursor: "pointer" }}
+                            >
+                              #ORD-{ord.id.slice(-6).toUpperCase()}
+                            </span>
+                          </td>
+                        )}
 
-                      {/* CLICKABLE CUSTOMER COLUMN */}
-                      {visibleColumns.customer && (
-                        <td>
-                          <div
-                            className="customer-cell clickable-cell"
-                            onClick={(e) => openCustomerModal(ord, e)}
-                            title="Click to view customer details"
-                          >
-                            <div className="customer-avatar">{initial}</div>
-                            <div className="customer-info">
-                              <span className="name customer-link">{customerName}</span>
-                              <span className="contact">
-                                {ord.contact_phone || ord.user?.phone || ord.user?.email || "No contact"}
-                              </span>
+                        {/* CLICKABLE CUSTOMER COLUMN */}
+                        {visibleColumns.customer && (
+                          <td>
+                            <div
+                              className="customer-cell clickable-cell"
+                              onClick={(e) => openCustomerModal(ord, e)}
+                              title="Click to view customer details"
+                            >
+                              <div className="customer-avatar">{initial}</div>
+                              <div className="customer-info">
+                                <span className="name customer-link">{customerName}</span>
+                                <span className="contact">
+                                  {ord.contact_phone || ord.user?.phone || ord.user?.email || "No contact"}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                      )}
+                          </td>
+                        )}
 
-                      {visibleColumns.date && (
-                        <td>{formatDate(ord.created_at)}</td>
-                      )}
+                        {visibleColumns.date && (
+                          <td>{formatDate(ord.created_at)}</td>
+                        )}
 
-                      {/* CLICKABLE ITEMS SUMMARY COLUMN */}
-                      {visibleColumns.items && (
-                        <td>
-                          <div
-                            className="items-preview clickable-cell"
-                            onClick={(e) => openItemsModal(ord, e)}
-                            title="Click to view order items & variants"
-                          >
-                            <div className="item-thumb-list">
-                              {ord.items &&
-                                ord.items.slice(0, 3).map((item, idx) => (
-                                  <img
-                                    key={idx}
-                                    src={item.product?.image_url || item.product?.images?.[0]?.image_url || "https://placehold.co/40"}
-                                    alt={item.product?.name || "Product"}
-                                    className="item-thumb-img"
-                                  />
-                                ))}
+                        {/* CLICKABLE ITEMS SUMMARY COLUMN */}
+                        {visibleColumns.items && (
+                          <td>
+                            <div
+                              className="items-preview clickable-cell"
+                              onClick={(e) => openItemsModal(ord, e)}
+                              title="Click to view order items & variants"
+                            >
+                              <div className="item-thumb-list">
+                                {ord.items &&
+                                  ord.items.slice(0, 3).map((item, idx) => (
+                                    <img
+                                      key={idx}
+                                      src={item.product?.image_url || item.product?.images?.[0]?.image_url || "https://placehold.co/40"}
+                                      alt={item.product?.name || "Product"}
+                                      className="item-thumb-img"
+                                    />
+                                  ))}
+                              </div>
+                              <div className="items-summary-text">
+                                <span className="item-count-badge">
+                                  {itemCount} {itemCount === 1 ? "item" : "items"}
+                                </span>
+                                {/* Show first item's variant attributes as preview */}
+                                {ord.items && ord.items[0] && (
+                                  (() => {
+                                    const attrs = ord.items[0].attributes || ord.items[0].variant?.attributes || {};
+                                    const attrEntries = Object.entries(attrs).filter(([, v]) => v);
+                                    return attrEntries.length > 0 ? (
+                                      <span className="variant-preview-tag">
+                                        {attrEntries[0][0]}: {attrEntries[0][1]}
+                                        {attrEntries.length > 1 ? ` +${attrEntries.length - 1}` : ""}
+                                      </span>
+                                    ) : null;
+                                  })()
+                                )}
+                              </div>
                             </div>
-                            <div className="items-summary-text">
-                              <span className="item-count-badge">
-                                {itemCount} {itemCount === 1 ? "item" : "items"}
-                              </span>
-                              {/* Show first item's variant attributes as preview */}
-                              {ord.items && ord.items[0] && (
-                                (() => {
-                                  const attrs = ord.items[0].attributes || ord.items[0].variant?.attributes || {};
-                                  const attrEntries = Object.entries(attrs).filter(([, v]) => v);
-                                  return attrEntries.length > 0 ? (
-                                    <span className="variant-preview-tag">
-                                      {attrEntries[0][0]}: {attrEntries[0][1]}
-                                      {attrEntries.length > 1 ? ` +${attrEntries.length - 1}` : ""}
-                                    </span>
-                                  ) : null;
-                                })()
+                          </td>
+                        )}
+
+                        {visibleColumns.total && (
+                          <td>
+                            <strong style={{ color: "#111827" }}>
+                              ${parseFloat(ord.total_amount).toFixed(2)}
+                            </strong>
+                          </td>
+                        )}
+
+                        {visibleColumns.status && (
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                              {renderStatusPill(ord.status)}
+                              {(can("orders", "process") || can("orders", "cancel")) && (
+                                <select
+                                  className="status-select-inline"
+                                  value={ord.status}
+                                  onChange={(e) => handleStatusChange(ord.id, e.target.value)}
+                                >
+                                  <option value="pending">Pending</option>
+                                  <option value="paid">Paid</option>
+                                  <option value="shipped">Shipped</option>
+                                  <option value="completed">Completed</option>
+                                  <option value="cancelled">Cancelled</option>
+                                  <option value="failed">Failed</option>
+                                </select>
                               )}
                             </div>
-                          </div>
-                        </td>
-                      )}
+                          </td>
+                        )}
 
-                      {visibleColumns.total && (
-                        <td>
-                          <strong style={{ color: "#111827" }}>
-                            ${parseFloat(ord.total_amount).toFixed(2)}
-                          </strong>
-                        </td>
-                      )}
-
-                      {visibleColumns.status && (
-                        <td>
-                          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                            {renderStatusPill(ord.status)}
-                            {(can("orders", "process") || can("orders", "cancel")) && (
-                              <select
-                                className="status-select-inline"
-                                value={ord.status}
-                                onChange={(e) => handleStatusChange(ord.id, e.target.value)}
-                              >
-                                <option value="pending">Pending</option>
-                                <option value="paid">Paid</option>
-                                <option value="shipped">Shipped</option>
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
-                                <option value="failed">Failed</option>
-                              </select>
-                            )}
-                          </div>
-                        </td>
-                      )}
-
-                      {visibleColumns.actions && (
-                        <td>
-                          <div className="action-buttons">
-                            <button
-                              className="action-btn view"
-                              title="View Order Details"
-                              onClick={() => { setSelectedOrder(ord); setIsViewModalOpen(true); }}
-                            >
-                              <FaEye />
-                            </button>
-                            {(can("orders", "delete") || can("orders", "cancel")) && (
+                        {visibleColumns.actions && (
+                          <td>
+                            <div className="action-buttons">
                               <button
-                                className="action-btn delete"
-                                title="Delete Order"
-                                onClick={() => handleDeleteOrder(ord.id)}
+                                className="action-btn view"
+                                title="View Order Details"
+                                onClick={() => { setSelectedOrder(ord); setIsViewModalOpen(true); }}
                               >
-                                <FaTrash />
+                                <FaEye />
                               </button>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                              {(can("orders", "delete") || can("orders", "cancel")) && (
+                                <button
+                                  className="action-btn delete"
+                                  title="Delete Order"
+                                  onClick={() => handleDeleteOrder(ord.id)}
+                                >
+                                  <FaTrash />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
       )}
 
       {/* ============ CUSTOMER DETAIL MODAL ============ */}
@@ -1112,6 +1112,7 @@ function OrderPage() {
               </div>
               {createItems.map((item, idx) => (
                 <div
+                  className="form_order_items"
                   key={idx}
                   style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px", background: "#f9fafb", padding: "8px", borderRadius: "8px" }}
                 >

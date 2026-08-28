@@ -161,7 +161,7 @@
 }
 
 [data-theme="dark"] .custom-modal-content .modal-footer {
-  background: #090d16 !important;
+  background: #1e293b00 !important;
   border-top: 1px solid #1e293b !important;
   padding: 1rem 0 0 0;
 }
