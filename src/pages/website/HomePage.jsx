@@ -977,12 +977,11 @@ function HomePage() {
             </ul>
           </div>
           <div className="footer-col">
-            <h4>Payment Methods</h4>
+            <h4>Payment Method</h4>
             <div className="payment-badges">
-              <span className="pay-badge">ABA KHQR</span>
-              <span className="pay-badge">VISA</span>
-              <span className="pay-badge">MasterCard</span>
-              <span className="pay-badge">Cash on Delivery</span>
+              <span className="pay-badge" style={{ background: "#00294B", color: "#fff", fontWeight: "bold" }}>ABA' QR</span>
+              <span className="pay-badge" style={{ background: "#ED1C24", color: "#fff", fontWeight: "bold" }}>KHQR</span>
+              <span className="pay-badge">Bakong</span>
             </div>
           </div>
         </div>

@@ -280,10 +280,14 @@ function ChatBot() {
 
   useEffect(() => {
     fetchUserTickets();
-    // Live polling every 10 seconds so user receives admin replies in real time
-    const interval = setInterval(fetchUserTickets, 10000);
+    // Live polling when chatbot is open or at relaxed interval when document is visible
+    const interval = setInterval(() => {
+      if (!document.hidden && (isOpen || isLoggedIn)) {
+        fetchUserTickets();
+      }
+    }, 60000); // 60s to prevent network spam
     return () => clearInterval(interval);
-  }, [isLoggedIn, activeTab]);
+  }, [isLoggedIn, activeTab, isOpen]);
 
   // Listen to support-replies-read event across components
   useEffect(() => {

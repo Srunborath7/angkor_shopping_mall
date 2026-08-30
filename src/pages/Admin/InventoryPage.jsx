@@ -53,8 +53,21 @@ function InventoryPage() {
                 categoriesApi()
             ]);
 
-            const prodList = prodRes.data?.products || prodRes.data || [];
-            setProducts(prodList);
+            const rawProducts = prodRes.data?.products || prodRes.data?.data || prodRes.data || (Array.isArray(prodRes) ? prodRes : []);
+            const formattedProducts = (Array.isArray(rawProducts) ? rawProducts : []).map(p => {
+                const primaryImg = p.image_url 
+                    || p.images?.find(img => img.is_primary)?.image_url 
+                    || p.images?.[0]?.image_url 
+                    || p.image 
+                    || "";
+                return {
+                    ...p,
+                    image_url: primaryImg,
+                    variants: p.variants || []
+                };
+            });
+
+            setProducts(formattedProducts);
             setCategories(catRes.data || []);
         } catch (error) {
             Swal.fire("Error", error.message || "Failed to load catalog inventory", "error");
@@ -81,7 +94,29 @@ function InventoryPage() {
             try {
                 setRowLoading(prev => ({ ...prev, [productId]: true }));
                 const res = await getProductByIdApi(productId);
-                const detailedProduct = res.data;
+                const rawDetailed = res.data?.product || res.data?.data || res.data || {};
+                const parentImg = rawDetailed.image_url 
+                    || rawDetailed.images?.find(img => img.is_primary)?.image_url 
+                    || rawDetailed.images?.[0]?.image_url 
+                    || rawDetailed.image 
+                    || "";
+
+                const detailedProduct = {
+                    ...rawDetailed,
+                    image_url: parentImg,
+                    variants: (rawDetailed.variants || []).map(v => {
+                        const variantSpecificImg = (rawDetailed.images || []).find(img => img.product_variant_id === v.id)?.image_url;
+                        const vImg = v.image_url 
+                            || variantSpecificImg 
+                            || (Array.isArray(v.images) && v.images.length > 0 ? v.images[0].image_url : "") 
+                            || v.image 
+                            || parentImg;
+                        return {
+                            ...v,
+                            image_url: vImg
+                        };
+                    })
+                };
 
                 setDetailedProducts(prev => ({
                     ...prev,
@@ -394,16 +429,26 @@ function InventoryPage() {
                                                 <td>
                                                     <div className="inventory-img-box">
                                                         {p.image_url ? (
-                                                            <img src={p.image_url} alt={p.name} />
-                                                        ) : (
-                                                            <FaBox className="fallback-box" />
-                                                        )}
+                                                            <img
+                                                                src={p.image_url}
+                                                                alt={p.name}
+                                                                onError={(e) => {
+                                                                    e.currentTarget.style.display = "none";
+                                                                    if (e.currentTarget.nextElementSibling) {
+                                                                        e.currentTarget.nextElementSibling.style.display = "flex";
+                                                                    }
+                                                                }}
+                                                            />
+                                                        ) : null}
+                                                        <div className="fallback-box" style={{ display: p.image_url ? "none" : "flex" }}>
+                                                            <FaBox />
+                                                        </div>
                                                     </div>
                                                 </td>
                                                 <td>
                                                     <div className="inventory-info-cell">
                                                         <strong>{p.name}</strong>
-                                                        <small>Brand: {p.brand.name}</small>
+                                                        <small>Brand: {p.brand?.name || (typeof p.brand === 'string' ? p.brand : "—")}</small>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -489,11 +534,12 @@ function InventoryPage() {
                                                                 <table className="variants-table">
                                                                     <thead>
                                                                         <tr>
+                                                                            <th style={{ width: "55px" }}>Image</th>
                                                                             <th>Variant SKU</th>
                                                                             <th>Variant Attributes</th>
                                                                             <th>Stock Status</th>
-                                                                            <th style={{ textAlign: 'center' }}>Stock Qty</th>
-                                                                            <th style={{ width: '220px' }}>Quick Adjustment</th>
+                                                                            <th style={{ textAlign: "center" }}>Stock Qty</th>
+                                                                            <th style={{ width: "220px" }}>Quick Adjustment</th>
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody>
@@ -517,6 +563,25 @@ function InventoryPage() {
 
                                                                             return (
                                                                                 <tr key={v.id}>
+                                                                                    <td>
+                                                                                        <div className="inventory-variant-img-box">
+                                                                                            {v.image_url ? (
+                                                                                                <img
+                                                                                                    src={v.image_url}
+                                                                                                    alt={v.sku}
+                                                                                                    onError={(e) => {
+                                                                                                        e.currentTarget.style.display = "none";
+                                                                                                        if (e.currentTarget.nextElementSibling) {
+                                                                                                            e.currentTarget.nextElementSibling.style.display = "flex";
+                                                                                                        }
+                                                                                                    }}
+                                                                                                />
+                                                                                            ) : null}
+                                                                                            <div className="fallback-box" style={{ display: v.image_url ? "none" : "flex" }}>
+                                                                                                <FaBox />
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </td>
                                                                                     <td><strong>{v.sku}</strong></td>
                                                                                     <td>
                                                                                         <span className="variant-attr-badge">

@@ -76,7 +76,11 @@ function Navbar({ setOpen, user, logout }) {
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 30000);
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        fetchNotifications();
+      }
+    }, 60000);
     return () => clearInterval(interval);
   }, []);
 

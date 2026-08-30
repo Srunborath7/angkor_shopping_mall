@@ -12,7 +12,8 @@ import {
     FaPlusCircle,
     FaTimes,
     FaCog,
-    FaInfoCircle
+    FaInfoCircle,
+    FaUser
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -30,6 +31,7 @@ import {
     deleteProductImageApi
 } from "../../services/productsService";
 import { categoriesApi } from "../../services/categoriesService";
+import { StaffApi } from "../../services/customerService";
 import Modal from "../../components/Modal";
 import { TableSkeleton, KpiCardSkeleton } from "../../components/loading/LoadingSkeleton";
 import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
@@ -40,6 +42,7 @@ function ProductPage() {
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [brands, setBrands] = useState([]);
+    const [staffUsers, setStaffUsers] = useState([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -54,6 +57,7 @@ function ProductPage() {
         price: true,
         stock: true,
         status: true,
+        createdBy: true,
         actions: true
     });
 
@@ -106,10 +110,11 @@ function ProductPage() {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [prodRes, catRes, brandRes] = await Promise.all([
+            const [prodRes, catRes, brandRes, staffRes] = await Promise.all([
                 productsApi(),
                 categoriesApi(),
-                brandsApi().catch(() => ({ data: [] }))
+                brandsApi().catch(() => ({ data: [] })),
+                StaffApi().catch(() => ({ data: [] }))
             ]);
 
             const rawProducts = prodRes?.data?.products || prodRes?.data?.data || prodRes?.data || (Array.isArray(prodRes) ? prodRes : []);
@@ -130,11 +135,18 @@ function ProductPage() {
             setProducts(formattedProducts);
             setCategories(catRes?.data?.data || catRes?.data || (Array.isArray(catRes) ? catRes : []));
             setBrands(brandRes?.data?.brands || brandRes?.data?.data || brandRes?.data || (Array.isArray(brandRes) ? brandRes : []));
+            setStaffUsers(staffRes?.data?.data || staffRes?.data || (Array.isArray(staffRes) ? staffRes : []));
         } catch (error) {
             Swal.fire("Error", error.message || "Failed to load catalog data", "error");
         } finally {
             setLoading(false);
         }
+    };
+
+    const getCreatorName = (userId) => {
+        if (!userId) return "SuperAdmin";
+        const found = staffUsers.find(u => u.id === userId || u._id === userId);
+        return found ? (found.name || found.email || "SuperAdmin") : "SuperAdmin";
     };
 
     useEffect(() => {
@@ -439,8 +451,12 @@ function ProductPage() {
         const attrs = v.attributes || {};
         setVAttributes(Object.keys(attrs).map(k => ({ key: k, value: attrs[k] })));
 
-        // Find variant image from variant's images array or main product image
-        const variantImg = v.images && v.images.length > 0 ? v.images[0].image_url : "";
+        // Find variant image from variant's images array or linked product gallery images
+        const variantImg = v.image_url 
+            || (galleryImages || []).find(img => img.product_variant_id === v.id)?.image_url
+            || (selectedProduct?.images || []).find(img => img.product_variant_id === v.id)?.image_url
+            || (Array.isArray(v.images) && v.images.length > 0 ? v.images[0].image_url : "")
+            || "";
         setVImageFile(null);
         setVImagePreview(variantImg);
         setIsVariantFormOpen(true);
@@ -656,6 +672,7 @@ function ProductPage() {
         price: "Price",
         stock: "Stock",
         status: "Status",
+        createdBy: "Created By",
         actions: "Action"
     };
 
@@ -763,7 +780,7 @@ function ProductPage() {
                 </div>
 
                 {loading && products.length === 0 ? (
-                    <TableSkeleton rows={6} cols={9} hasImage={true} />
+                    <TableSkeleton rows={6} cols={10} hasImage={true} />
                 ) : (
                     <div className="product-table-wrapper">
                         <table className="desktop-table">
@@ -777,6 +794,7 @@ function ProductPage() {
                                     {visibleColumns.price && <th>Price</th>}
                                     {visibleColumns.stock && <th>Stock</th>}
                                     {visibleColumns.status && <th>Status</th>}
+                                    {visibleColumns.createdBy && <th>Created By</th>}
                                     {visibleColumns.actions && <th>Action</th>}
                                 </tr>
                             </thead>
@@ -785,7 +803,7 @@ function ProductPage() {
                                     <tr key={item.id}>
                                         {visibleColumns.hash && <td>{index + 1}</td>}
                                         {visibleColumns.image && (
-                                            <td>
+                                             <td>
                                                 <div className="product-table-image">
                                                     {item.image_url ? (
                                                         <img src={item.image_url} alt={item.name} />
@@ -827,6 +845,14 @@ function ProductPage() {
                                             <td>
                                                 <span className={`status-badge ${item.is_active ? "active" : "inactive"}`}>
                                                     {item.is_active ? "Active" : "Inactive"}
+                                                </span>
+                                            </td>
+                                        )}
+                                        {visibleColumns.createdBy && (
+                                            <td>
+                                                <span className="creator-badge">
+                                                    <FaUser className="creator-icon" />
+                                                    <span>{getCreatorName(item.created_by) || item.creator?.name || "SuperAdmin"}</span>
                                                 </span>
                                             </td>
                                         )}
@@ -1185,7 +1211,11 @@ function ProductPage() {
                                         <div className="variants-grid-list">
                                             {variants.map(v => {
                                                 const attrKeys = Object.keys(v.attributes || {});
-                                                const variantImg = v.images && v.images.length > 0 ? v.images[0].image_url : "";
+                                                const variantImg = v.image_url 
+                                                    || (galleryImages || []).find(img => img.product_variant_id === v.id)?.image_url
+                                                    || (selectedProduct?.images || []).find(img => img.product_variant_id === v.id)?.image_url
+                                                    || (Array.isArray(v.images) && v.images.length > 0 ? v.images[0].image_url : "")
+                                                    || "";
 
                                                 return (
                                                     <div className="variant-item-card" key={v.id}>
@@ -1435,6 +1465,9 @@ function ProductPage() {
                                         <span className="brand-badge">{detailProduct.brand?.name || "Generic"}</span>
                                         <span className={`status-badge ${detailProduct.is_active ? "active" : "inactive"}`}>
                                             {detailProduct.is_active ? "Active" : "Inactive"}
+                                        </span>
+                                        <span className="creator-badge">
+                                            <FaUser className="creator-icon" /> Created by: {getCreatorName(detailProduct.created_by) || detailProduct.creator?.name || "SuperAdmin"}
                                         </span>
                                     </div>
                                 </div>

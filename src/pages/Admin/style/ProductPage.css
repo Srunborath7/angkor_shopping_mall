@@ -174,6 +174,36 @@ td {
     color: #721c24;
 }
 
+.creator-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #f1f5f9;
+    color: #475569;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+}
+
+.creator-badge .creator-icon {
+    font-size: 11px;
+    color: #64748b;
+}
+
+[data-theme="dark"] .creator-badge,
+body.dark-theme .creator-badge {
+    background: #1e293b;
+    color: #cbd5e1;
+    border-color: #334155;
+}
+
+[data-theme="dark"] .creator-badge .creator-icon,
+body.dark-theme .creator-badge .creator-icon {
+    color: #94a3b8;
+}
+
 .edit-btn,
 .delete-btn {
     width: 35px;

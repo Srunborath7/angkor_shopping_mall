@@ -134,6 +134,16 @@ function OrderPage() {
     }
   }, [isLoggedIn]);
 
+  useEffect(() => {
+    const handler = () => {
+      if (isLoggedIn) {
+        loadOrders();
+      }
+    };
+    window.addEventListener("orders:refresh", handler);
+    return () => window.removeEventListener("orders:refresh", handler);
+  }, [isLoggedIn, loadOrders]);
+
   const toggleOrderDetails = (id) => {
     if (expandedOrderId === id) {
       setExpandedOrderId(null);
@@ -145,8 +155,11 @@ function OrderPage() {
   const getStatusClass = (status) => {
     if (status === "Delivered") return "status-delivered";
     if (status === "Shipped") return "status-shipped";
+    if (status === "Paid") return "status-paid";
     if (status === "Processing") return "status-processing";
-    return "status-pending"; // Default
+    if (status === "Completed") return "status-completed";
+    if (status === "Cancelled" || status === "Failed") return "status-cancelled";
+    return "status-pending";
   };
 
   // If not logged in, render unauthenticated CTA screen

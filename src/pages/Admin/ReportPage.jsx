@@ -338,27 +338,46 @@ function ReportPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [ordersRes, productsRes, purchasesRes, customersRes] = await Promise.allSettled([
-        getAdminOrdersApi(),
-        productsApi(),
-        purchaseOrdersApi(),
-        CustomersApi()
-      ]);
+      // 1. Fetch Orders (primary data for KPIs)
+      try {
+        const ordersRes = await getAdminOrdersApi();
+        setOrders(toList(ordersRes, "orders"));
+      } catch (err) {
+        console.warn("Orders fetch warning:", err?.message || err);
+      }
 
-      if (ordersRes.status === "fulfilled") {
-        setOrders(toList(ordersRes.value, "orders"));
+      // Small 60ms pause to let database handle next query without shared memory lock exhaustion
+      await new Promise((r) => setTimeout(r, 60));
+
+      // 2. Fetch Products
+      try {
+        const productsRes = await productsApi();
+        setProducts(toList(productsRes, "products"));
+      } catch (err) {
+        console.warn("Products fetch warning:", err?.message || err);
       }
-      if (productsRes.status === "fulfilled") {
-        setProducts(toList(productsRes.value, "products"));
+
+      await new Promise((r) => setTimeout(r, 60));
+
+      // 3. Fetch Purchases
+      try {
+        const purchasesRes = await purchaseOrdersApi();
+        setPurchases(toList(purchasesRes, "purchaseOrders", "purchases"));
+      } catch (err) {
+        console.warn("Purchases fetch warning:", err?.message || err);
       }
-      if (purchasesRes.status === "fulfilled") {
-        setPurchases(toList(purchasesRes.value, "purchaseOrders", "purchases"));
-      }
-      if (customersRes.status === "fulfilled") {
-        setCustomers(toList(customersRes.value, "customers", "users"));
+
+      await new Promise((r) => setTimeout(r, 60));
+
+      // 4. Fetch Customers
+      try {
+        const customersRes = await CustomersApi();
+        setCustomers(toList(customersRes, "customers", "users"));
+      } catch (err) {
+        console.warn("Customers fetch warning:", err?.message || err);
       }
     } catch (error) {
-      Swal.fire("Error", error.message || "Failed to load report data", "error");
+      console.warn("Report data loading error:", error);
     } finally {
       setLoading(false);
     }

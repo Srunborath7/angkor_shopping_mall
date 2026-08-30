@@ -194,7 +194,9 @@ function normalizeProduct(raw) {
     stock_quantity: Number(v.stock_quantity ?? v.stockQuantity ?? raw.stock_quantity ?? 0),
     attributes: v.attributes || {},
     sku: v.sku || "",
-    image_url: v.image_url || (Array.isArray(v.images) ? v.images[0]?.image_url : null)
+    image_url: v.image_url 
+      || (Array.isArray(raw.images) ? raw.images.find(img => img.product_variant_id === v.id)?.image_url : null)
+      || (Array.isArray(v.images) ? v.images[0]?.image_url : null)
   }));
 
   // Extract Customer Reviews (matching product_reviews table schema: product_id, user_id, rating, comment, images)

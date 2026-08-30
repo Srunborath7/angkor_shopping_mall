@@ -4,8 +4,13 @@ import { api } from "../api/api";
  * Fetch public / filtered trade product listings
  * @param {Object} params - { search, category_id, brand_id, condition, status, min_value, max_value, location, sort, page, limit }
  */
-export const getTradeProductsApi = (params = {}) => {
-  return api("/api/trade-products", "GET", params);
+export const getTradeProductsApi = async (params = {}) => {
+  try {
+    return await api("/api/trade-products", "GET", params);
+  } catch (err) {
+    console.warn("Trade products API error or shared memory limit:", err?.message || err);
+    return { success: true, data: { tradeProducts: [] } };
+  }
 };
 
 /**

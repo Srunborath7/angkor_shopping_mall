@@ -80,3 +80,5 @@ export const verifyResetOtpTelegramApi = (phone, otp) => {
 export const resetPasswordTelegramApi = (resetToken, newPassword) => {
     return api("/api/auth/telegram/password/reset", "post", { resetToken, newPassword });
 };
+
+

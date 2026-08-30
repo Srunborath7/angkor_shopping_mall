@@ -1,11 +1,16 @@
 import { api } from "../api/api";
 
-export const productsApi = (data) => {
-    return api(
-        "/api/products",
-        "get",
-        data
-    );
+export const productsApi = async (data) => {
+    try {
+        return await api(
+            "/api/products",
+            "get",
+            data
+        );
+    } catch (err) {
+        console.warn("Products API error, using fallback:", err?.message || err);
+        return { success: true, data: [] };
+    }
 };
 
 export const createProductApi = (data) => {

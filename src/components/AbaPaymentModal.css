@@ -1,11 +1,11 @@
 /* ==========================================================================
-   ABA PAYWAY PAYMENT MODAL STYLES (DEVELOPER SUITE DESIGN SYSTEM)
+   OFFICIAL ABA BANK KHQR STANDEE MODAL STYLING
    ========================================================================== */
 
 .aba-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(4, 15, 29, 0.78);
+  background: rgba(8, 19, 34, 0.78);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 99999;
@@ -21,23 +21,23 @@
   to { opacity: 1; }
 }
 
-.aba-modal-card {
+.aba-standee-container {
   width: 100%;
-  max-width: 440px;
-  background: #ffffff;
-  border-radius: 24px;
-  box-shadow: 0 25px 60px -15px rgba(0, 41, 75, 0.35), 0 0 0 1px rgba(0, 163, 224, 0.15);
+  max-width: 420px;
+  background: #f8fafc;
+  border-radius: 28px;
+  box-shadow: 0 25px 60px -12px rgba(0, 41, 75, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.1);
   overflow: hidden;
   position: relative;
   display: flex;
   flex-direction: column;
-  animation: abaCardPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: abaCardPop 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes abaCardPop {
   from {
     opacity: 0;
-    transform: scale(0.92) translateY(12px);
+    transform: scale(0.92) translateY(16px);
   }
   to {
     opacity: 1;
@@ -45,59 +45,14 @@
   }
 }
 
-/* Header */
-.aba-header {
-  background: linear-gradient(135deg, #00294B 0%, #004B7D 60%, #0077B6 100%);
-  padding: 20px 22px 18px;
-  color: #ffffff;
-  position: relative;
-}
-
-.aba-header::after {
-  content: "";
+/* Close Button */
+.aba-standee-close-btn {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #00A3E0, #FFB703, #00A3E0);
-}
-
-.aba-header-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.aba-branding-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.aba-logo-pill {
-  background: #00A3E0;
-  color: #ffffff;
-  font-weight: 900;
-  font-size: 13px;
-  letter-spacing: 0.5px;
-  padding: 3px 8px;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 163, 224, 0.4);
-}
-
-.aba-payway-text {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  color: #E2F4FD;
-}
-
-.aba-close-btn {
-  background: rgba(255, 255, 255, 0.15);
+  top: 14px;
+  right: 14px;
+  background: rgba(0, 41, 75, 0.08);
   border: none;
-  color: #ffffff;
+  color: #00294B;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -105,104 +60,142 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  z-index: 10;
   transition: all 0.2s ease;
 }
 
-.aba-close-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+.aba-standee-close-btn:hover {
+  background: #ED1C24;
+  color: #ffffff;
   transform: rotate(90deg);
 }
 
-.aba-merchant-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.aba-merchant-name {
-  font-size: 17px;
-  font-weight: 700;
-  margin: 0;
-  color: #ffffff;
-}
-
-.aba-order-tag {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.8);
-  font-weight: 500;
-}
-
-/* Amount Bar & Currency Switcher */
-.aba-amount-section {
-  background: #f8fafc;
-  padding: 14px 22px;
-  border-bottom: 1px solid #e2e8f0;
-  text-align: center;
-}
-
-.aba-currency-pills {
-  display: inline-flex;
-  background: #e2e8f0;
-  padding: 3px;
-  border-radius: 999px;
-  margin-bottom: 8px;
-}
-
-.aba-curr-btn {
-  border: none;
-  background: transparent;
-  padding: 4px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: 999px;
-  cursor: pointer;
-  color: #475569;
-  transition: all 0.2s ease;
-}
-
-.aba-curr-btn.active {
-  background: #00294B;
-  color: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 41, 75, 0.25);
-}
-
-.aba-amount-display {
-  font-size: 28px;
-  font-weight: 800;
-  color: #00294B;
-  letter-spacing: -0.5px;
-  line-height: 1.2;
-}
-
-.aba-amount-sub {
-  font-size: 11px;
-  color: #64748b;
-  margin-top: 4px;
-  display: block;
-}
-
-/* QR Body */
-.aba-body {
-  padding: 20px 22px 16px;
+/* Main Standee Body */
+.aba-standee-body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  padding: 24px 22px 0;
 }
 
-.aba-qr-frame {
-  position: relative;
+/* Top Title: ABA' QR */
+.aba-standee-top-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+}
+
+.aba-text-main {
+  font-size: 32px;
+  font-weight: 900;
+  color: #00294B;
+  letter-spacing: 1.5px;
+}
+
+.aba-apostrophe {
+  font-size: 32px;
+  font-weight: 900;
+  color: #ED1C24;
+  margin-right: 8px;
+}
+
+.aba-text-qr {
+  font-size: 32px;
+  font-weight: 900;
+  color: #00294B;
+  letter-spacing: 2px;
+}
+
+/* Center Standee White Card */
+.aba-white-card {
+  width: 100%;
+  max-width: 310px;
   background: #ffffff;
-  padding: 14px;
-  border-radius: 18px;
-  border: 2px solid #00A3E0;
-  box-shadow: 0 10px 30px rgba(0, 163, 224, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 41, 75, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+/* Red KHQR Top Banner with Cut Angle */
+.aba-khqr-banner {
+  width: 100%;
+  background: #ED1C24;
+  height: 48px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 220px;
-  min-height: 220px;
+  position: relative;
+  /* Distinctive angled cut tab at bottom right */
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
 }
 
+.aba-khqr-logo-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.khqr-logo-text {
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  text-transform: uppercase;
+}
+
+/* Account / Merchant Name */
+.aba-account-name {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 14px;
+  text-align: center;
+  padding: 0 16px;
+  line-height: 1.2;
+}
+
+/* Dashed Separator */
+.aba-card-dashed-line {
+  width: calc(100% - 32px);
+  border-top: 1.5px dashed #cbd5e1;
+  margin: 12px 0 14px;
+}
+
+/* QR Code Area */
+.aba-qr-code-area {
+  padding: 0 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 215px;
+}
+
+.aba-qr-canvas-wrapper {
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.aba-qr-canvas-wrapper canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+/* QR Loading State */
 .aba-qr-loading {
   display: flex;
   flex-direction: column;
@@ -211,13 +204,14 @@
   color: #64748b;
   font-size: 13px;
   font-weight: 500;
+  padding: 40px 0;
 }
 
 .aba-qr-spinner {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border: 3px solid #e2e8f0;
-  border-top-color: #00A3E0;
+  border-top-color: #ED1C24;
   border-radius: 50%;
   animation: abaSpin 0.8s linear infinite;
 }
@@ -226,75 +220,9 @@
   to { transform: rotate(360deg); }
 }
 
-/* Timer Bar */
-.aba-timer-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  background: #f1f5f9;
-  border-radius: 10px;
-  padding: 8px 12px;
-  margin-top: 14px;
-  font-size: 12px;
-  color: #334155;
-  font-weight: 600;
-}
 
-.aba-pulse-dot {
-  width: 8px;
-  height: 8px;
-  background: #00A3E0;
-  border-radius: 50%;
-  display: inline-block;
-  margin-right: 6px;
-  animation: abaPulse 1.5s infinite;
-}
-
-@keyframes abaPulse {
-  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 163, 224, 0.7); }
-  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(0, 163, 224, 0); }
-  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 163, 224, 0); }
-}
-
-/* Actions Row */
-.aba-actions-row {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-  margin-top: 12px;
-}
-
-.aba-btn-action {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  padding: 9px 12px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #334155;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.aba-btn-action:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #00A3E0;
-  color: #00294B;
-}
-
-.aba-btn-action:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Open in ABA Mobile Button */
-.aba-btn-primary {
+/* Mobile Direct Open Button */
+.aba-mobile-direct-btn {
   width: 100%;
   display: flex;
   align-items: center;
@@ -302,35 +230,187 @@
   gap: 8px;
   background: linear-gradient(135deg, #00294B 0%, #004B7D 100%);
   color: #ffffff;
-  border: none;
+  border: 1px solid rgba(0, 163, 224, 0.4);
   padding: 12px 16px;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 700;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 800;
   cursor: pointer;
-  margin-top: 10px;
-  transition: all 0.2s ease;
+  margin-bottom: 12px;
   box-shadow: 0 4px 14px rgba(0, 41, 75, 0.25);
-  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  letter-spacing: 0.3px;
 }
 
-.aba-btn-primary:hover {
+.aba-mobile-direct-btn:hover {
   background: linear-gradient(135deg, #001f38 0%, #003b64 100%);
   transform: translateY(-1px);
   box-shadow: 0 6px 18px rgba(0, 41, 75, 0.35);
 }
 
-/* Simulator Button */
-.aba-dev-simulate-btn {
+.aba-mobile-direct-btn:active {
+  transform: scale(0.98);
+}
+
+/* Interactive Currency Selector & Total Bar */
+.aba-order-interactive-bar {
   width: 100%;
-  margin-top: 10px;
-  background: #eff6ff;
-  border: 1px dashed #60a5fa;
-  color: #1e40af;
-  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.aba-curr-pill-selector {
+  display: flex;
+  background: #f1f5f9;
+  padding: 3px;
+  border-radius: 10px;
+  gap: 2px;
+}
+
+.aba-curr-pill {
+  border: none;
+  background: transparent;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.aba-curr-pill.active {
+  background: #00294B;
+  color: #ffffff;
+  box-shadow: 0 2px 4px rgba(0, 41, 75, 0.2);
+}
+
+.aba-payable-amount {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.aba-payable-label {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.aba-payable-val {
+  font-size: 17px;
+  font-weight: 900;
+  color: #00294B;
+  letter-spacing: -0.3px;
+}
+
+/* Live Timer & Scan Status */
+.aba-scan-status-strip {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #eef2f6;
+  border-radius: 10px;
+  padding: 7px 12px;
+  margin-bottom: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.aba-status-live {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aba-live-pulse {
+  width: 8px;
+  height: 8px;
+  background: #ED1C24;
+  border-radius: 50%;
+  display: inline-block;
+  animation: abaLivePulse 1.5s infinite;
+}
+
+@keyframes abaLivePulse {
+  0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(237, 28, 36, 0.7); }
+  70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(237, 28, 36, 0); }
+  100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(237, 28, 36, 0); }
+}
+
+.aba-status-timer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #00294B;
+  font-weight: 700;
+}
+
+/* Action Buttons Grid */
+.aba-actions-grid {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.aba-mini-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  padding: 8px 10px;
   border-radius: 10px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
+  color: #00294B;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aba-mini-action-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #00294B;
+}
+
+.aba-mini-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.aba-mini-action-btn.aba-btn-accent {
+  background: #00294B;
+  color: #ffffff;
+  border-color: #00294B;
+}
+
+.aba-mini-action-btn.aba-btn-accent:hover {
+  background: #001e38;
+}
+
+/* Simulation Fast Button */
+.aba-simulation-button {
+  width: 100%;
+  margin-bottom: 18px;
+  background: #eff6ff;
+  border: 1px dashed #93c5fd;
+  color: #1e40af;
+  padding: 7px 12px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -339,60 +419,81 @@
   transition: all 0.2s ease;
 }
 
-.aba-dev-simulate-btn:hover:not(:disabled) {
+.aba-simulation-button:hover:not(:disabled) {
   background: #dbeafe;
   border-color: #3b82f6;
 }
 
-.aba-dev-simulate-btn:disabled {
+.aba-simulation-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Banks Footer */
-.aba-banks-footer {
-  background: #f8fafc;
-  padding: 12px 18px 16px;
-  border-top: 1px solid #e2e8f0;
-  text-align: center;
-}
-
-.aba-banks-title {
-  font-size: 11px;
-  color: #64748b;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
-}
-
-.aba-banks-icons {
+/* Official Bottom Footer Strip */
+.aba-standee-footer {
+  width: calc(100% + 44px);
+  margin: 0 -22px;
+  background: #00294B;
+  padding: 14px 20px;
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
+  gap: 12px;
+}
+
+.aba-footer-left {
+  display: flex;
+  align-items: baseline;
+}
+
+.aba-bank-name {
+  font-size: 15px;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.aba-bank-apostrophe {
+  font-size: 15px;
+  font-weight: 900;
+  color: #ED1C24;
+  margin-right: 4px;
+}
+
+.aba-bank-suffix {
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.8px;
+}
+
+.aba-footer-divider {
+  width: 1.5px;
+  height: 16px;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.aba-footer-right {
+  display: flex;
+  align-items: center;
   gap: 6px;
 }
 
-.aba-bank-tag {
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: 6px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  color: #475569;
+.aba-flag-icon {
+  flex-shrink: 0;
 }
 
-.aba-bank-tag.aba-highlight {
-  background: #00294B;
+.aba-group-text {
+  font-size: 9px;
+  font-weight: 700;
   color: #ffffff;
-  border-color: #00294B;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 /* Success View */
 .aba-success-view {
-  padding: 32px 24px;
+  padding: 36px 24px;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -432,7 +533,7 @@
 
 .aba-receipt-card {
   width: 100%;
-  background: #f8fafc;
+  background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   padding: 14px 16px;
@@ -452,4 +553,83 @@
 
 .aba-receipt-row strong {
   color: #0f172a;
+}
+
+.aba-standee-primary-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #00294B;
+  color: #ffffff;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(0, 41, 75, 0.25);
+}
+
+.aba-standee-primary-btn:hover {
+  background: #001f38;
+  transform: translateY(-1px);
+}
+
+.aba-standee-secondary-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #e2e8f0;
+  color: #334155;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aba-standee-secondary-btn:hover {
+  background: #cbd5e1;
+}
+
+/* Expired View */
+.aba-expired-view {
+  padding: 36px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.aba-expired-icon-wrap {
+  width: 72px;
+  height: 72px;
+  background: #fee2e2;
+  color: #dc2626;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  animation: abaPopIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.aba-expired-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #00294B;
+  margin: 0 0 6px 0;
+}
+
+.aba-expired-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 20px 0;
 }

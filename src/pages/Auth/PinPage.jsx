@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+﻿import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,10 +14,8 @@ import {
   FaQuestionCircle,
   FaStore,
   FaUserShield,
-  FaFingerprint,
   FaBackspace,
-  FaCheck,
-  FaLightbulb
+  FaCheck
 } from "react-icons/fa";
 import { Sun, Moon, Laptop, Globe } from "lucide-react";
 import { verifyPinSuccess, clearAuth } from "../../store/authSlice";
@@ -54,25 +52,21 @@ function PinPage() {
   // Helper to retrieve saved PIN from admin settings or local profile
   const getExpectedPin = useCallback(() => {
     try {
-      // 1. Check user profile object
       if (user?.pin) return String(user.pin);
       if (user?.security_pin) return String(user.security_pin);
 
-      // 2. Check saved admin settings
       const savedSettings = localStorage.getItem("angkor_admin_settings_v1");
       if (savedSettings) {
         const parsed = JSON.parse(savedSettings);
         if (parsed.securityPin) return String(parsed.securityPin);
       }
 
-      // 3. Check staff pin key
       const staffPin = localStorage.getItem("angkor_staff_pin");
       if (staffPin) return String(staffPin);
 
-      // 4. Default master fallback pins
-      return "123456";
+      return null;
     } catch {
-      return "123456";
+      return null;
     }
   }, [user]);
 
@@ -126,12 +120,10 @@ function PinPage() {
 
       try {
         const expectedPin = getExpectedPin();
-        const validDefaultPins = ["1234", "123456", "0000", "8888", "9999", expectedPin];
 
         let isValid = false;
         let verifiedPayload = null;
 
-        // 1. If backend 2FA tempToken exists, verify directly with backend API
         if (auth?.tempToken) {
           try {
             const apiRes = await verify2FAApi(auth.tempToken, inputPin);
@@ -157,13 +149,12 @@ function PinPage() {
             }
           } catch (e) {
             console.warn("Backend 2FA verification response:", e);
-            if (validDefaultPins.includes(inputPin)) {
+            if (expectedPin && inputPin === expectedPin) {
               isValid = true;
             }
           }
         } else {
-          // If already logged in (e.g. terminal lock screen), check against default/saved PINs
-          isValid = validDefaultPins.includes(inputPin);
+          isValid = expectedPin ? inputPin === expectedPin : false;
         }
 
         if (isValid) {
@@ -219,8 +210,8 @@ function PinPage() {
               icon: "error",
               title: isKhmer ? "កូដ PIN មិនត្រឹមត្រូវ" : "Incorrect PIN",
               text: isKhmer
-                ? `នៅសល់ ${remaining} ដងទៀត។ (កូដសាកល្បង៖ 1234 ឬ 123456)`
-                : `Incorrect PIN code. ${remaining} attempts remaining. (Hint: default PIN is 1234)`,
+                ? `នៅសល់ ${remaining} ដងទៀត។`
+                : `Incorrect PIN code. ${remaining} attempts remaining.`,
               timer: 2000,
               showConfirmButton: false,
             });
@@ -261,14 +252,6 @@ function PinPage() {
   const handleClear = () => {
     triggerHaptic();
     setPin("");
-  };
-
-  // Quick Demo Autofill
-  const handleQuickFill = () => {
-    triggerHaptic();
-    const demoPin = "123456";
-    setPin(demoPin);
-    setTimeout(() => handleVerify(demoPin), 250);
   };
 
   // Physical Keyboard Listener
@@ -467,22 +450,6 @@ function PinPage() {
             </button>
           </div>
 
-          {/* Quick Demo Hint */}
-          <div className="pin-demo-hint">
-            <div className="pin-hint-text">
-              <FaLightbulb size={13} />
-              <span>{isKhmer ? "កូដ PIN លំនាំដើម៖ 123456" : "Default Master PIN: 123456"}</span>
-            </div>
-            <button
-              type="button"
-              className="pin-quick-fill-btn"
-              onClick={handleQuickFill}
-              title="Auto-fill 123456"
-            >
-              {isKhmer ? "បំពេញរហ័ស" : "Auto Fill"}
-            </button>
-          </div>
-
           {/* Numeric Keypad Grid */}
           <div className="pin-keypad">
             {[
@@ -508,16 +475,15 @@ function PinPage() {
               </button>
             ))}
 
-            {/* Bottom Row: Clear / Biometric / 0 / Backspace */}
+            {/* Bottom Row: Clear / 0 / Backspace */}
             <button
               type="button"
-              className="pin-key action-key bio-key"
-              onClick={handleQuickFill}
-              title={isKhmer ? "ស្កេនមេដៃ / ចូលរហ័ស" : "Biometric / Quick Fill"}
-              disabled={isVerifying || lockoutTime > 0}
+              className="pin-key action-key clear-key"
+              onClick={handleClear}
+              title={isKhmer ? "លុបទាំងអស់" : "Clear All"}
+              disabled={isVerifying || lockoutTime > 0 || pin.length === 0}
             >
-              <FaFingerprint size={22} />
-              <span className="pin-action-label">{isKhmer ? "រហ័ស" : "Quick"}</span>
+              <span className="pin-action-label">{isKhmer ? "លុប" : "Clear"}</span>
             </button>
 
             <button
@@ -593,14 +559,9 @@ function PinPage() {
               <div className="pin-modal-body">
                 <p>
                   {isKhmer
-                    ? "ប្រសិនបើអ្នកភ្លេចលេខកូដសម្ងាត់ សូមទាក់ទង Super Administrator ឬប្រើលេខកូដសាកល្បងខាងក្រោម៖"
-                    : "If you forgot or misplaced your staff Security PIN, you can use the system default master PINs or contact your Super Administrator to reset it."}
+                    ? "ប្រសិនបើអ្នកភ្លេចលេខកូដសម្ងាត់ សូមទាក់ទង Super Administrator ដើម្បីកំណត់លេខកូដថ្មី។"
+                    : "If you forgot your staff Security PIN, please contact your Super Administrator to reset it."}
                 </p>
-
-                <div className="pin-modal-code-box">
-                  <div>🔑 <strong>Default Master PINs:</strong> <code>1234</code> or <code>123456</code></div>
-                  <div style={{ marginTop: 6 }}>⚙️ <strong>Custom PIN:</strong> Can be configured under Admin Settings → Security.</div>
-                </div>
 
                 <p style={{ fontSize: "0.82rem", color: "#94a3b8" }}>
                   {isKhmer
@@ -613,12 +574,9 @@ function PinPage() {
                 <button
                   type="button"
                   className="pin-modal-btn btn-primary"
-                  onClick={() => {
-                    setShowForgotModal(false);
-                    handleQuickFill();
-                  }}
+                  onClick={() => setShowForgotModal(false)}
                 >
-                  {isKhmer ? "ប្រើកូដ 1234 ឥឡូវនេះ" : "Use PIN 1234 Now"}
+                  {isKhmer ? "យល់ព្រម" : "Understood"}
                 </button>
               </div>
             </motion.div>

@@ -155,7 +155,12 @@ function Header() {
 
   useEffect(() => {
     fetchUserReplies();
-    const interval = setInterval(fetchUserReplies, 10000);
+    const interval = setInterval(() => {
+      if (!document.hidden && isLoggedIn) {
+        fetchUserReplies();
+      }
+    }, 60000); // 60s instead of 10s to prevent network spam
+
     const handleRepliesRead = () => fetchUserReplies();
     window.addEventListener("support-replies-read", handleRepliesRead);
 

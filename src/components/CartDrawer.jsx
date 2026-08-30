@@ -713,6 +713,7 @@ function CartDrawer({ isOpen, onClose }) {
     } catch (e) {
       console.warn("Update local order after KHQR paid:", e);
     }
+    window.dispatchEvent(new CustomEvent("orders:refresh"));
     navigate("/orders");
   };
 
@@ -1125,39 +1126,73 @@ function CartDrawer({ isOpen, onClose }) {
                   <h4 className="payment-section-title">Select Payment Method</h4>
 
                   <div className="payment-options-grid">
-                    {/* ABA PayWay (ABA Mobile & KHQR) */}
+                    {/* ABA Bank KHQR (Official Single Payment Gateway) */}
                     <div
-                      className={`payment-option-card ${paymentMethod === "aba-qr" || paymentMethod === "aba-pay" ? "active" : ""}`}
+                      className="payment-option-card active"
+                      style={{
+                        border: "2px solid #00294B",
+                        background: "linear-gradient(135deg, rgba(0, 41, 75, 0.04) 0%, rgba(237, 28, 36, 0.04) 100%)",
+                        borderRadius: "16px",
+                        position: "relative",
+                        overflow: "hidden"
+                      }}
                       onClick={() => setPaymentMethod("aba-qr")}
                     >
-                      <QrCode className="payment-card-icon" style={{ color: "#00A3E0" }} />
-                      <div className="payment-card-text">
-                        <span className="method-title">ABA PayWay</span>
-                        <span className="method-sub">ABA Mobile, KHQR & All Banks</span>
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: 0,
+                          right: 0,
+                          background: "#ED1C24",
+                          color: "#fff",
+                          fontSize: "10px",
+                          fontWeight: 800,
+                          padding: "2px 10px",
+                          borderBottomLeftRadius: "10px",
+                          letterSpacing: "0.5px"
+                        }}
+                      >
+                        OFFICIAL KHQR
                       </div>
-                    </div>
-
-                    {/* Visa / Master */}
-                    <div
-                      className={`payment-option-card ${paymentMethod === "visa-master" ? "active" : ""}`}
-                      onClick={() => setPaymentMethod("visa-master")}
-                    >
-                      <CreditCard className="payment-card-icon" />
-                      <div className="payment-card-text">
-                        <span className="method-title">Visa / Mastercard</span>
-                        <span className="method-sub">Secure Credit/Debit payment</span>
+                      <div
+                        style={{
+                          width: "44px",
+                          height: "44px",
+                          borderRadius: "12px",
+                          background: "#00294B",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: "#ffffff",
+                          flexShrink: 0,
+                          fontWeight: 900,
+                          fontSize: "14px",
+                          letterSpacing: "0.5px"
+                        }}
+                      >
+                        ABA<span style={{ color: "#ED1C24" }}>'</span>
                       </div>
-                    </div>
-
-                    {/* COD */}
-                    <div
-                      className={`payment-option-card ${paymentMethod === "cod" ? "active" : ""}`}
-                      onClick={() => setPaymentMethod("cod")}
-                    >
-                      <Truck className="payment-card-icon" />
                       <div className="payment-card-text">
-                        <span className="method-title">Cash on Delivery</span>
-                        <span className="method-sub">Pay on physical delivery</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span className="method-title" style={{ fontWeight: 800, color: "#00294B", fontSize: "15px" }}>
+                            ABA Bank KHQR
+                          </span>
+                          <span
+                            style={{
+                              background: "#ED1C24",
+                              color: "#ffffff",
+                              fontSize: "10px",
+                              fontWeight: 900,
+                              padding: "1px 6px",
+                              borderRadius: "4px"
+                            }}
+                          >
+                            KHQR
+                          </span>
+                        </div>
+                        <span className="method-sub" style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                          Scan & Pay with ABA Mobile or any Bakong KHQR Banking App
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1224,10 +1259,7 @@ function CartDrawer({ isOpen, onClose }) {
                   <div className="review-block-card">
                     <h4>Payment Method</h4>
                     <p className="bold text-green">
-                      {paymentMethod === "aba-qr" && "ABA KHQR Scan"}
-                      {paymentMethod === "aba-pay" && "ABA Pay App Link"}
-                      {paymentMethod === "visa-master" && "Credit / Debit Card"}
-                      {paymentMethod === "cod" && "Cash on Delivery"}
+                      ABA Bank KHQR (Scan & Pay)
                     </p>
                     {selectedTradeIn && (
                       <p style={{ fontSize: "12px", color: "#166534", marginTop: 4 }}>

@@ -51,11 +51,35 @@ apiClient.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-const retryableStatuses = [408, 500, 502, 503, 504];
+const retryableStatuses = [408, 429, 500, 502, 503, 504];
+
+const isSharedMemoryError = (error) => {
+    const data = error?.response?.data;
+    const msg = String(
+        (typeof data === "string" ? data : "") ||
+        data?.message ||
+        data?.error ||
+        data?.details ||
+        error?.message ||
+        ""
+    ).toLowerCase();
+
+    return (
+        msg.includes("out of shared memory") ||
+        msg.includes("53200") ||
+        msg.includes("max_locks_per_transaction") ||
+        msg.includes("deadlock") ||
+        msg.includes("too many clients") ||
+        msg.includes("connection terminated") ||
+        msg.includes("socket hang up")
+    );
+};
 
 const shouldRetry = (error, retryCount = 0) => {
     if (retryCount >= 2) return false;
     if (!error.response) return true;
+    if (error.response.status === 400 || error.response.status === 401 || error.response.status === 403 || error.response.status === 404) return false;
+    if (isSharedMemoryError(error)) return true;
     return retryableStatuses.includes(error.response.status);
 };
 

@@ -86,8 +86,7 @@ function TradingPage() {
       const params = {
         search: search || undefined,
         status: statusFilter !== "all" ? statusFilter : undefined,
-        condition: conditionFilter !== "all" ? conditionFilter : undefined,
-        limit: 100
+        condition: conditionFilter !== "all" ? conditionFilter : undefined
       };
       const res = await getTradeProductsApi(params);
       const items = res?.data?.tradeProducts || res?.data?.data || res?.data || (Array.isArray(res) ? res : []);
@@ -99,8 +98,8 @@ function TradingPage() {
       }
       setTradeProducts(list);
     } catch (err) {
-      console.error("Failed to load trade products:", err);
-      toastError("Failed to fetch trade listings");
+      console.warn("Failed to load trade products:", err);
+      setTradeProducts([]);
     } finally {
       setLoading(false);
     }

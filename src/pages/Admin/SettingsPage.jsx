@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -30,8 +30,7 @@ import {
   Check,
   Sparkles,
   Eye,
-  Layers,
-  Volume2
+  Layers
 } from "lucide-react";
 import Swal from "sweetalert2";
 import confetti from "canvas-confetti";
@@ -58,105 +57,105 @@ const PERMISSION_MODULES = [
   {
     id: "dashboard",
     name: "Dashboard & Analytics",
-    nameKm: "ផ្ទាំងគ្រប់គ្រង & ស្ថិតិ",
+    nameKm: "áž•áŸ’áž‘áž¶áŸ†áž„áž‚áŸ’ážšáž”áŸ‹áž‚áŸ’ážšáž„ & ážŸáŸ’ážáž·ážáž·",
     desc: "View business metrics, revenue charts, order analytics and sales stats",
     actions: ["view", "export"]
   },
   {
     id: "products",
     name: "Products & Catalog",
-    nameKm: "ផលិតផល & កាតាឡុក",
+    nameKm: "áž•áž›áž·ážáž•áž› & áž€áž¶ážáž¶áž¡áž»áž€",
     desc: "Manage item listings, prices, SKU, specs, variants and gallery images",
     actions: ["view", "create", "edit", "delete"]
   },
   {
     id: "categories",
     name: "Product Categories",
-    nameKm: "ប្រភេទផលិតផល",
+    nameKm: "áž”áŸ’ážšáž—áŸáž‘áž•áž›áž·ážáž•áž›",
     desc: "Organize category trees, hierarchies and department taxonomy",
     actions: ["view", "create", "edit", "delete"]
   },
   {
     id: "brands",
     name: "Brands & Partners",
-    nameKm: "ម៉ាក & យីហោ",
+    nameKm: "áž˜áŸ‰áž¶áž€ & áž™áž¸áž áŸ„",
     desc: "Manage partner brands, manufacturer logos and official endorsements",
     actions: ["view", "create", "edit", "delete"]
   },
   {
     id: "flash_sale",
     name: "Flash Sale & Deals",
-    nameKm: "ប្រូម៉ូសិន & Flash Sale",
+    nameKm: "áž”áŸ’ážšáž¼áž˜áŸ‰áž¼ážŸáž·áž“ & Flash Sale",
     desc: "Create limited-time deals, discount countdown timers and campaign banners",
     actions: ["view", "create", "edit", "delete"]
   },
   {
     id: "trading",
     name: "Trade-In & Exchange",
-    nameKm: "ប្តូរសេរីទូរស័ព្ទ (Trade-In)",
+    nameKm: "áž”áŸ’ážáž¼ážšážŸáŸážšáž¸áž‘áž¼ážšážŸáŸáž–áŸ’áž‘ (Trade-In)",
     desc: "Review trade-in requests, evaluate second-hand gadgets, approve cash payouts",
     actions: ["view", "value", "approve", "reject"]
   },
   {
     id: "orders",
     name: "Orders & Invoicing",
-    nameKm: "ការបញ្ជាទិញ & វិក្កយបត្រ",
+    nameKm: "áž€áž¶ážšáž”áž‰áŸ’áž‡áž¶áž‘áž·áž‰ & ážœáž·áž€áŸ’áž€áž™áž”ážáŸ’ážš",
     desc: "Process customer orders, generate invoices, handle dispatch and refunds",
     actions: ["view", "process", "cancel", "refund"]
   },
   {
     id: "messages",
     name: "Customer Support & Chat",
-    nameKm: "សារ & ជំនួយអតិថិជន",
+    nameKm: "ážŸáž¶ážš & áž‡áŸ†áž“áž½áž™áž¢ážáž·ážáž·áž‡áž“",
     desc: "Respond to customer inquiries, support tickets and live customer chat",
     actions: ["view", "reply", "delete"]
   },
   {
     id: "inventory",
     name: "Inventory & Warehouses",
-    nameKm: "ស្តុកទំនិញ & ឃ្លាំង",
+    nameKm: "ážŸáŸ’ážáž»áž€áž‘áŸ†áž“áž·áž‰ & ážƒáŸ’áž›áž¶áŸ†áž„",
     desc: "Track real-time stock levels, low-stock alerts, stock count adjustments",
     actions: ["view", "adjust", "reorder"]
   },
   {
     id: "purchases",
     name: "Purchases & Stock In",
-    nameKm: "ការទិញចូល & នាំចូលស្តុក",
+    nameKm: "áž€áž¶ážšáž‘áž·áž‰áž…áž¼áž› & áž“áž¶áŸ†áž…áž¼áž›ážŸáŸ’ážáž»áž€",
     desc: "Manage supplier purchase orders, inward goods receipts, cost tracking",
     actions: ["view", "create", "edit", "delete"]
   },
   {
     id: "suppliers",
     name: "Suppliers & Vendors",
-    nameKm: "អ្នកផ្គត់ផ្គង់",
+    nameKm: "áž¢áŸ’áž“áž€áž•áŸ’áž‚ážáŸ‹áž•áŸ’áž‚áž„áŸ‹",
     desc: "Manage vendor contacts, payment agreements, and supplier directories",
     actions: ["view", "create", "edit", "delete"]
   },
   {
     id: "attendance",
     name: "Staff Attendance & Leave",
-    nameKm: "វត្តមាន & សុំច្បាប់បុគ្គលិក",
+    nameKm: "ážœážáŸ’ážáž˜áž¶áž“ & ážŸáž»áŸ†áž…áŸ’áž”áž¶áž”áŸ‹áž”áž»áž‚áŸ’áž‚áž›áž·áž€",
     desc: "QR code check-ins, attendance logs, leave requests approval, work shifts",
     actions: ["view", "checkin", "approve", "export"]
   },
   {
     id: "customers",
     name: "Customers & Accounts",
-    nameKm: "អតិថិជន & គណនី",
+    nameKm: "áž¢ážáž·ážáž·áž‡áž“ & áž‚ážŽáž“áž¸",
     desc: "Manage customer accounts, VIP tiers, loyalty points, user ban status",
     actions: ["view", "edit", "ban"]
   },
   {
     id: "reports",
     name: "Reports & Financials",
-    nameKm: "របាយការណ៍ & ហិរញ្ញវត្ថុ",
+    nameKm: "ážšáž”áž¶áž™áž€áž¶ážšážŽáŸ & áž áž·ážšáž‰áŸ’áž‰ážœážáŸ’ážáž»",
     desc: "Export financial statements, profit margins, sales breakdown reports",
     actions: ["view", "export"]
   },
   {
     id: "settings",
     name: "System Settings & RBAC",
-    nameKm: "ការកំណត់ប្រព័ន្ធ & RBAC",
+    nameKm: "áž€áž¶ážšáž€áŸ†ážŽážáŸ‹áž”áŸ’ážšáž–áŸáž“áŸ’áž’ & RBAC",
     desc: "Store config, payment keys, security, role-based access permissions",
     actions: ["view", "edit"]
   }
@@ -318,7 +317,7 @@ const DEFAULT_SYSTEM_SETTINGS = {
   // Payment Gateways
   abaEnabled: true,
   abaMerchantId: "MCH_ANGKOR_8892",
-  abaApiKey: "••••••••••••••••••••••••••••••••",
+  abaApiKey: "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢",
   abaSandbox: false,
   wingEnabled: true,
   codEnabled: true,
@@ -349,7 +348,7 @@ function SettingsPage() {
 
   // Guard: if user does not have view permission for settings, block rendering and show AccessDeniedView
   if (!isSuperAdmin && !can("settings", "view")) {
-    return <AccessDeniedView moduleName={isKhmer ? "ការកំណត់ប្រព័ន្ធ (System Settings)" : "System Settings & RBAC"} />;
+    return <AccessDeniedView moduleName={isKhmer ? "áž€áž¶ážšáž€áŸ†ážŽážáŸ‹áž”áŸ’ážšáž–áŸáž“áŸ’áž’ (System Settings)" : "System Settings & RBAC"} />;
   }
 
   const [activeTab, setActiveTab] = useState("appearance_language");
@@ -416,8 +415,8 @@ function SettingsPage() {
     if (!currentUser?.id) {
       Swal.fire({
         icon: "error",
-        title: isKhmer ? "មិនស្គាល់អ្នកប្រើប្រាស់" : "User Not Found",
-        text: isKhmer ? "សូមចូលប្រើប្រាស់ម្តងទៀត" : "Please re-login to update security PIN",
+        title: isKhmer ? "áž˜áž·áž“ážŸáŸ’áž‚áž¶áž›áŸ‹áž¢áŸ’áž“áž€áž”áŸ’ážšáž¾áž”áŸ’ážšáž¶ážŸáŸ‹" : "User Not Found",
+        text: isKhmer ? "ážŸáž¼áž˜áž…áž¼áž›áž”áŸ’ážšáž¾áž”áŸ’ážšáž¶ážŸáŸ‹áž˜áŸ’ážáž„áž‘áŸ€áž" : "Please re-login to update security PIN",
       });
       return;
     }
@@ -426,8 +425,8 @@ function SettingsPage() {
     if (!/^\d{6}$/.test(cleanPin)) {
       Swal.fire({
         icon: "warning",
-        title: isKhmer ? "កូដ PIN ត្រូវតែមាន ៦ ខ្ទង់" : "6-Digit PIN Required",
-        text: isKhmer ? "កូដ PIN សុវត្ថិភាពត្រូវតែជាលេខ ៦ ខ្ទង់គត់ (ឧ. 123456)" : "Security PIN must be exactly 6 numeric digits (e.g. 123456).",
+        title: isKhmer ? "áž€áž¼ážŠ PIN ážáŸ’ážšáž¼ážœážáŸ‚áž˜áž¶áž“ áŸ¦ ážáŸ’áž‘áž„áŸ‹" : "6-Digit PIN Required",
+        text: isKhmer ? "áž€áž¼ážŠ PIN ážŸáž»ážœážáŸ’ážáž·áž—áž¶áž–ážáŸ’ážšáž¼ážœážáŸ‚áž‡áž¶áž›áŸáž áŸ¦ ážáŸ’áž‘áž„áŸ‹áž‚ážáŸ‹ (áž§. 123456)" : "Security PIN must be exactly 6 numeric digits (e.g. 123456).",
       });
       return;
     }
@@ -435,8 +434,8 @@ function SettingsPage() {
     if (pinForm.pin !== pinForm.confirmPin) {
       Swal.fire({
         icon: "warning",
-        title: isKhmer ? "កូដ PIN មិនត្រូវគ្នា" : "PINs Do Not Match",
-        text: isKhmer ? "សូមផ្ទៀងផ្ទាត់កូដ PIN ទាំងពីរប្រអប់ឱ្យដូចគ្នា" : "Please ensure both PIN fields match exactly.",
+        title: isKhmer ? "áž€áž¼ážŠ PIN áž˜áž·áž“ážáŸ’ážšáž¼ážœáž‚áŸ’áž“áž¶" : "PINs Do Not Match",
+        text: isKhmer ? "ážŸáž¼áž˜áž•áŸ’áž‘áŸ€áž„áž•áŸ’áž‘áž¶ážáŸ‹áž€áž¼ážŠ PIN áž‘áž¶áŸ†áž„áž–áž¸ážšáž”áŸ’ážšáž¢áž”áŸ‹áž±áŸ’áž™ážŠáž¼áž…áž‚áŸ’áž“áž¶" : "Please ensure both PIN fields match exactly.",
       });
       return;
     }
@@ -452,9 +451,9 @@ function SettingsPage() {
 
       Swal.fire({
         icon: "success",
-        title: isKhmer ? "បានកំណត់កូដ PIN ៦ ខ្ទង់ជោគជ័យ!" : "6-Digit Security PIN Saved!",
+        title: isKhmer ? "áž”áž¶áž“áž€áŸ†ážŽážáŸ‹áž€áž¼ážŠ PIN áŸ¦ ážáŸ’áž‘áž„áŸ‹áž‡áŸ„áž‚áž‡áŸáž™!" : "6-Digit Security PIN Saved!",
         text: isKhmer
-          ? "កូដ PIN ៦ ខ្ទង់ត្រូវបានបើកដំណើរការសម្រាប់គណនីរបស់អ្នករួចរាល់។"
+          ? "áž€áž¼ážŠ PIN áŸ¦ ážáŸ’áž‘áž„áŸ‹ážáŸ’ážšáž¼ážœáž”áž¶áž“áž”áž¾áž€ážŠáŸ†ážŽáž¾ážšáž€áž¶ážšážŸáž˜áŸ’ážšáž¶áž”áŸ‹áž‚ážŽáž“áž¸ážšáž”ážŸáŸ‹áž¢áŸ’áž“áž€ážšáž½áž…ážšáž¶áž›áŸ‹áŸ”"
           : "Your 6-digit security PIN has been activated for this account.",
         timer: 2000,
         showConfirmButton: false,
@@ -465,7 +464,7 @@ function SettingsPage() {
     } catch (err) {
       Swal.fire({
         icon: "error",
-        title: isKhmer ? "បរាជ័យក្នុងការកំណត់ PIN" : "Failed to Set PIN",
+        title: isKhmer ? "áž”ážšáž¶áž‡áŸáž™áž€áŸ’áž“áž»áž„áž€áž¶ážšáž€áŸ†ážŽážáŸ‹ PIN" : "Failed to Set PIN",
         text: err?.response?.data?.message || err?.message || "Could not configure security PIN.",
       });
     } finally {
@@ -477,14 +476,14 @@ function SettingsPage() {
     if (!currentUser?.id) return;
 
     Swal.fire({
-      title: isKhmer ? "បិទកូដ PIN សុវត្ថិភាព?" : "Disable Security PIN?",
-      text: isKhmer ? "តើអ្នកចង់បិទការទាមទារកូដ PIN ពេលចូលប្រើប្រាស់មែនទេ?" : "Are you sure you want to remove 2FA PIN protection from this account?",
+      title: isKhmer ? "áž”áž·áž‘áž€áž¼ážŠ PIN ážŸáž»ážœážáŸ’ážáž·áž—áž¶áž–?" : "Disable Security PIN?",
+      text: isKhmer ? "ážáž¾áž¢áŸ’áž“áž€áž…áž„áŸ‹áž”áž·áž‘áž€áž¶ážšáž‘áž¶áž˜áž‘áž¶ážšáž€áž¼ážŠ PIN áž–áŸáž›áž…áž¼áž›áž”áŸ’ážšáž¾áž”áŸ’ážšáž¶ážŸáŸ‹áž˜áŸ‚áž“áž‘áŸ?" : "Are you sure you want to remove 2FA PIN protection from this account?",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#dc2626",
       cancelButtonColor: "#64748b",
-      confirmButtonText: isKhmer ? "បាទ/ចាស បិទ PIN" : "Yes, Disable PIN",
-      cancelButtonText: isKhmer ? "បោះបង់" : "Cancel",
+      confirmButtonText: isKhmer ? "áž”áž¶áž‘/áž…áž¶ážŸ áž”áž·áž‘ PIN" : "Yes, Disable PIN",
+      cancelButtonText: isKhmer ? "áž”áŸ„áŸ‡áž”áž„áŸ‹" : "Cancel",
     }).then(async (res) => {
       if (res.isConfirmed) {
         try {
@@ -493,8 +492,8 @@ function SettingsPage() {
           localStorage.removeItem("angkor_staff_pin");
           Swal.fire({
             icon: "success",
-            title: isKhmer ? "បានបិទ PIN រួចរាល់" : "PIN Disabled",
-            text: isKhmer ? "ការផ្ទៀងផ្ទាត់ PIN ត្រូវបានបិទដោយជោគជ័យ។" : "Security PIN verification has been disabled.",
+            title: isKhmer ? "áž”áž¶áž“áž”áž·áž‘ PIN ážšáž½áž…ážšáž¶áž›áŸ‹" : "PIN Disabled",
+            text: isKhmer ? "áž€áž¶ážšáž•áŸ’áž‘áŸ€áž„áž•áŸ’áž‘áž¶ážáŸ‹ PIN ážáŸ’ážšáž¼ážœáž”áž¶áž“áž”áž·áž‘ážŠáŸ„áž™áž‡áŸ„áž‚áž‡áŸáž™áŸ”" : "Security PIN verification has been disabled.",
           });
           loadStaffAndRoles();
         } catch (err) {
@@ -648,9 +647,9 @@ function SettingsPage() {
     if (targetRole.id === "super_admin" || String(targetRole.name).toLowerCase().includes("super")) {
       Swal.fire({
         icon: "info",
-        title: isKhmer ? "ដំណឹង" : "Super Admin Permissions",
+        title: isKhmer ? "ážŠáŸ†ážŽáž¹áž„" : "Super Admin Permissions",
         text: isKhmer
-          ? "Super Administrator មានសិទ្ធិពេញលេញលើគ្រប់ផ្នែកទាំងអស់នៃប្រព័ន្ធជាស្វ័យប្រវត្តិ។"
+          ? "Super Administrator áž˜áž¶áž“ážŸáž·áž‘áŸ’áž’áž·áž–áŸáž‰áž›áŸáž‰áž›áž¾áž‚áŸ’ážšáž”áŸ‹áž•áŸ’áž“áŸ‚áž€áž‘áž¶áŸ†áž„áž¢ážŸáŸ‹áž“áŸƒáž”áŸ’ážšáž–áŸáž“áŸ’áž’áž‡áž¶ážŸáŸ’ážœáŸáž™áž”áŸ’ážšážœážáŸ’ážáž·áŸ”"
           : "Super Administrator holds permanent full system permissions across all modules.",
         confirmButtonColor: "#166534"
       });
@@ -677,9 +676,9 @@ function SettingsPage() {
 
       Swal.fire({
         icon: "success",
-        title: isKhmer ? "បានរក្សាទុកសិទ្ធិជោគជ័យ!" : "Role Permissions Saved!",
+        title: isKhmer ? "áž”áž¶áž“ážšáž€áŸ’ážŸáž¶áž‘áž»áž€ážŸáž·áž‘áŸ’áž’áž·áž‡áŸ„áž‚áž‡áŸáž™!" : "Role Permissions Saved!",
         text: isKhmer
-          ? `សិទ្ធិសម្រាប់តួនាទី "${targetRole.name}" ត្រូវបានធ្វើបច្ចុប្បន្នភាពក្នុង Database តាមរយៈ Backend API រួចរាល់។`
+          ? `ážŸáž·áž‘áŸ’áž’áž·ážŸáž˜áŸ’ážšáž¶áž”áŸ‹ážáž½áž“áž¶áž‘áž¸ "${targetRole.name}" ážáŸ’ážšáž¼ážœáž”áž¶áž“áž’áŸ’ážœáž¾áž”áž…áŸ’áž…áž»áž”áŸ’áž”áž“áŸ’áž“áž—áž¶áž–áž€áŸ’áž“áž»áž„ Database ážáž¶áž˜ážšáž™áŸˆ Backend API ážšáž½áž…ážšáž¶áž›áŸ‹áŸ”`
           : `Permissions for "${targetRole.name}" have been updated and synced to backend database (/api/roles/${targetRole.id}).`,
         timer: 2200,
         showConfirmButton: false,
@@ -689,7 +688,7 @@ function SettingsPage() {
       console.error("Failed to sync role permissions to API:", error);
       Swal.fire({
         icon: "error",
-        title: isKhmer ? "បរាជ័យក្នុងការរក្សាទុក" : "Failed to Sync with API",
+        title: isKhmer ? "áž”ážšáž¶áž‡áŸáž™áž€áŸ’áž“áž»áž„áž€áž¶ážšážšáž€áŸ’ážŸáž¶áž‘áž»áž€" : "Failed to Sync with API",
         text: error?.response?.data?.message || error?.message || "Could not sync role permissions to backend database.",
         confirmButtonColor: "#dc2626"
       });
@@ -755,9 +754,9 @@ function SettingsPage() {
 
       Swal.fire({
         icon: "success",
-        title: isKhmer ? "បានរក្សាទុកជោគជ័យ!" : "Settings Saved!",
+        title: isKhmer ? "áž”áž¶áž“ážšáž€áŸ’ážŸáž¶áž‘áž»áž€áž‡áŸ„áž‚áž‡áŸáž™!" : "Settings Saved!",
         text: isKhmer
-          ? "ការកំណត់រូបរាង ភាសា សិទ្ធិបុគ្គលិក និងព័ត៌មានទូទៅត្រូវបានធ្វើបច្ចុប្បន្នភាពក្នុងប្រព័ន្ធ និង Database។"
+          ? "áž€áž¶ážšáž€áŸ†ážŽážáŸ‹ážšáž¼áž”ážšáž¶áž„ áž—áž¶ážŸáž¶ ážŸáž·áž‘áŸ’áž’áž·áž”áž»áž‚áŸ’áž‚áž›áž·áž€ áž“áž·áž„áž–áŸážáŸŒáž˜áž¶áž“áž‘áž¼áž‘áŸ…ážáŸ’ážšáž¼ážœáž”áž¶áž“áž’áŸ’ážœáž¾áž”áž…áŸ’áž…áž»áž”áŸ’áž”áž“áŸ’áž“áž—áž¶áž–áž€áŸ’áž“áž»áž„áž”áŸ’ážšáž–áŸáž“áŸ’áž’ áž“áž·áž„ DatabaseáŸ”"
           : "Appearance, language, RBAC permissions, and store configurations have been updated and synced to database.",
         timer: 2000,
         showConfirmButton: false,
@@ -770,16 +769,16 @@ function SettingsPage() {
 
   const handleResetDefaults = () => {
     Swal.fire({
-      title: isKhmer ? "កំណត់ឡើងវិញដូចដើម?" : "Reset to System Defaults?",
+      title: isKhmer ? "áž€áŸ†ážŽážáŸ‹áž¡áž¾áž„ážœáž·áž‰ážŠáž¼áž…ážŠáž¾áž˜?" : "Reset to System Defaults?",
       text: isKhmer
-        ? "វានឹងស្ដារការកំណត់រូបរាង ភាសា តួនាទី និងប្រព័ន្ធទាំងអស់ទៅកាន់លំនាំដើមវិញ។"
+        ? "ážœáž¶áž“áž¹áž„ážŸáŸ’ážŠáž¶ážšáž€áž¶ážšáž€áŸ†ážŽážáŸ‹ážšáž¼áž”ážšáž¶áž„ áž—áž¶ážŸáž¶ ážáž½áž“áž¶áž‘áž¸ áž“áž·áž„áž”áŸ’ážšáž–áŸáž“áŸ’áž’áž‘áž¶áŸ†áž„áž¢ážŸáŸ‹áž‘áŸ…áž€áž¶áž“áŸ‹áž›áŸ†áž“áž¶áŸ†ážŠáž¾áž˜ážœáž·áž‰áŸ”"
         : "This will restore all default appearances, roles, permissions, and system configurations.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#dc2626",
       cancelButtonColor: "#64748b",
-      confirmButtonText: isKhmer ? "បាទ/ចាស កំណត់ឡើងវិញ" : "Yes, Reset",
-      cancelButtonText: isKhmer ? "បោះបង់" : "Cancel"
+      confirmButtonText: isKhmer ? "áž”áž¶áž‘/áž…áž¶ážŸ áž€áŸ†ážŽážáŸ‹áž¡áž¾áž„ážœáž·áž‰" : "Yes, Reset",
+      cancelButtonText: isKhmer ? "áž”áŸ„áŸ‡áž”áž„áŸ‹" : "Cancel"
     }).then((res) => {
       if (res.isConfirmed) {
         setTheme("system");
@@ -796,8 +795,8 @@ function SettingsPage() {
         window.dispatchEvent(new Event("angkor_roles_updated"));
 
         Swal.fire(
-          isKhmer ? "បានស្ដាររួចរាល់" : "Reset Completed",
-          isKhmer ? "ការកំណត់លំនាំដើមត្រូវបានស្ដារជោគជ័យ។" : "Default configuration restored.",
+          isKhmer ? "áž”áž¶áž“ážŸáŸ’ážŠáž¶ážšážšáž½áž…ážšáž¶áž›áŸ‹" : "Reset Completed",
+          isKhmer ? "áž€áž¶ážšáž€áŸ†ážŽážáŸ‹áž›áŸ†áž“áž¶áŸ†ážŠáž¾áž˜ážáŸ’ážšáž¼ážœáž”áž¶áž“ážŸáŸ’ážŠáž¶ážšáž‡áŸ„áž‚áž‡áŸáž™áŸ”" : "Default configuration restored.",
           "success"
         );
       }
@@ -808,9 +807,9 @@ function SettingsPage() {
   const handleTogglePermission = (moduleId, action) => {
     if (selectedRoleId === "super_admin" || String(currentRole?.name).toLowerCase().includes("super")) {
       Swal.fire(
-        isKhmer ? "ដំណឹង" : "Notice",
+        isKhmer ? "ážŠáŸ†ážŽáž¹áž„" : "Notice",
         isKhmer
-          ? "Super Administrator មានសិទ្ធិពេញលេញលើគ្រប់ផ្នែកទាំងអស់នៃប្រព័ន្ធជាអចិន្ត្រៃយ៍។"
+          ? "Super Administrator áž˜áž¶áž“ážŸáž·áž‘áŸ’áž’áž·áž–áŸáž‰áž›áŸáž‰áž›áž¾áž‚áŸ’ážšáž”áŸ‹áž•áŸ’áž“áŸ‚áž€áž‘áž¶áŸ†áž„áž¢ážŸáŸ‹áž“áŸƒáž”áŸ’ážšáž–áŸáž“áŸ’áž’áž‡áž¶áž¢áž…áž·áž“áŸ’ážáŸ’ážšáŸƒáž™áŸáŸ”"
           : "Super Administrator holds permanent full system permissions.",
         "info"
       );
@@ -866,7 +865,7 @@ function SettingsPage() {
     e.preventDefault();
     const roleName = newRoleForm.name.trim();
     if (!roleName) {
-      Swal.fire("Warning", isKhmer ? "សូមបញ្ចូលឈ្មោះតួនាទី" : "Please enter role title", "warning");
+      Swal.fire("Warning", isKhmer ? "ážŸáž¼áž˜áž”áž‰áŸ’áž…áž¼áž›ážˆáŸ’áž˜áŸ„áŸ‡ážáž½áž“áž¶áž‘áž¸" : "Please enter role title", "warning");
       return;
     }
 
@@ -893,9 +892,9 @@ function SettingsPage() {
       setRoleModalOpen(false);
 
       Swal.fire({
-        title: isKhmer ? "បង្កើតតួនាទីជោគជ័យ!" : "Role Created Successfully!",
+        title: isKhmer ? "áž”áž„áŸ’áž€áž¾ážážáž½áž“áž¶áž‘áž¸áž‡áŸ„áž‚áž‡áŸáž™!" : "Role Created Successfully!",
         text: isKhmer
-          ? `តួនាទី "${roleName}" ត្រូវបានរក្សាទុកក្នុង Database តាមរយៈ API (/api/roles)។`
+          ? `ážáž½áž“áž¶áž‘áž¸ "${roleName}" ážáŸ’ážšáž¼ážœáž”áž¶áž“ážšáž€áŸ’ážŸáž¶áž‘áž»áž€áž€áŸ’áž“áž»áž„ Database ážáž¶áž˜ážšáž™áŸˆ API (/api/roles)áŸ”`
           : `Role "${roleName}" was created and saved to database via /api/roles.`,
         icon: "success",
         timer: 2500,
@@ -904,7 +903,7 @@ function SettingsPage() {
     } catch (error) {
       console.error("Failed to create role via API:", error);
       Swal.fire({
-        title: isKhmer ? "បរាជ័យក្នុងការបង្កើតតួនាទី" : "Failed to Create Role",
+        title: isKhmer ? "áž”ážšáž¶áž‡áŸáž™áž€áŸ’áž“áž»áž„áž€áž¶ážšáž”áž„áŸ’áž€áž¾ážážáž½áž“áž¶áž‘áž¸" : "Failed to Create Role",
         text: error?.response?.data?.message || error?.message || "Could not save role to database via /api/roles.",
         icon: "error",
         confirmButtonColor: "#ef4444"
@@ -924,19 +923,19 @@ function SettingsPage() {
     }
 
     Swal.fire({
-      title: isKhmer ? `លុបតួនាទី "${roleName}"?` : `Delete "${roleName}"?`,
-      text: isKhmer ? "តួនាទីនេះនឹងត្រូវលុបចេញពី Database តាមរយៈ API (/api/roles)។" : "This role will be deleted from the database via /api/roles.",
+      title: isKhmer ? `áž›áž»áž”ážáž½áž“áž¶áž‘áž¸ "${roleName}"?` : `Delete "${roleName}"?`,
+      text: isKhmer ? "ážáž½áž“áž¶áž‘áž¸áž“áŸáŸ‡áž“áž¹áž„ážáŸ’ážšáž¼ážœáž›áž»áž”áž…áŸáž‰áž–áž¸ Database ážáž¶áž˜ážšáž™áŸˆ API (/api/roles)áŸ”" : "This role will be deleted from the database via /api/roles.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#dc2626",
-      confirmButtonText: isKhmer ? "បាទ/ចាស លុប" : "Delete Role",
-      cancelButtonText: isKhmer ? "បោះបង់" : "Cancel"
+      confirmButtonText: isKhmer ? "áž”áž¶áž‘/áž…áž¶ážŸ áž›áž»áž”" : "Delete Role",
+      cancelButtonText: isKhmer ? "áž”áŸ„áŸ‡áž”áž„áŸ‹" : "Cancel"
     }).then(async (res) => {
       if (res.isConfirmed) {
         try {
           await deleteRoleApi(roleId);
           await loadStaffAndRoles();
-          Swal.fire(isKhmer ? "បានលុប!" : "Deleted!", `Role "${roleName}" removed.`, "success");
+          Swal.fire(isKhmer ? "áž”áž¶áž“áž›áž»áž”!" : "Deleted!", `Role "${roleName}" removed.`, "success");
         } catch (error) {
           Swal.fire("Error", error?.response?.data?.message || error?.message || "Failed to delete role", "error");
         }
@@ -976,10 +975,10 @@ function SettingsPage() {
               : s
           )
         );
-        Swal.fire(isKhmer ? "ជោគជ័យ!" : "Staff Updated", isKhmer ? "ព័ត៌មានបុគ្គលិកត្រូវបានកែប្រែ។" : "User details and role refreshed.", "success");
+        Swal.fire(isKhmer ? "áž‡áŸ„áž‚áž‡áŸáž™!" : "Staff Updated", isKhmer ? "áž–áŸážáŸŒáž˜áž¶áž“áž”áž»áž‚áŸ’áž‚áž›áž·áž€ážáŸ’ážšáž¼ážœáž”áž¶áž“áž€áŸ‚áž”áŸ’ážšáŸ‚áŸ”" : "User details and role refreshed.", "success");
       } else {
         if (!staffForm.password || staffForm.password.length < 6) {
-          Swal.fire("Warning", isKhmer ? "លេខសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ តួ!" : "Password must be at least 6 characters long.", "warning");
+          Swal.fire("Warning", isKhmer ? "áž›áŸážážŸáž˜áŸ’áž„áž¶ážáŸ‹ážáŸ’ážšáž¼ážœáž˜áž¶áž“áž™áŸ‰áž¶áž„ážáž·áž… áŸ¦ ážáž½!" : "Password must be at least 6 characters long.", "warning");
           return;
         }
 
@@ -1005,7 +1004,7 @@ function SettingsPage() {
           lastLogin: "Never"
         };
         setStaff((prev) => [newMember, ...prev]);
-        Swal.fire(isKhmer ? "ជោគជ័យ!" : "Staff Added", isKhmer ? "គណនីបុគ្គលិកថ្មីត្រូវបានបង្កើត។" : "New administrator user created.", "success");
+        Swal.fire(isKhmer ? "áž‡áŸ„áž‚áž‡áŸáž™!" : "Staff Added", isKhmer ? "áž‚ážŽáž“áž¸áž”áž»áž‚áŸ’áž‚áž›áž·áž€ážáŸ’áž˜áž¸ážáŸ’ážšáž¼ážœáž”áž¶áž“áž”áž„áŸ’áž€áž¾ážáŸ”" : "New administrator user created.", "success");
       }
 
       setStaffModalOpen(false);
@@ -1018,20 +1017,20 @@ function SettingsPage() {
   // Delete Staff via API
   const handleDeleteStaff = (member) => {
     Swal.fire({
-      title: isKhmer ? `លុបបុគ្គលិក ${member.name}?` : `Delete Staff ${member.name}?`,
-      text: isKhmer ? "សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។" : "This staff account will be permanently removed.",
+      title: isKhmer ? `áž›áž»áž”áž”áž»áž‚áŸ’áž‚áž›áž·áž€ ${member.name}?` : `Delete Staff ${member.name}?`,
+      text: isKhmer ? "ážŸáž€áž˜áŸ’áž˜áž—áž¶áž–áž“áŸáŸ‡áž˜áž·áž“áž¢áž¶áž…ážáŸ’ážšáž¡áž”áŸ‹ážœáž·áž‰áž”áž¶áž“áž‘áŸáŸ”" : "This staff account will be permanently removed.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#dc2626",
       cancelButtonColor: "#64748b",
-      confirmButtonText: isKhmer ? "បាទ/ចាស លុប" : "Yes, Delete",
-      cancelButtonText: isKhmer ? "បោះបង់" : "Cancel"
+      confirmButtonText: isKhmer ? "áž”áž¶áž‘/áž…áž¶ážŸ áž›áž»áž”" : "Yes, Delete",
+      cancelButtonText: isKhmer ? "áž”áŸ„áŸ‡áž”áž„áŸ‹" : "Cancel"
     }).then(async (res) => {
       if (res.isConfirmed) {
         try {
           await deleteStaffApi(member.id);
           setStaff((prev) => prev.filter((s) => s.id !== member.id));
-          Swal.fire(isKhmer ? "បានលុប!" : "Deleted!", isKhmer ? "បុគ្គលិកត្រូវបានលុបចេញពីប្រព័ន្ធ។" : "Staff member has been removed.", "success");
+          Swal.fire(isKhmer ? "áž”áž¶áž“áž›áž»áž”!" : "Deleted!", isKhmer ? "áž”áž»áž‚áŸ’áž‚áž›áž·áž€ážáŸ’ážšáž¼ážœáž”áž¶áž“áž›áž»áž”áž…áŸáž‰áž–áž¸áž”áŸ’ážšáž–áŸáž“áŸ’áž’áŸ”" : "Staff member has been removed.", "success");
         } catch (error) {
           Swal.fire("Error", error.message || "Failed to delete staff", "error");
         }
@@ -1048,10 +1047,10 @@ function SettingsPage() {
             <Sliders size={26} />
           </div>
           <div>
-            <h1>{isKhmer ? "ការកំណត់ប្រព័ន្ធ & សិទ្ធិគ្រប់គ្រង Admin" : "Admin Settings & RBAC Control"}</h1>
+            <h1>{isKhmer ? "áž€áž¶ážšáž€áŸ†ážŽážáŸ‹áž”áŸ’ážšáž–áŸáž“áŸ’áž’ & ážŸáž·áž‘áŸ’áž’áž·áž‚áŸ’ážšáž”áŸ‹áž‚áŸ’ážšáž„ Admin" : "Admin Settings & RBAC Control"}</h1>
             <p>
               {isKhmer
-                ? "កំណត់រូបរាង ស្បែកពណ៌ ភាសា សិទ្ធិតួនាទីបុគ្គលិក ធនាគារទូទាត់ និងសុវត្ថិភាពទូទៅនៃប្រព័ន្ធ។"
+                ? "áž€áŸ†ážŽážáŸ‹ážšáž¼áž”ážšáž¶áž„ ážŸáŸ’áž”áŸ‚áž€áž–ážŽáŸŒ áž—áž¶ážŸáž¶ ážŸáž·áž‘áŸ’áž’áž·ážáž½áž“áž¶áž‘áž¸áž”áž»áž‚áŸ’áž‚áž›áž·áž€ áž’áž“áž¶áž‚áž¶ážšáž‘áž¼áž‘áž¶ážáŸ‹ áž“áž·áž„ážŸáž»ážœážáŸ’ážáž·áž—áž¶áž–áž‘áž¼áž‘áŸ…áž“áŸƒáž”áŸ’ážšáž–áŸáž“áŸ’áž’áŸ”"
                 : "Configure appearance theme, language, role-based access permissions, payment gateways, and security preferences."}
             </p>
           </div>
@@ -1061,11 +1060,11 @@ function SettingsPage() {
           <div className="settings-header-actions">
             <button type="button" className="btn-outline-secondary" onClick={handleResetDefaults}>
               <RotateCcw size={15} />
-              <span>{isKhmer ? "កំណត់ដើមឡើងវិញ" : "Reset Defaults"}</span>
+              <span>{isKhmer ? "áž€áŸ†ážŽážáŸ‹ážŠáž¾áž˜áž¡áž¾áž„ážœáž·áž‰" : "Reset Defaults"}</span>
             </button>
             <button type="button" className="btn-save-primary" onClick={handleSaveAll}>
               <Save size={16} />
-              <span>{isKhmer ? "រក្សាទុកការផ្លាស់ប្តូរ" : "Save All Changes"}</span>
+              <span>{isKhmer ? "ážšáž€áŸ’ážŸáž¶áž‘áž»áž€áž€áž¶ážšáž•áŸ’áž›áž¶ážŸáŸ‹áž”áŸ’ážáž¼ážš" : "Save All Changes"}</span>
             </button>
           </div>
         )}
@@ -1080,8 +1079,8 @@ function SettingsPage() {
           onClick={() => setActiveTab("appearance_language")}
         >
           <Palette size={16} />
-          <span>{isKhmer ? "រូបរាង & ភាសា" : "Theme & Language"}</span>
-          <span className="tab-pill-badge">{language === "km" ? "🇰🇭 KM" : "🇺🇸 EN"}</span>
+          <span>{isKhmer ? "ážšáž¼áž”ážšáž¶áž„ & áž—áž¶ážŸáž¶" : "Theme & Language"}</span>
+          <span className="tab-pill-badge">{language === "km" ? "ðŸ‡°ðŸ‡­ KM" : "ðŸ‡ºðŸ‡¸ EN"}</span>
         </button>
 
         {/* Tab 2: Roles & Permissions */}
@@ -1091,7 +1090,7 @@ function SettingsPage() {
           onClick={() => setActiveTab("roles_permissions")}
         >
           <Shield size={16} />
-          <span>{isKhmer ? "តួនាទី & សិទ្ធិ (RBAC)" : "Roles & RBAC Matrix"}</span>
+          <span>{isKhmer ? "ážáž½áž“áž¶áž‘áž¸ & ážŸáž·áž‘áŸ’áž’áž· (RBAC)" : "Roles & RBAC Matrix"}</span>
         </button>
 
         {/* Tab 3: Staff Users */}
@@ -1101,7 +1100,7 @@ function SettingsPage() {
           onClick={() => setActiveTab("staff_users")}
         >
           <Users size={16} />
-          <span>{isKhmer ? `បញ្ជីបុគ្គលិក (${staff.length})` : `Staff Directory (${staff.length})`}</span>
+          <span>{isKhmer ? `áž”áž‰áŸ’áž‡áž¸áž”áž»áž‚áŸ’áž‚áž›áž·áž€ (${staff.length})` : `Staff Directory (${staff.length})`}</span>
         </button>
 
         {/* Tab 4: Store Profile */}
@@ -1111,7 +1110,7 @@ function SettingsPage() {
           onClick={() => setActiveTab("general")}
         >
           <Store size={16} />
-          <span>{isKhmer ? "ព័ត៌មានទូទៅហាង" : "Store & Mall Profile"}</span>
+          <span>{isKhmer ? "áž–áŸážáŸŒáž˜áž¶áž“áž‘áž¼áž‘áŸ…áž áž¶áž„" : "Store & Mall Profile"}</span>
         </button>
 
         {/* Tab 5: Payments */}
@@ -1121,7 +1120,7 @@ function SettingsPage() {
           onClick={() => setActiveTab("payments")}
         >
           <CreditCard size={16} />
-          <span>{isKhmer ? "ធនាគារទូទាត់" : "Payment Gateways"}</span>
+          <span>{isKhmer ? "áž’áž“áž¶áž‚áž¶ážšáž‘áž¼áž‘áž¶ážáŸ‹" : "Payment Gateways"}</span>
         </button>
 
         {/* Tab 6: Shipping */}
@@ -1131,7 +1130,7 @@ function SettingsPage() {
           onClick={() => setActiveTab("shipping")}
         >
           <Truck size={16} />
-          <span>{isKhmer ? "ការដឹកជញ្ជូន" : "Delivery & Shipping"}</span>
+          <span>{isKhmer ? "áž€áž¶ážšážŠáž¹áž€áž‡áž‰áŸ’áž‡áž¼áž“" : "Delivery & Shipping"}</span>
         </button>
 
         {/* Tab 7: Security */}
@@ -1141,7 +1140,7 @@ function SettingsPage() {
           onClick={() => setActiveTab("security")}
         >
           <Lock size={16} />
-          <span>{isKhmer ? "សុវត្ថិភាព & ការជូនដំណឹង" : "Security & Alerts"}</span>
+          <span>{isKhmer ? "ážŸáž»ážœážáŸ’ážáž·áž—áž¶áž– & áž€áž¶ážšáž‡áž¼áž“ážŠáŸ†ážŽáž¹áž„" : "Security & Alerts"}</span>
         </button>
       </div>
 
@@ -1156,18 +1155,18 @@ function SettingsPage() {
               <div className="settings-card-header-left">
                 <h3>
                   <Palette size={19} color="#166534" />
-                  <span>{isKhmer ? "ស្បែកពណ៌ និងរូបរាង (Theme & Appearance Mode)" : "Theme & Appearance Mode"}</span>
+                  <span>{isKhmer ? "ážŸáŸ’áž”áŸ‚áž€áž–ážŽáŸŒ áž“áž·áž„ážšáž¼áž”ážšáž¶áž„ (Theme & Appearance Mode)" : "Theme & Appearance Mode"}</span>
                 </h3>
                 <p>
                   {isKhmer
-                    ? "ផ្លាស់ប្តូររូបរាងភ្លឺ ងងឹត ឬតាមប្រព័ន្ធកុំព្យូទ័រ/ទូរស័ព្ទសម្រាប់ផ្ទាំង Admin និងគេហទំព័រទាំងមូល។"
+                    ? "áž•áŸ’áž›áž¶ážŸáŸ‹áž”áŸ’ážáž¼ážšážšáž¼áž”ážšáž¶áž„áž—áŸ’áž›ážº áž„áž„áž¹áž áž¬ážáž¶áž˜áž”áŸ’ážšáž–áŸáž“áŸ’áž’áž€áž»áŸ†áž–áŸ’áž™áž¼áž‘áŸážš/áž‘áž¼ážšážŸáŸáž–áŸ’áž‘ážŸáž˜áŸ’ážšáž¶áž”áŸ‹áž•áŸ’áž‘áž¶áŸ†áž„ Admin áž“áž·áž„áž‚áŸáž áž‘áŸ†áž–áŸážšáž‘áž¶áŸ†áž„áž˜áž¼áž›áŸ”"
                     : "Select your preferred visual mode for the admin suite and storefront. Instant real-time toggle."}
                 </p>
               </div>
               <div className="theme-current-pill">
                 <span className="dot-pulse" />
                 <span>
-                  {isKhmer ? "ស្បែកបច្ចុប្បន្ន៖ " : "Active Mode: "}
+                  {isKhmer ? "ážŸáŸ’áž”áŸ‚áž€áž”áž…áŸ’áž…áž»áž”áŸ’áž”áž“áŸ’áž“áŸ– " : "Active Mode: "}
                   <strong>{theme.toUpperCase()} ({resolvedTheme.toUpperCase()})</strong>
                 </span>
               </div>
@@ -1198,8 +1197,8 @@ function SettingsPage() {
                       <Sun size={18} />
                     </div>
                     <div>
-                      <h4>{isKhmer ? "ពន្លឺ (Light Mode)" : "Light Mode"}</h4>
-                      <small>{isKhmer ? "ផ្ទៃសភ្លឺច្បាស់ ងាយស្រួលមើលពេលថ្ងៃ" : "Clean, crisp bright presentation"}</small>
+                      <h4>{isKhmer ? "áž–áž“áŸ’áž›ážº (Light Mode)" : "Light Mode"}</h4>
+                      <small>{isKhmer ? "áž•áŸ’áž‘áŸƒážŸáž—áŸ’áž›ážºáž…áŸ’áž”áž¶ážŸáŸ‹ áž„áž¶áž™ážŸáŸ’ážšáž½áž›áž˜áž¾áž›áž–áŸáž›ážáŸ’áž„áŸƒ" : "Clean, crisp bright presentation"}</small>
                     </div>
                   </div>
                   {theme === "light" && (
@@ -1234,8 +1233,8 @@ function SettingsPage() {
                       <Moon size={18} />
                     </div>
                     <div>
-                      <h4>{isKhmer ? "ងងឹត (Dark Mode)" : "Dark Mode"}</h4>
-                      <small>{isKhmer ? "ផ្ទៃខ្មៅប្រណិត កាត់បន្ថយចំណាំងពន្លឺ" : "Deep luxury dark theme for reduced eye strain"}</small>
+                      <h4>{isKhmer ? "áž„áž„áž¹áž (Dark Mode)" : "Dark Mode"}</h4>
+                      <small>{isKhmer ? "áž•áŸ’áž‘áŸƒážáŸ’áž˜áŸ…áž”áŸ’ážšážŽáž·áž áž€áž¶ážáŸ‹áž”áž“áŸ’ážáž™áž…áŸ†ážŽáž¶áŸ†áž„áž–áž“áŸ’áž›ážº" : "Deep luxury dark theme for reduced eye strain"}</small>
                     </div>
                   </div>
                   {theme === "dark" && (
@@ -1271,8 +1270,8 @@ function SettingsPage() {
                       <Laptop size={18} />
                     </div>
                     <div>
-                      <h4>{isKhmer ? "តាមឧបករណ៍ (System Auto)" : "System Default"}</h4>
-                      <small>{isKhmer ? "ផ្លាស់ប្តូរស្វ័យប្រវត្តិតាមការកំណត់ឧបករណ៍" : "Automatically syncs with device OS theme"}</small>
+                      <h4>{isKhmer ? "ážáž¶áž˜áž§áž”áž€ážšážŽáŸ (System Auto)" : "System Default"}</h4>
+                      <small>{isKhmer ? "áž•áŸ’áž›áž¶ážŸáŸ‹áž”áŸ’ážáž¼ážšážŸáŸ’ážœáŸáž™áž”áŸ’ážšážœážáŸ’ážáž·ážáž¶áž˜áž€áž¶ážšáž€áŸ†ážŽážáŸ‹áž§áž”áž€ážšážŽáŸ" : "Automatically syncs with device OS theme"}</small>
                     </div>
                   </div>
                   {theme === "system" && (
@@ -1291,18 +1290,18 @@ function SettingsPage() {
               <div className="settings-card-header-left">
                 <h3>
                   <Globe size={19} color="#166534" />
-                  <span>{isKhmer ? "ការកំណត់ភាសា (Language & Localization)" : "Language & Localization Selection"}</span>
+                  <span>{isKhmer ? "áž€áž¶ážšáž€áŸ†ážŽážáŸ‹áž—áž¶ážŸáž¶ (Language & Localization)" : "Language & Localization Selection"}</span>
                 </h3>
                 <p>
                   {isKhmer
-                    ? "ជ្រើសរើសភាសាចម្បងសម្រាប់គ្រប់គ្រងទិន្នន័យ របាយការណ៍ និងការបង្ហាញលើគេហទំព័រ។"
+                    ? "áž‡áŸ’ážšáž¾ážŸážšáž¾ážŸáž—áž¶ážŸáž¶áž…áž˜áŸ’áž”áž„ážŸáž˜áŸ’ážšáž¶áž”áŸ‹áž‚áŸ’ážšáž”áŸ‹áž‚áŸ’ážšáž„áž‘áž·áž“áŸ’áž“áž“áŸáž™ ážšáž”áž¶áž™áž€áž¶ážšážŽáŸ áž“áž·áž„áž€áž¶ážšáž”áž„áŸ’áž áž¶áž‰áž›áž¾áž‚áŸáž áž‘áŸ†áž–áŸážšáŸ”"
                     : "Select your active language. Changes apply immediately across all modules, sidebar, tables, and AI assistant."}
                 </p>
               </div>
               <div className="theme-current-pill">
                 <span>
-                  {isKhmer ? "ភាសាសកម្ម៖ " : "Active Language: "}
-                  <strong>{language === "km" ? "🇰🇭 ភាសាខ្មែរ (Khmer)" : "🇺🇸 English (US)"}</strong>
+                  {isKhmer ? "áž—áž¶ážŸáž¶ážŸáž€áž˜áŸ’áž˜áŸ– " : "Active Language: "}
+                  <strong>{language === "km" ? "ðŸ‡°ðŸ‡­ áž—áž¶ážŸáž¶ážáŸ’áž˜áŸ‚ážš (Khmer)" : "ðŸ‡ºðŸ‡¸ English (US)"}</strong>
                 </span>
               </div>
             </div>
@@ -1314,16 +1313,16 @@ function SettingsPage() {
                 onClick={() => setLanguage("km")}
               >
                 <div className="lang-flag-banner">
-                  <span className="lang-flag-emoji">🇰🇭</span>
+                  <span className="lang-flag-emoji">ðŸ‡°ðŸ‡­</span>
                   <span className="lang-code-pill">KM</span>
                 </div>
                 <div className="lang-card-details">
-                  <h4>ភាសាខ្មែរ (Khmer)</h4>
-                  <p>ប្រើប្រាស់ភាសាខ្មែរពេញលេញសម្រាប់ផ្ទាំង Admin ផលិតផល ការបញ្ជាទិញ និងសារជំនួយការ AI</p>
+                  <h4>áž—áž¶ážŸáž¶ážáŸ’áž˜áŸ‚ážš (Khmer)</h4>
+                  <p>áž”áŸ’ážšáž¾áž”áŸ’ážšáž¶ážŸáŸ‹áž—áž¶ážŸáž¶ážáŸ’áž˜áŸ‚ážšáž–áŸáž‰áž›áŸáž‰ážŸáž˜áŸ’ážšáž¶áž”áŸ‹áž•áŸ’áž‘áž¶áŸ†áž„ Admin áž•áž›áž·ážáž•áž› áž€áž¶ážšáž”áž‰áŸ’áž‡áž¶áž‘áž·áž‰ áž“áž·áž„ážŸáž¶ážšáž‡áŸ†áž“áž½áž™áž€áž¶ážš AI</p>
                   <div className="lang-feature-tags">
-                    <span className="lang-tag">✓ ផ្ទាំងបញ្ជាជាភាសាខ្មែរ</span>
-                    <span className="lang-tag">✓ សំឡេង AI ខ្មែរ</span>
-                    <span className="lang-tag">✓ ទ្រង់ទ្រាយប្រាក់រៀល (KHR)</span>
+                    <span className="lang-tag">âœ“ áž•áŸ’áž‘áž¶áŸ†áž„áž”áž‰áŸ’áž‡áž¶áž‡áž¶áž—áž¶ážŸáž¶ážáŸ’áž˜áŸ‚ážš</span>
+                    <span className="lang-tag">âœ“ ážŸáŸ†áž¡áŸáž„ AI ážáŸ’áž˜áŸ‚ážš</span>
+                    <span className="lang-tag">âœ“ áž‘áŸ’ážšáž„áŸ‹áž‘áŸ’ážšáž¶áž™áž”áŸ’ážšáž¶áž€áŸ‹ážšáŸ€áž› (KHR)</span>
                   </div>
                 </div>
                 {language === "km" && (
@@ -1339,16 +1338,16 @@ function SettingsPage() {
                 onClick={() => setLanguage("en")}
               >
                 <div className="lang-flag-banner">
-                  <span className="lang-flag-emoji">🇺🇸</span>
+                  <span className="lang-flag-emoji">ðŸ‡ºðŸ‡¸</span>
                   <span className="lang-code-pill">EN</span>
                 </div>
                 <div className="lang-card-details">
                   <h4>English (US)</h4>
                   <p>Standard International English interface for back-office administration, inventory, and analytics.</p>
                   <div className="lang-feature-tags">
-                    <span className="lang-tag">✓ Full English UI</span>
-                    <span className="lang-tag">✓ AI Voice in English</span>
-                    <span className="lang-tag">✓ USD ($) Standards</span>
+                    <span className="lang-tag">âœ“ Full English UI</span>
+                    <span className="lang-tag">âœ“ AI Voice in English</span>
+                    <span className="lang-tag">âœ“ USD ($) Standards</span>
                   </div>
                 </div>
                 {language === "en" && (
@@ -1366,11 +1365,11 @@ function SettingsPage() {
               <div className="settings-card-header-left">
                 <h3>
                   <Sliders size={18} color="#166534" />
-                  <span>{isKhmer ? "ការកំណត់លំនាំដើមសម្រាប់អតិថិជន និង AI" : "Storefront & AI Assistant Defaults"}</span>
+                  <span>{isKhmer ? "áž€áž¶ážšáž€áŸ†ážŽážáŸ‹áž›áŸ†áž“áž¶áŸ†ážŠáž¾áž˜ážŸáž˜áŸ’ážšáž¶áž”áŸ‹áž¢ážáž·ážáž·áž‡áž“ áž“áž·áž„ AI" : "Storefront & AI Assistant Defaults"}</span>
                 </h3>
                 <p>
                   {isKhmer
-                    ? "កំណត់ភាសា និងស្បែកពណ៌ដំបូងពេលដែលអតិថិជនថ្មីចូលទស្សនាគេហទំព័ររបស់អ្នក"
+                    ? "áž€áŸ†ážŽážáŸ‹áž—áž¶ážŸáž¶ áž“áž·áž„ážŸáŸ’áž”áŸ‚áž€áž–ážŽáŸŒážŠáŸ†áž”áž¼áž„áž–áŸáž›ážŠáŸ‚áž›áž¢ážáž·ážáž·áž‡áž“ážáŸ’áž˜áž¸áž…áž¼áž›áž‘ážŸáŸ’ážŸáž“áž¶áž‚áŸáž áž‘áŸ†áž–áŸážšážšáž”ážŸáŸ‹áž¢áŸ’áž“áž€"
                     : "Specify default preferences presented to first-time shoppers and guest visitors."}
                 </p>
               </div>
@@ -1378,38 +1377,38 @@ function SettingsPage() {
 
             <div className="settings-form-grid">
               <div className="form-group-item">
-                <label className="form-label">{isKhmer ? "ភាសាដំបូងសម្រាប់អតិថិជនថ្មី" : "Default Storefront Language"}</label>
+                <label className="form-label">{isKhmer ? "áž—áž¶ážŸáž¶ážŠáŸ†áž”áž¼áž„ážŸáž˜áŸ’ážšáž¶áž”áŸ‹áž¢ážáž·ážáž·áž‡áž“ážáŸ’áž˜áž¸" : "Default Storefront Language"}</label>
                 <select
                   className="settings-select"
                   value={settings.defaultStoreLanguage || "km"}
                   onChange={(e) => setSettings({ ...settings, defaultStoreLanguage: e.target.value })}
                 >
-                  <option value="km">🇰🇭 ភាសាខ្មែរ (Khmer) - Recommended</option>
-                  <option value="en">🇺🇸 English (US)</option>
+                  <option value="km">ðŸ‡°ðŸ‡­ áž—áž¶ážŸáž¶ážáŸ’áž˜áŸ‚ážš (Khmer) - Recommended</option>
+                  <option value="en">ðŸ‡ºðŸ‡¸ English (US)</option>
                 </select>
                 <span className="form-helper-text">
-                  {isKhmer ? "ភាសាដែលត្រូវបង្ហាញពេលអតិថិជនបើកគេហទំព័រលើកដំបូង" : "Default language shown to new visitors on first launch"}
+                  {isKhmer ? "áž—áž¶ážŸáž¶ážŠáŸ‚áž›ážáŸ’ážšáž¼ážœáž”áž„áŸ’áž áž¶áž‰áž–áŸáž›áž¢ážáž·ážáž·áž‡áž“áž”áž¾áž€áž‚áŸáž áž‘áŸ†áž–áŸážšáž›áž¾áž€ážŠáŸ†áž”áž¼áž„" : "Default language shown to new visitors on first launch"}
                 </span>
               </div>
 
               <div className="form-group-item">
-                <label className="form-label">{isKhmer ? "ស្បែកពណ៌ដំបូងសម្រាប់អតិថិជនថ្មី" : "Default Storefront Theme"}</label>
+                <label className="form-label">{isKhmer ? "ážŸáŸ’áž”áŸ‚áž€áž–ážŽáŸŒážŠáŸ†áž”áž¼áž„ážŸáž˜áŸ’ážšáž¶áž”áŸ‹áž¢ážáž·ážáž·áž‡áž“ážáŸ’áž˜áž¸" : "Default Storefront Theme"}</label>
                 <select
                   className="settings-select"
                   value={settings.defaultStoreTheme || "system"}
                   onChange={(e) => setSettings({ ...settings, defaultStoreTheme: e.target.value })}
                 >
-                  <option value="system">💻 System Auto-Match (Recommended)</option>
-                  <option value="light">☀️ Light Theme Mode</option>
-                  <option value="dark">🌙 Dark Theme Mode</option>
+                  <option value="system">ðŸ’» System Auto-Match (Recommended)</option>
+                  <option value="light">â˜€ï¸ Light Theme Mode</option>
+                  <option value="dark">ðŸŒ™ Dark Theme Mode</option>
                 </select>
                 <span className="form-helper-text">
-                  {isKhmer ? "ស្បែកពណ៌ដែលត្រូវបានជ្រើសរើសស្វ័យប្រវត្តសម្រាប់ភ្ញៀវ" : "Initial theme mode applied for non-logged-in shoppers"}
+                  {isKhmer ? "ážŸáŸ’áž”áŸ‚áž€áž–ážŽáŸŒážŠáŸ‚áž›ážáŸ’ážšáž¼ážœáž”áž¶áž“áž‡áŸ’ážšáž¾ážŸážšáž¾ážŸážŸáŸ’ážœáŸáž™áž”áŸ’ážšážœážáŸ’ážážŸáž˜áŸ’ážšáž¶áž”áŸ‹áž—áŸ’áž‰áŸ€ážœ" : "Initial theme mode applied for non-logged-in shoppers"}
                 </span>
               </div>
 
               <div className="form-group-item">
-                <label className="form-label">{isKhmer ? "តំបន់ម៉ោងប្រព័ន្ធ (Timezone)" : "System Timezone"}</label>
+                <label className="form-label">{isKhmer ? "ážáŸ†áž”áž“áŸ‹áž˜áŸ‰áŸ„áž„áž”áŸ’ážšáž–áŸáž“áŸ’áž’ (Timezone)" : "System Timezone"}</label>
                 <input
                   type="text"
                   className="settings-input"
@@ -1420,14 +1419,14 @@ function SettingsPage() {
               </div>
 
               <div className="form-group-item">
-                <label className="form-label">{isKhmer ? "ការបង្ហាញរូបិយប័ណ្ណទ្វេរ (USD & KHR)" : "Dual Currency Display"}</label>
+                <label className="form-label">{isKhmer ? "áž€áž¶ážšáž”áž„áŸ’áž áž¶áž‰ážšáž¼áž”áž·áž™áž”áŸážŽáŸ’ážŽáž‘áŸ’ážœáŸážš (USD & KHR)" : "Dual Currency Display"}</label>
                 <select
                   className="settings-select"
                   value={settings.dualCurrencyDisplay ? "yes" : "no"}
                   onChange={(e) => setSettings({ ...settings, dualCurrencyDisplay: e.target.value === "yes" })}
                 >
-                  <option value="yes">{isKhmer ? "បង្ហាញទាំង ដុល្លារ ($) និង រៀល (៛)" : "Show both USD ($) and KHR (៛)"}</option>
-                  <option value="no">{isKhmer ? "បង្ហាញតែ ដុល្លារ ($)" : "Show USD ($) only"}</option>
+                  <option value="yes">{isKhmer ? "áž”áž„áŸ’áž áž¶áž‰áž‘áž¶áŸ†áž„ ážŠáž»áž›áŸ’áž›áž¶ážš ($) áž“áž·áž„ ážšáŸ€áž› (áŸ›)" : "Show both USD ($) and KHR (áŸ›)"}</option>
+                  <option value="no">{isKhmer ? "áž”áž„áŸ’áž áž¶áž‰ážáŸ‚ ážŠáž»áž›áŸ’áž›áž¶ážš ($)" : "Show USD ($) only"}</option>
                 </select>
               </div>
             </div>
@@ -1439,11 +1438,11 @@ function SettingsPage() {
               <div className="settings-card-header-left">
                 <h3>
                   <Eye size={18} color="#166534" />
-                  <span>{isKhmer ? "ការបង្ហាញគំរូជាក់ស្តែង (Live UI Preview)" : "Live Interactive UI Simulation"}</span>
+                  <span>{isKhmer ? "áž€áž¶ážšáž”áž„áŸ’áž áž¶áž‰áž‚áŸ†ážšáž¼áž‡áž¶áž€áŸ‹ážŸáŸ’ážáŸ‚áž„ (Live UI Preview)" : "Live Interactive UI Simulation"}</span>
                 </h3>
                 <p>
                   {isKhmer
-                    ? "ទិដ្ឋភាពជាក់ស្តែងនៃប៊ូតុង ស្លាកសញ្ញា និងអត្ថបទតាមការកំណត់រូបរាងបច្ចុប្បន្ន"
+                    ? "áž‘áž·ážŠáŸ’áž‹áž—áž¶áž–áž‡áž¶áž€áŸ‹ážŸáŸ’ážáŸ‚áž„áž“áŸƒáž”áŸŠáž¼ážáž»áž„ ážŸáŸ’áž›áž¶áž€ážŸáž‰áŸ’áž‰áž¶ áž“áž·áž„áž¢ážáŸ’ážáž”áž‘ážáž¶áž˜áž€áž¶ážšáž€áŸ†ážŽážáŸ‹ážšáž¼áž”ážšáž¶áž„áž”áž…áŸ’áž…áž»áž”áŸ’áž”áž“áŸ’áž“"
                     : "Real-time preview demonstrating typography, card surfaces, badges, and button states in current theme."}
                 </p>
               </div>
@@ -1456,12 +1455,12 @@ function SettingsPage() {
                   <strong>Angkor Mall Admin Dashboard</strong>
                 </div>
                 <div className="preview-header-meta">
-                  <span className="preview-badge success">● System Online</span>
+                  <span className="preview-badge success">â— System Online</span>
                   <span className="preview-badge theme-tag">
-                    {resolvedTheme === "dark" ? "🌙 Dark Theme" : "☀️ Light Theme"}
+                    {resolvedTheme === "dark" ? "ðŸŒ™ Dark Theme" : "â˜€ï¸ Light Theme"}
                   </span>
                   <span className="preview-badge lang-tag">
-                    {language === "km" ? "🇰🇭 ភាសាខ្មែរ" : "🇺🇸 English"}
+                    {language === "km" ? "ðŸ‡°ðŸ‡­ áž—áž¶ážŸáž¶ážáŸ’áž˜áŸ‚ážš" : "ðŸ‡ºðŸ‡¸ English"}
                   </span>
                 </div>
               </div>
@@ -1470,32 +1469,32 @@ function SettingsPage() {
                 {/* Metric Card 1 */}
                 <div className="preview-metric-card">
                   <div className="preview-metric-top">
-                    <span className="preview-metric-label">{isKhmer ? "ចំណូលសរុបប្រចាំថ្ងៃ" : "Today's Total Revenue"}</span>
+                    <span className="preview-metric-label">{isKhmer ? "áž…áŸ†ážŽáž¼áž›ážŸážšáž»áž”áž”áŸ’ážšáž…áž¶áŸ†ážáŸ’áž„áŸƒ" : "Today's Total Revenue"}</span>
                     <span className="preview-metric-growth">+18.4%</span>
                   </div>
                   <div className="preview-metric-value">$4,850.00</div>
-                  <div className="preview-metric-sub">{isKhmer ? "ស្មើនឹង ≈ 19,885,000 ៛" : "Approx ≈ 19,885,000 KHR"}</div>
+                  <div className="preview-metric-sub">{isKhmer ? "ážŸáŸ’áž˜áž¾áž“áž¹áž„ â‰ˆ 19,885,000 áŸ›" : "Approx â‰ˆ 19,885,000 KHR"}</div>
                 </div>
 
                 {/* Metric Card 2 */}
                 <div className="preview-metric-card">
                   <div className="preview-metric-top">
-                    <span className="preview-metric-label">{isKhmer ? "ការបញ្ជាទិញថ្មី" : "New Orders Today"}</span>
+                    <span className="preview-metric-label">{isKhmer ? "áž€áž¶ážšáž”áž‰áŸ’áž‡áž¶áž‘áž·áž‰ážáŸ’áž˜áž¸" : "New Orders Today"}</span>
                     <span className="preview-metric-growth blue">+12</span>
                   </div>
-                  <div className="preview-metric-value">48 {isKhmer ? "កញ្ចប់" : "Orders"}</div>
+                  <div className="preview-metric-value">48 {isKhmer ? "áž€áž‰áŸ’áž…áž”áŸ‹" : "Orders"}</div>
                   <div className="preview-metric-sub">{isKhmer ? "ABA KHQR: 36 | COD: 12" : "ABA KHQR: 36 | COD: 12"}</div>
                 </div>
 
                 {/* Metric Card 3 */}
                 <div className="preview-metric-card">
                   <div className="preview-metric-top">
-                    <span className="preview-metric-label">{isKhmer ? "ជំនួយការឆ្លាតវៃ" : "AI Voice Assistant"}</span>
-                    <span className="preview-metric-growth green">{isKhmer ? "ដំណើរការ" : "Active"}</span>
+                    <span className="preview-metric-label">{isKhmer ? "áž‡áŸ†áž“áž½áž™áž€áž¶ážšáž†áŸ’áž›áž¶ážážœáŸƒ" : "AI Voice Assistant"}</span>
+                    <span className="preview-metric-growth green">{isKhmer ? "ážŠáŸ†ážŽáž¾ážšáž€áž¶ážš" : "Active"}</span>
                   </div>
                   <div className="preview-metric-value">Angkor AI 2.0</div>
                   <div className="preview-metric-sub">
-                    {isKhmer ? "ភាសាសំឡេង៖ ខ្មែរ (ស្តង់ដារ)" : "Voice Engine: English (US)"}
+                    {isKhmer ? "áž—áž¶ážŸáž¶ážŸáŸ†áž¡áŸáž„áŸ– ážáŸ’áž˜áŸ‚ážš (ážŸáŸ’ážáž„áŸ‹ážŠáž¶ážš)" : "Voice Engine: English (US)"}
                   </div>
                 </div>
               </div>
@@ -1503,10 +1502,10 @@ function SettingsPage() {
               <div className="preview-action-row">
                 <button type="button" className="btn-save-primary">
                   <Sparkles size={15} />
-                  <span>{isKhmer ? "សាកល្បងមុខងារថ្មី" : "Interactive Action"}</span>
+                  <span>{isKhmer ? "ážŸáž¶áž€áž›áŸ’áž”áž„áž˜áž»ážáž„áž¶ážšážáŸ’áž˜áž¸" : "Interactive Action"}</span>
                 </button>
                 <button type="button" className="btn-outline-secondary">
-                  <span>{isKhmer ? "មើលរបាយការណ៍លម្អិត" : "Export Report"}</span>
+                  <span>{isKhmer ? "áž˜áž¾áž›ážšáž”áž¶áž™áž€áž¶ážšážŽáŸáž›áž˜áŸ’áž¢áž·áž" : "Export Report"}</span>
                 </button>
               </div>
             </div>
@@ -1534,9 +1533,9 @@ function SettingsPage() {
                 <div className="settings-card-header-left">
                   <h3>
                     <Shield size={18} color="#166534" />
-                    <span>{isKhmer ? "ជ្រើសរើសតួនាទីដើម្បីកំណត់សិទ្ធិ" : "Select Role to Configure Permissions"}</span>
+                    <span>{isKhmer ? "áž‡áŸ’ážšáž¾ážŸážšáž¾ážŸážáž½áž“áž¶áž‘áž¸ážŠáž¾áž˜áŸ’áž”áž¸áž€áŸ†ážŽážáŸ‹ážŸáž·áž‘áŸ’áž’áž·" : "Select Role to Configure Permissions"}</span>
                   </h3>
-                  <p>{isKhmer ? "ជ្រើសរើសតួនាទីដើម្បីមើល ឬកែប្រែសិទ្ធិនីមួយៗក្នុងប្រព័ន្ធ រួច Sync ទៅកាន់ Database Backend API" : "Choose a role to inspect or adjust module privileges and save directly to backend API."}</p>
+                  <p>{isKhmer ? "áž‡áŸ’ážšáž¾ážŸážšáž¾ážŸážáž½áž“áž¶áž‘áž¸ážŠáž¾áž˜áŸ’áž”áž¸áž˜áž¾áž› áž¬áž€áŸ‚áž”áŸ’ážšáŸ‚ážŸáž·áž‘áŸ’áž’áž·áž“áž¸áž˜áž½áž™áŸ—áž€áŸ’áž“áž»áž„áž”áŸ’ážšáž–áŸáž“áŸ’áž’ ážšáž½áž… Sync áž‘áŸ…áž€áž¶áž“áŸ‹ Database Backend API" : "Choose a role to inspect or adjust module privileges and save directly to backend API."}</p>
                 </div>
                 {can("settings", "edit") && (
                   <button
@@ -1548,7 +1547,7 @@ function SettingsPage() {
                     }}
                   >
                     <Plus size={15} />
-                    <span>{isKhmer ? "បន្ថែមតួនាទីថ្មី" : "Add New Role"}</span>
+                    <span>{isKhmer ? "áž”áž“áŸ’ážáŸ‚áž˜ážáž½áž“áž¶áž‘áž¸ážáŸ’áž˜áž¸" : "Add New Role"}</span>
                   </button>
                 )}
               </div>
@@ -1592,9 +1591,9 @@ function SettingsPage() {
                       <h4 className="role-title">{role.name}</h4>
                       <p className="role-description">{role.desc}</p>
                       <div className="role-meta-row">
-                        <span>{isKhmer ? "បុគ្គលិកប្រើប្រាស់៖" : "Assigned Staff:"}</span>
+                        <span>{isKhmer ? "áž”áž»áž‚áŸ’áž‚áž›áž·áž€áž”áŸ’ážšáž¾áž”áŸ’ážšáž¶ážŸáŸ‹áŸ–" : "Assigned Staff:"}</span>
                         <span className="role-user-count">
-                          {staff.filter((s) => String(s.roleId) === String(role.id)).length} {isKhmer ? "នាក់" : "Users"}
+                          {staff.filter((s) => String(s.roleId) === String(role.id)).length} {isKhmer ? "áž“áž¶áž€áŸ‹" : "Users"}
                         </span>
                       </div>
                     </div>
@@ -1609,9 +1608,9 @@ function SettingsPage() {
                 <div className="settings-card-header-left">
                   <h3>
                     <Key size={18} color="#166534" />
-                    <span>{isKhmer ? `តារាងសិទ្ធិសម្រាប់៖ ${currentRole.name}` : `Permissions Matrix for: ${currentRole.name}`}</span>
+                    <span>{isKhmer ? `ážáž¶ážšáž¶áž„ážŸáž·áž‘áŸ’áž’áž·ážŸáž˜áŸ’ážšáž¶áž”áŸ‹áŸ– ${currentRole.name}` : `Permissions Matrix for: ${currentRole.name}`}</span>
                   </h3>
-                  <p>{isKhmer ? "ធីក ឬដោះធីកលើសកម្មភាពនីមួយៗ រួចចុច 'រក្សាទុកសិទ្ធិ' ដើម្បីបញ្ជូនទៅ API (/api/roles)" : "Configure capabilities below and click 'Save Role Permissions' to sync to database."}</p>
+                  <p>{isKhmer ? "áž’áž¸áž€ áž¬ážŠáŸ„áŸ‡áž’áž¸áž€áž›áž¾ážŸáž€áž˜áŸ’áž˜áž—áž¶áž–áž“áž¸áž˜áž½áž™áŸ— ážšáž½áž…áž…áž»áž… 'ážšáž€áŸ’ážŸáž¶áž‘áž»áž€ážŸáž·áž‘áŸ’áž’áž·' ážŠáž¾áž˜áŸ’áž”áž¸áž”áž‰áŸ’áž‡áž¼áž“áž‘áŸ… API (/api/roles)" : "Configure capabilities below and click 'Save Role Permissions' to sync to database."}</p>
                 </div>
                 {can("settings", "edit") && (
                   <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap" }}>
@@ -1624,7 +1623,7 @@ function SettingsPage() {
                       title="Grant all permissions across all modules"
                     >
                       <Check size={14} color="#166534" />
-                      <span>{isKhmer ? "ផ្តល់សិទ្ធិទាំងអស់" : "Grant All"}</span>
+                      <span>{isKhmer ? "áž•áŸ’ážáž›áŸ‹ážŸáž·áž‘áŸ’áž’áž·áž‘áž¶áŸ†áž„áž¢ážŸáŸ‹" : "Grant All"}</span>
                     </button>
                     <button
                       type="button"
@@ -1635,7 +1634,7 @@ function SettingsPage() {
                       title="Revoke all permissions for this role"
                     >
                       <X size={14} color="#dc2626" />
-                      <span>{isKhmer ? "ដកសិទ្ធិទាំងអស់" : "Revoke All"}</span>
+                      <span>{isKhmer ? "ážŠáž€ážŸáž·áž‘áŸ’áž’áž·áž‘áž¶áŸ†áž„áž¢ážŸáŸ‹" : "Revoke All"}</span>
                     </button>
                     <button
                       type="button"
@@ -1647,12 +1646,12 @@ function SettingsPage() {
                       {isSavingRole ? (
                         <>
                           <RotateCcw size={14} className="spin-animate" />
-                          <span>{isKhmer ? "កំពុងរក្សាទុក..." : "Saving..."}</span>
+                          <span>{isKhmer ? "áž€áŸ†áž–áž»áž„ážšáž€áŸ’ážŸáž¶áž‘áž»áž€..." : "Saving..."}</span>
                         </>
                       ) : (
                         <>
                           <Save size={14} />
-                          <span>{isKhmer ? "រក្សាទុកសិទ្ធិតួនាទីនេះ" : "Save Role Permissions"}</span>
+                          <span>{isKhmer ? "ážšáž€áŸ’ážŸáž¶áž‘áž»áž€ážŸáž·áž‘áŸ’áž’áž·ážáž½áž“áž¶áž‘áž¸áž“áŸáŸ‡" : "Save Role Permissions"}</span>
                         </>
                       )}
                     </button>
@@ -1683,13 +1682,13 @@ function SettingsPage() {
                     </span>
                     {isSuperAdmin && (
                       <span style={{ fontSize: "11.5px", color: "#166534", fontWeight: 600 }}>
-                        {isKhmer ? "🛡️ សិទ្ធិពេញលេញអចិន្ត្រៃយ៍" : "🛡️ Permanent Unrestricted Master Access"}
+                        {isKhmer ? "ðŸ›¡ï¸ ážŸáž·áž‘áŸ’áž’áž·áž–áŸáž‰áž›áŸáž‰áž¢áž…áž·áž“áŸ’ážáŸ’ážšáŸƒáž™áŸ" : "ðŸ›¡ï¸ Permanent Unrestricted Master Access"}
                       </span>
                     )}
                   </div>
                   <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#475569" }}>
                     {isKhmer
-                      ? `សិទ្ធិអនុញ្ញាត៖ ${currentGrantedCount} / ${totalSystemActions} (${currentPercentage}%)`
+                      ? `ážŸáž·áž‘áŸ’áž’áž·áž¢áž“áž»áž‰áŸ’áž‰áž¶ážáŸ– ${currentGrantedCount} / ${totalSystemActions} (${currentPercentage}%)`
                       : `Privileges Granted: ${currentGrantedCount} of ${totalSystemActions} (${currentPercentage}%)`}
                   </div>
                 </div>
@@ -1712,9 +1711,9 @@ function SettingsPage() {
                 <table className="matrix-table">
                   <thead>
                     <tr>
-                      <th style={{ width: "35%" }}>{isKhmer ? "ផ្នែក / មុខងារ" : "Module Name"}</th>
-                      <th style={{ width: "15%", textAlign: "center" }}>{isKhmer ? "ជ្រើសទាំងអស់" : "Select All"}</th>
-                      <th>{isKhmer ? "សិទ្ធិអនុញ្ញាត" : "Permissions & Actions"}</th>
+                      <th style={{ width: "35%" }}>{isKhmer ? "áž•áŸ’áž“áŸ‚áž€ / áž˜áž»ážáž„áž¶ážš" : "Module Name"}</th>
+                      <th style={{ width: "15%", textAlign: "center" }}>{isKhmer ? "áž‡áŸ’ážšáž¾ážŸáž‘áž¶áŸ†áž„áž¢ážŸáŸ‹" : "Select All"}</th>
+                      <th>{isKhmer ? "ážŸáž·áž‘áŸ’áž’áž·áž¢áž“áž»áž‰áŸ’áž‰áž¶áž" : "Permissions & Actions"}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1810,9 +1809,9 @@ function SettingsPage() {
             <div className="settings-card-header-left">
               <h3>
                 <Users size={18} color="#166534" />
-                <span>{isKhmer ? "គណនី Admin & បុគ្គលិកគ្រប់គ្រង" : "Admin & Staff Accounts"}</span>
+                <span>{isKhmer ? "áž‚ážŽáž“áž¸ Admin & áž”áž»áž‚áŸ’áž‚áž›áž·áž€áž‚áŸ’ážšáž”áŸ‹áž‚áŸ’ážšáž„" : "Admin & Staff Accounts"}</span>
               </h3>
-              <p>{isKhmer ? "គ្រប់គ្រងអ្នកប្រើប្រាស់ និងតួនាទីរបស់ពួកគេក្នុងប្រព័ន្ធ" : "Manage back-office users and their designated system roles."}</p>
+              <p>{isKhmer ? "áž‚áŸ’ážšáž”áŸ‹áž‚áŸ’ážšáž„áž¢áŸ’áž“áž€áž”áŸ’ážšáž¾áž”áŸ’ážšáž¶ážŸáŸ‹ áž“áž·áž„ážáž½áž“áž¶áž‘áž¸ážšáž”ážŸáŸ‹áž–áž½áž€áž‚áŸáž€áŸ’áž“áž»áž„áž”áŸ’ážšáž–áŸáž“áŸ’áž’" : "Manage back-office users and their designated system roles."}</p>
             </div>
             {can("settings", "edit") && (
               <button
@@ -1825,7 +1824,7 @@ function SettingsPage() {
                 }}
               >
                 <Plus size={15} />
-                <span>{isKhmer ? "បន្ថែមបុគ្គលិកថ្មី" : "Add Staff User"}</span>
+                <span>{isKhmer ? "áž”áž“áŸ’ážáŸ‚áž˜áž”áž»áž‚áŸ’áž‚áž›áž·áž€ážáŸ’áž˜áž¸" : "Add Staff User"}</span>
               </button>
             )}
           </div>
@@ -1834,11 +1833,11 @@ function SettingsPage() {
             <table className="staff-table">
               <thead>
                 <tr>
-                  <th>{isKhmer ? "ឈ្មោះអ្នកប្រើ" : "User"}</th>
-                  <th>{isKhmer ? "តួនាទី" : "Assigned Role"}</th>
-                  <th>{isKhmer ? "ស្ថានភាព" : "Status"}</th>
-                  <th>{isKhmer ? "សកម្មភាពចុងក្រោយ" : "Last Active"}</th>
-                  {can("settings", "edit") && <th style={{ textAlign: "right" }}>{isKhmer ? "សកម្មភាព" : "Actions"}</th>}
+                  <th>{isKhmer ? "ážˆáŸ’áž˜áŸ„áŸ‡áž¢áŸ’áž“áž€áž”áŸ’ážšáž¾" : "User"}</th>
+                  <th>{isKhmer ? "ážáž½áž“áž¶áž‘áž¸" : "Assigned Role"}</th>
+                  <th>{isKhmer ? "ážŸáŸ’ážáž¶áž“áž—áž¶áž–" : "Status"}</th>
+                  <th>{isKhmer ? "ážŸáž€áž˜áŸ’áž˜áž—áž¶áž–áž…áž»áž„áž€áŸ’ážšáŸ„áž™" : "Last Active"}</th>
+                  {can("settings", "edit") && <th style={{ textAlign: "right" }}>{isKhmer ? "ážŸáž€áž˜áŸ’áž˜áž—áž¶áž–" : "Actions"}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -1870,21 +1869,21 @@ function SettingsPage() {
                           style={{ padding: "6px 12px", fontSize: "12px", marginRight: "6px", color: "#f57c00", borderColor: "#ffe082" }}
                           onClick={async () => {
                             const { value: newPassword } = await Swal.fire({
-                              title: isKhmer ? `ប្តូរលេខសម្ងាត់សម្រាប់ ${member.name}` : `Change Password for ${member.name}`,
+                              title: isKhmer ? `áž”áŸ’ážáž¼ážšáž›áŸážážŸáž˜áŸ’áž„áž¶ážáŸ‹ážŸáž˜áŸ’ážšáž¶áž”áŸ‹ ${member.name}` : `Change Password for ${member.name}`,
                               input: "password",
-                              inputLabel: isKhmer ? "លេខសម្ងាត់ថ្មី (យ៉ាងតិច ៦ តួអក្សរ)" : "New Password (min 6 characters)",
-                              inputPlaceholder: isKhmer ? "បញ្ចូលលេខសម្ងាត់ថ្មី..." : "Enter new password...",
+                              inputLabel: isKhmer ? "áž›áŸážážŸáž˜áŸ’áž„áž¶ážáŸ‹ážáŸ’áž˜áž¸ (áž™áŸ‰áž¶áž„ážáž·áž… áŸ¦ ážáž½áž¢áž€áŸ’ážŸážš)" : "New Password (min 6 characters)",
+                              inputPlaceholder: isKhmer ? "áž”áž‰áŸ’áž…áž¼áž›áž›áŸážážŸáž˜áŸ’áž„áž¶ážáŸ‹ážáŸ’áž˜áž¸..." : "Enter new password...",
                               showCancelButton: true,
-                              confirmButtonText: isKhmer ? "ផ្លាស់ប្តូរ" : "Update Password",
+                              confirmButtonText: isKhmer ? "áž•áŸ’áž›áž¶ážŸáŸ‹áž”áŸ’ážáž¼ážš" : "Update Password",
                               confirmButtonColor: "#f57c00",
                               inputValidator: (val) => {
-                                if (!val || val.length < 6) return isKhmer ? "លេខសម្ងាត់ត្រូវមានយ៉ាងតិច ៦ តួ!" : "Password must be at least 6 characters!";
+                                if (!val || val.length < 6) return isKhmer ? "áž›áŸážážŸáž˜áŸ’áž„áž¶ážáŸ‹ážáŸ’ážšáž¼ážœáž˜áž¶áž“áž™áŸ‰áž¶áž„ážáž·áž… áŸ¦ ážáž½!" : "Password must be at least 6 characters!";
                               }
                             });
                             if (newPassword) {
                               try {
                                 await adminChangeUserPasswordApi(member.id, newPassword).catch(() => null);
-                                Swal.fire(isKhmer ? "ជោគជ័យ!" : "Success!", isKhmer ? `បានផ្លាស់ប្តូរលេខសម្ងាត់សម្រាប់ ${member.name}` : `Password updated for ${member.name}`, "success");
+                                Swal.fire(isKhmer ? "áž‡áŸ„áž‚áž‡áŸáž™!" : "Success!", isKhmer ? `áž”áž¶áž“áž•áŸ’áž›áž¶ážŸáŸ‹áž”áŸ’ážáž¼ážšáž›áŸážážŸáž˜áŸ’áž„áž¶ážáŸ‹ážŸáž˜áŸ’ážšáž¶áž”áŸ‹ ${member.name}` : `Password updated for ${member.name}`, "success");
                               } catch (err) {
                                 Swal.fire("Error", err.message || "Failed to update password", "error");
                               }
@@ -1892,7 +1891,7 @@ function SettingsPage() {
                           }}
                         >
                           <Key size={13} />
-                          <span>{isKhmer ? "ប្តូរលេខសម្ងាត់" : "Password"}</span>
+                          <span>{isKhmer ? "áž”áŸ’ážáž¼ážšáž›áŸážážŸáž˜áŸ’áž„áž¶ážáŸ‹" : "Password"}</span>
                         </button>
                         <button
                           type="button"
@@ -1912,7 +1911,7 @@ function SettingsPage() {
                           }}
                         >
                           <Edit2 size={13} />
-                          <span>{isKhmer ? "កែប្រែ" : "Edit"}</span>
+                          <span>{isKhmer ? "áž€áŸ‚áž”áŸ’ážšáŸ‚" : "Edit"}</span>
                         </button>
                         <button
                           type="button"
@@ -1920,36 +1919,36 @@ function SettingsPage() {
                           style={{ padding: "6px 12px", fontSize: "12px", marginRight: "6px" }}
                           onClick={async () => {
                             const action = await Swal.fire({
-                              title: isKhmer ? `គ្រប់គ្រង 2FA សម្រាប់ ${member.name}` : `Manage 2FA for ${member.name}`,
-                              text: isKhmer ? "ជ្រើសរើសសកម្មភាព 2FA ដែលអ្នកចង់អនុវត្ត" : "Choose a 2FA action to perform",
+                              title: isKhmer ? `áž‚áŸ’ážšáž”áŸ‹áž‚áŸ’ážšáž„ 2FA ážŸáž˜áŸ’ážšáž¶áž”áŸ‹ ${member.name}` : `Manage 2FA for ${member.name}`,
+                              text: isKhmer ? "áž‡áŸ’ážšáž¾ážŸážšáž¾ážŸážŸáž€áž˜áŸ’áž˜áž—áž¶áž– 2FA ážŠáŸ‚áž›áž¢áŸ’áž“áž€áž…áž„áŸ‹áž¢áž“áž»ážœážáŸ’áž" : "Choose a 2FA action to perform",
                               icon: "question",
                               showCancelButton: true,
-                              confirmButtonText: isKhmer ? "បន្ថែម/កែប្រែ PIN" : "Set / Update PIN",
-                              cancelButtonText: isKhmer ? "បិទ" : "Cancel",
+                              confirmButtonText: isKhmer ? "áž”áž“áŸ’ážáŸ‚áž˜/áž€áŸ‚áž”áŸ’ážšáŸ‚ PIN" : "Set / Update PIN",
+                              cancelButtonText: isKhmer ? "áž”áž·áž‘" : "Cancel",
                               showDenyButton: true,
-                              denyButtonText: isKhmer ? "បិទផ្អាក 2FA" : "Disable 2FA",
+                              denyButtonText: isKhmer ? "áž”áž·áž‘áž•áŸ’áž¢áž¶áž€ 2FA" : "Disable 2FA",
                               confirmButtonColor: "#f57c00",
                               denyButtonColor: "#dc2626"
                             });
 
                             if (action.isConfirmed) {
                               const { value: pin } = await Swal.fire({
-                                title: isKhmer ? `កំណត់ 2FA PIN សម្រាប់ ${member.name}` : `Set 2FA PIN for ${member.name}`,
+                                title: isKhmer ? `áž€áŸ†ážŽážáŸ‹ 2FA PIN ážŸáž˜áŸ’ážšáž¶áž”áŸ‹ ${member.name}` : `Set 2FA PIN for ${member.name}`,
                                 input: "password",
-                                inputLabel: isKhmer ? "PIN (យ៉ាងតិច ៤ តួខ្ទង់)" : "PIN (min 4 digits)",
-                                inputPlaceholder: isKhmer ? "បញ្ចូល PIN..." : "Enter PIN...",
+                                inputLabel: isKhmer ? "PIN (áž™áŸ‰áž¶áž„ážáž·áž… áŸ¤ ážáž½ážáŸ’áž‘áž„áŸ‹)" : "PIN (min 4 digits)",
+                                inputPlaceholder: isKhmer ? "áž”áž‰áŸ’áž…áž¼áž› PIN..." : "Enter PIN...",
                                 showCancelButton: true,
-                                confirmButtonText: isKhmer ? "រក្សាទុក" : "Save PIN",
+                                confirmButtonText: isKhmer ? "ážšáž€áŸ’ážŸáž¶áž‘áž»áž€" : "Save PIN",
                                 confirmButtonColor: "#f57c00",
                                 inputValidator: (val) => {
-                                  if (!val || val.length < 4) return isKhmer ? "PIN ត្រូវមានយ៉ាងតិច ៤ តួ!" : "PIN must be at least 4 digits!";
+                                  if (!val || val.length < 4) return isKhmer ? "PIN ážáŸ’ážšáž¼ážœáž˜áž¶áž“áž™áŸ‰áž¶áž„ážáž·áž… áŸ¤ ážáž½!" : "PIN must be at least 4 digits!";
                                 }
                               });
 
                               if (pin) {
                                 try {
                                   await enableStaff2FAApi(member.id, pin);
-                                  Swal.fire(isKhmer ? "ជោគជ័យ!" : "Success!", isKhmer ? `2FA PIN ត្រូវបានកំណត់សម្រាប់ ${member.name}` : `2FA PIN configured for ${member.name}`, "success");
+                                  Swal.fire(isKhmer ? "áž‡áŸ„áž‚áž‡áŸáž™!" : "Success!", isKhmer ? `2FA PIN ážáŸ’ážšáž¼ážœáž”áž¶áž“áž€áŸ†ážŽážáŸ‹ážŸáž˜áŸ’ážšáž¶áž”áŸ‹ ${member.name}` : `2FA PIN configured for ${member.name}`, "success");
                                 } catch (err) {
                                   Swal.fire("Error", err.message || "Failed to enable 2FA", "error");
                                 }
@@ -1957,7 +1956,7 @@ function SettingsPage() {
                             } else if (action.isDenied) {
                               try {
                                 await disableStaff2FAApi(member.id);
-                                Swal.fire(isKhmer ? "ជោគជ័យ!" : "Success!", isKhmer ? `2FA ត្រូវបានបិទសម្រាប់ ${member.name}` : `2FA disabled for ${member.name}`, "success");
+                                Swal.fire(isKhmer ? "áž‡áŸ„áž‚áž‡áŸáž™!" : "Success!", isKhmer ? `2FA ážáŸ’ážšáž¼ážœáž”áž¶áž“áž”áž·áž‘ážŸáž˜áŸ’ážšáž¶áž”áŸ‹ ${member.name}` : `2FA disabled for ${member.name}`, "success");
                               } catch (err) {
                                 Swal.fire("Error", err.message || "Failed to disable 2FA", "error");
                               }
@@ -1974,7 +1973,7 @@ function SettingsPage() {
                           onClick={() => handleDeleteStaff(member)}
                         >
                           <Trash2 size={13} />
-                          <span>{isKhmer ? "លុប" : "Delete"}</span>
+                          <span>{isKhmer ? "áž›áž»áž”" : "Delete"}</span>
                         </button>
                       </td>
                     )}
@@ -1995,15 +1994,15 @@ function SettingsPage() {
             <div className="settings-card-header-left">
               <h3>
                 <Store size={18} color="#166534" />
-                <span>{isKhmer ? "ព័ត៌មានទូទៅរបស់ហាង" : "Store Profile & Official Information"}</span>
+                <span>{isKhmer ? "áž–áŸážáŸŒáž˜áž¶áž“áž‘áž¼áž‘áŸ…ážšáž”ážŸáŸ‹áž áž¶áž„" : "Store Profile & Official Information"}</span>
               </h3>
-              <p>{isKhmer ? "កំណត់ឈ្មោះហាង ពាក្យស្លោក ព័ត៌មានទំនាក់ទំនង និងរូបិយប័ណ្ណ" : "Customize store branding, operating details, contact channels, and currency."}</p>
+              <p>{isKhmer ? "áž€áŸ†ážŽážáŸ‹ážˆáŸ’áž˜áŸ„áŸ‡áž áž¶áž„ áž–áž¶áž€áŸ’áž™ážŸáŸ’áž›áŸ„áž€ áž–áŸážáŸŒáž˜áž¶áž“áž‘áŸ†áž“áž¶áž€áŸ‹áž‘áŸ†áž“áž„ áž“áž·áž„ážšáž¼áž”áž·áž™áž”áŸážŽáŸ’ážŽ" : "Customize store branding, operating details, contact channels, and currency."}</p>
             </div>
           </div>
 
           <div className="settings-form-grid">
             <div className="form-group-item">
-              <label className="form-label">{isKhmer ? "ឈ្មោះហាង / ផ្សារទំនើប" : "Mall / Store Name"}</label>
+              <label className="form-label">{isKhmer ? "ážˆáŸ’áž˜áŸ„áŸ‡áž áž¶áž„ / áž•áŸ’ážŸáž¶ážšáž‘áŸ†áž“áž¾áž”" : "Mall / Store Name"}</label>
               <input
                 type="text"
                 className="settings-input"
@@ -2013,7 +2012,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">{isKhmer ? "ពាក្យស្លោកផ្លូវការ" : "Official Tagline"}</label>
+              <label className="form-label">{isKhmer ? "áž–áž¶áž€áŸ’áž™ážŸáŸ’áž›áŸ„áž€áž•áŸ’áž›áž¼ážœáž€áž¶ážš" : "Official Tagline"}</label>
               <input
                 type="text"
                 className="settings-input"
@@ -2023,7 +2022,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">{isKhmer ? "អ៊ីមែលជំនួយការ" : "Support Email"}</label>
+              <label className="form-label">{isKhmer ? "áž¢áŸŠáž¸áž˜áŸ‚áž›áž‡áŸ†áž“áž½áž™áž€áž¶ážš" : "Support Email"}</label>
               <input
                 type="email"
                 className="settings-input"
@@ -2033,7 +2032,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">{isKhmer ? "លេខទូរស័ព្ទ Hotline" : "Hotline Phone"}</label>
+              <label className="form-label">{isKhmer ? "áž›áŸážáž‘áž¼ážšážŸáŸáž–áŸ’áž‘ Hotline" : "Hotline Phone"}</label>
               <input
                 type="text"
                 className="settings-input"
@@ -2043,7 +2042,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">{isKhmer ? "ឆានែល Telegram ផ្លូវការ" : "Official Telegram Channel"}</label>
+              <label className="form-label">{isKhmer ? "áž†áž¶áž“áŸ‚áž› Telegram áž•áŸ’áž›áž¼ážœáž€áž¶ážš" : "Official Telegram Channel"}</label>
               <input
                 type="text"
                 className="settings-input"
@@ -2053,19 +2052,19 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">{isKhmer ? "រូបិយប័ណ្ណចម្បង" : "Primary Currency"}</label>
+              <label className="form-label">{isKhmer ? "ážšáž¼áž”áž·áž™áž”áŸážŽáŸ’ážŽáž…áž˜áŸ’áž”áž„" : "Primary Currency"}</label>
               <select
                 className="settings-select"
                 value={settings.currency}
                 onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
               >
                 <option value="USD">USD ($) - US Dollar</option>
-                <option value="KHR">KHR (៛) - Cambodian Riel</option>
+                <option value="KHR">KHR (áŸ›) - Cambodian Riel</option>
               </select>
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">{isKhmer ? "អត្រាប្តូរប្រាក់រៀល (1 USD = X KHR)" : "KHR Exchange Rate (1 USD = X KHR)"}</label>
+              <label className="form-label">{isKhmer ? "áž¢ážáŸ’ážšáž¶áž”áŸ’ážáž¼ážšáž”áŸ’ážšáž¶áž€áŸ‹ážšáŸ€áž› (1 USD = X KHR)" : "KHR Exchange Rate (1 USD = X KHR)"}</label>
               <input
                 type="number"
                 className="settings-input"
@@ -2075,7 +2074,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">{isKhmer ? "អត្រាពន្ធ VAT (%)" : "VAT / Tax Rate (%)"}</label>
+              <label className="form-label">{isKhmer ? "áž¢ážáŸ’ážšáž¶áž–áž“áŸ’áž’ VAT (%)" : "VAT / Tax Rate (%)"}</label>
               <input
                 type="number"
                 className="settings-input"
@@ -2085,7 +2084,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item full-width">
-              <label className="form-label">{isKhmer ? "អាសយដ្ឋានទីស្នាក់ការកណ្តាល" : "Physical Store / Headquarters Address"}</label>
+              <label className="form-label">{isKhmer ? "áž¢áž¶ážŸáž™ážŠáŸ’áž‹áž¶áž“áž‘áž¸ážŸáŸ’áž“áž¶áž€áŸ‹áž€áž¶ážšáž€ážŽáŸ’ážáž¶áž›" : "Physical Store / Headquarters Address"}</label>
               <textarea
                 className="settings-textarea"
                 value={settings.storeAddress}
@@ -2105,9 +2104,9 @@ function SettingsPage() {
             <div className="settings-card-header-left">
               <h3>
                 <CreditCard size={18} color="#166534" />
-                <span>{isKhmer ? "ធនាគារទូទាត់ប្រាក់ & KHQR" : "Payment Gateways & Checkout Methods"}</span>
+                <span>{isKhmer ? "áž’áž“áž¶áž‚áž¶ážšáž‘áž¼áž‘áž¶ážáŸ‹áž”áŸ’ážšáž¶áž€áŸ‹ & KHQR" : "Payment Gateways & Checkout Methods"}</span>
               </h3>
-              <p>{isKhmer ? "កំណត់ ABA KHQR, Wing Bank, Cash on Delivery និងកាតធនាគារ" : "Configure ABA KHQR, Wing Bank, Cash on Delivery, and Credit/Debit cards."}</p>
+              <p>{isKhmer ? "áž€áŸ†ážŽážáŸ‹ ABA KHQR, Wing Bank, Cash on Delivery áž“áž·áž„áž€áž¶ážáž’áž“áž¶áž‚áž¶ážš" : "Configure ABA KHQR, Wing Bank, Cash on Delivery, and Credit/Debit cards."}</p>
             </div>
           </div>
 
@@ -2116,7 +2115,7 @@ function SettingsPage() {
             <div className="payment-gateway-item">
               <div className="payment-gateway-top">
                 <div className="payment-gateway-info">
-                  <div className="gateway-icon-badge">🏦</div>
+                  <div className="gateway-icon-badge">ðŸ¦</div>
                   <div>
                     <strong style={{ fontSize: "14.5px" }}>ABA KHQR & PayWay</strong>
                     <div style={{ fontSize: "12px", color: "var(--text-muted, #64748b)" }}>Instant QR scan & in-app checkout</div>
@@ -2160,7 +2159,7 @@ function SettingsPage() {
             <div className="payment-gateway-item">
               <div className="payment-gateway-top">
                 <div className="payment-gateway-info">
-                  <div className="gateway-icon-badge" style={{ color: "#84cc16" }}>💸</div>
+                  <div className="gateway-icon-badge" style={{ color: "#84cc16" }}>ðŸ’¸</div>
                   <div>
                     <strong style={{ fontSize: "14.5px" }}>Wing Bank Wallet</strong>
                     <div style={{ fontSize: "12px", color: "var(--text-muted, #64748b)" }}>Wing KHQR & mobile account</div>
@@ -2181,7 +2180,7 @@ function SettingsPage() {
             <div className="payment-gateway-item">
               <div className="payment-gateway-top">
                 <div className="payment-gateway-info">
-                  <div className="gateway-icon-badge">📦</div>
+                  <div className="gateway-icon-badge">ðŸ“¦</div>
                   <div>
                     <strong style={{ fontSize: "14.5px" }}>Cash on Delivery (COD)</strong>
                     <div style={{ fontSize: "12px", color: "var(--text-muted, #64748b)" }}>Pay driver upon parcel receipt</div>
@@ -2214,7 +2213,7 @@ function SettingsPage() {
             <div className="payment-gateway-item">
               <div className="payment-gateway-top">
                 <div className="payment-gateway-info">
-                  <div className="gateway-icon-badge">💳</div>
+                  <div className="gateway-icon-badge">ðŸ’³</div>
                   <div>
                     <strong style={{ fontSize: "14.5px" }}>Credit / Debit Cards</strong>
                     <div style={{ fontSize: "12px", color: "var(--text-muted, #64748b)" }}>Visa, MasterCard, UnionPay</div>
@@ -2243,15 +2242,15 @@ function SettingsPage() {
             <div className="settings-card-header-left">
               <h3>
                 <Truck size={18} color="#166534" />
-                <span>{isKhmer ? "ការដឹកជញ្ជូន & តម្លៃសេវា" : "Delivery Zones & Shipping Rates"}</span>
+                <span>{isKhmer ? "áž€áž¶ážšážŠáž¹áž€áž‡áž‰áŸ’áž‡áž¼áž“ & ážáž˜áŸ’áž›áŸƒážŸáŸážœáž¶" : "Delivery Zones & Shipping Rates"}</span>
               </h3>
-              <p>{isKhmer ? "កំណត់តម្លៃដឹកជញ្ជូនក្នុងរាជធានីភ្នំពេញ និងតាមបណ្តាខេត្ត" : "Configure Phnom Penh express delivery and nationwide province dispatch fees."}</p>
+              <p>{isKhmer ? "áž€áŸ†ážŽážáŸ‹ážáž˜áŸ’áž›áŸƒážŠáž¹áž€áž‡áž‰áŸ’áž‡áž¼áž“áž€áŸ’áž“áž»áž„ážšáž¶áž‡áž’áž¶áž“áž¸áž—áŸ’áž“áŸ†áž–áŸáž‰ áž“áž·áž„ážáž¶áž˜áž”ážŽáŸ’ážáž¶ážáŸážáŸ’áž" : "Configure Phnom Penh express delivery and nationwide province dispatch fees."}</p>
             </div>
           </div>
 
           <div className="settings-form-grid">
             <div className="form-group-item">
-              <label className="form-label">{isKhmer ? "តម្លៃដឹកជញ្ជូនភ្នំពេញ ($)" : "Express Delivery Fee - Phnom Penh ($)"}</label>
+              <label className="form-label">{isKhmer ? "ážáž˜áŸ’áž›áŸƒážŠáž¹áž€áž‡áž‰áŸ’áž‡áž¼áž“áž—áŸ’áž“áŸ†áž–áŸáž‰ ($)" : "Express Delivery Fee - Phnom Penh ($)"}</label>
               <input
                 type="number"
                 step="0.1"
@@ -2262,7 +2261,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">{isKhmer ? "រយៈពេលប៉ាន់ស្មានដឹកដល់" : "Estimated Delivery Timeframe"}</label>
+              <label className="form-label">{isKhmer ? "ážšáž™áŸˆáž–áŸáž›áž”áŸ‰áž¶áž“áŸ‹ážŸáŸ’áž˜áž¶áž“ážŠáž¹áž€ážŠáž›áŸ‹" : "Estimated Delivery Timeframe"}</label>
               <input
                 type="text"
                 className="settings-input"
@@ -2272,7 +2271,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">{isKhmer ? "តម្លៃដឹកជញ្ជូនតាមបណ្តាខេត្ត ($)" : "Provinces Shipping Fee ($)"}</label>
+              <label className="form-label">{isKhmer ? "ážáž˜áŸ’áž›áŸƒážŠáž¹áž€áž‡áž‰áŸ’áž‡áž¼áž“ážáž¶áž˜áž”ážŽáŸ’ážáž¶ážáŸážáŸ’áž ($)" : "Provinces Shipping Fee ($)"}</label>
               <input
                 type="number"
                 step="0.1"
@@ -2283,7 +2282,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">{isKhmer ? "កម្រិតទឹកប្រាក់ដើម្បីទទួលបានដឹកឥតគិតថ្លៃ ($)" : "Free Shipping Minimum Threshold ($)"}</label>
+              <label className="form-label">{isKhmer ? "áž€áž˜áŸ’ážšáž·ážáž‘áž¹áž€áž”áŸ’ážšáž¶áž€áŸ‹ážŠáž¾áž˜áŸ’áž”áž¸áž‘áž‘áž½áž›áž”áž¶áž“ážŠáž¹áž€áž¥ážáž‚áž·ážážáŸ’áž›áŸƒ ($)" : "Free Shipping Minimum Threshold ($)"}</label>
               <input
                 type="number"
                 className="settings-input"
@@ -2291,7 +2290,7 @@ function SettingsPage() {
                 onChange={(e) => setSettings({ ...settings, freeShippingThreshold: Number(e.target.value) })}
               />
               <span className="form-helper-text">
-                {isKhmer ? "ការបញ្ជាទិញចាប់ពីចំនួននេះឡើងទៅនឹងទទួលបានការដឹកជញ្ជូនឥតគិតថ្លៃ" : "Orders above this amount receive free shipping automatically."}
+                {isKhmer ? "áž€áž¶ážšáž”áž‰áŸ’áž‡áž¶áž‘áž·áž‰áž…áž¶áž”áŸ‹áž–áž¸áž…áŸ†áž“áž½áž“áž“áŸáŸ‡áž¡áž¾áž„áž‘áŸ…áž“áž¹áž„áž‘áž‘áž½áž›áž”áž¶áž“áž€áž¶ážšážŠáž¹áž€áž‡áž‰áŸ’áž‡áž¼áž“áž¥ážáž‚áž·ážážáŸ’áž›áŸƒ" : "Orders above this amount receive free shipping automatically."}
               </span>
             </div>
           </div>
@@ -2307,9 +2306,9 @@ function SettingsPage() {
             <div className="settings-card-header-left">
               <h3>
                 <Lock size={18} color="#166534" />
-                <span>{isKhmer ? "សុវត្ថិភាព ការជូនដំណឹង & ការថែទាំប្រព័ន្ធ" : "Security Policies, Alerts & Maintenance"}</span>
+                <span>{isKhmer ? "ážŸáž»ážœážáŸ’ážáž·áž—áž¶áž– áž€áž¶ážšáž‡áž¼áž“ážŠáŸ†ážŽáž¹áž„ & áž€áž¶ážšážáŸ‚áž‘áž¶áŸ†áž”áŸ’ážšáž–áŸáž“áŸ’áž’" : "Security Policies, Alerts & Maintenance"}</span>
               </h3>
-              <p>{isKhmer ? "កំណត់កម្រិតព្រមានស្តុក Telegram Webhook និងរបៀបថែទាំប្រព័ន្ធ" : "Configure stock alert thresholds, Telegram webhooks, and maintenance mode."}</p>
+              <p>{isKhmer ? "áž€áŸ†ážŽážáŸ‹áž€áž˜áŸ’ážšáž·ážáž–áŸ’ážšáž˜áž¶áž“ážŸáŸ’ážáž»áž€ Telegram Webhook áž“áž·áž„ážšáž”áŸ€áž”ážáŸ‚áž‘áž¶áŸ†áž”áŸ’ážšáž–áŸáž“áŸ’áž’" : "Configure stock alert thresholds, Telegram webhooks, and maintenance mode."}</p>
             </div>
           </div>
 
@@ -2317,8 +2316,8 @@ function SettingsPage() {
             {/* Low Stock Alert */}
             <div className="switch-container">
               <div className="switch-label-group">
-                <span className="switch-title">{isKhmer ? "កម្រិតព្រមានស្តុកទាប (ចំនួនឯកតា)" : "Low Stock Alert Threshold (Units)"}</span>
-                <span className="switch-desc">{isKhmer ? "ជូនដំណឹងទៅកាន់អ្នកគ្រប់គ្រងស្តុកនៅពេលចំនួនផលិតផលធ្លាក់ចុះក្រោមចំនួននេះ" : "Notify warehouse managers when item quantity drops below this number"}</span>
+                <span className="switch-title">{isKhmer ? "áž€áž˜áŸ’ážšáž·ážáž–áŸ’ážšáž˜áž¶áž“ážŸáŸ’ážáž»áž€áž‘áž¶áž” (áž…áŸ†áž“áž½áž“áž¯áž€ážáž¶)" : "Low Stock Alert Threshold (Units)"}</span>
+                <span className="switch-desc">{isKhmer ? "áž‡áž¼áž“ážŠáŸ†ážŽáž¹áž„áž‘áŸ…áž€áž¶áž“áŸ‹áž¢áŸ’áž“áž€áž‚áŸ’ážšáž”áŸ‹áž‚áŸ’ážšáž„ážŸáŸ’ážáž»áž€áž“áŸ…áž–áŸáž›áž…áŸ†áž“áž½áž“áž•áž›áž·ážáž•áž›áž’áŸ’áž›áž¶áž€áŸ‹áž…áž»áŸ‡áž€áŸ’ážšáŸ„áž˜áž…áŸ†áž“áž½áž“áž“áŸáŸ‡" : "Notify warehouse managers when item quantity drops below this number"}</span>
               </div>
               <input
                 type="number"
@@ -2332,8 +2331,8 @@ function SettingsPage() {
             {/* Telegram Webhook Notifications */}
             <div className="switch-container">
               <div className="switch-label-group">
-                <span className="switch-title">{isKhmer ? "ការជូនដំណឹងតាម Telegram ភ្លាមៗពេលមានការកុម្ម៉ង់ & ប្តូរសេរី" : "Instant Telegram Order & Trade-In Webhook"}</span>
-                <span className="switch-desc">{isKhmer ? "ផ្ញើសារដំណឹងទៅកាន់គ្រុប Telegram បុគ្គលិកភ្លាមៗនៅពេលមានការបញ្ជាទិញថ្មី" : "Receive real-time alerts in your staff Telegram group whenever an order or trade is placed"}</span>
+                <span className="switch-title">{isKhmer ? "áž€áž¶ážšáž‡áž¼áž“ážŠáŸ†ážŽáž¹áž„ážáž¶áž˜ Telegram áž—áŸ’áž›áž¶áž˜áŸ—áž–áŸáž›áž˜áž¶áž“áž€áž¶ážšáž€áž»áž˜áŸ’áž˜áŸ‰áž„áŸ‹ & áž”áŸ’ážáž¼ážšážŸáŸážšáž¸" : "Instant Telegram Order & Trade-In Webhook"}</span>
+                <span className="switch-desc">{isKhmer ? "áž•áŸ’áž‰áž¾ážŸáž¶ážšážŠáŸ†ážŽáž¹áž„áž‘áŸ…áž€áž¶áž“áŸ‹áž‚áŸ’ážšáž»áž” Telegram áž”áž»áž‚áŸ’áž‚áž›áž·áž€áž—áŸ’áž›áž¶áž˜áŸ—áž“áŸ…áž–áŸáž›áž˜áž¶áž“áž€áž¶ážšáž”áž‰áŸ’áž‡áž¶áž‘áž·áž‰ážáŸ’áž˜áž¸" : "Receive real-time alerts in your staff Telegram group whenever an order or trade is placed"}</span>
               </div>
               <label className="toggle-switch">
                 <input
@@ -2348,8 +2347,8 @@ function SettingsPage() {
             {/* Enforce 2FA */}
             <div className="switch-container">
               <div className="switch-label-group">
-                <span className="switch-title">{isKhmer ? "ទាមទារការផ្ទៀងផ្ទាត់ ២ ជំហាន (2FA) សម្រាប់បុគ្គលិក" : "Enforce Two-Factor Authentication (2FA) for Staff"}</span>
-                <span className="switch-desc">{isKhmer ? "ទាមទារលេខកូដ OTP មុនពេលចូលប្រើប្រាស់ផ្ទាំងគ្រប់គ្រង" : "Require OTP or authenticator verification on all admin/manager logins"}</span>
+                <span className="switch-title">{isKhmer ? "áž‘áž¶áž˜áž‘áž¶ážšáž€áž¶ážšáž•áŸ’áž‘áŸ€áž„áž•áŸ’áž‘áž¶ážáŸ‹ áŸ¢ áž‡áŸ†áž áž¶áž“ (2FA) ážŸáž˜áŸ’ážšáž¶áž”áŸ‹áž”áž»áž‚áŸ’áž‚áž›áž·áž€" : "Enforce Two-Factor Authentication (2FA) for Staff"}</span>
+                <span className="switch-desc">{isKhmer ? "áž‘áž¶áž˜áž‘áž¶ážšáž›áŸážáž€áž¼ážŠ OTP áž˜áž»áž“áž–áŸáž›áž…áž¼áž›áž”áŸ’ážšáž¾áž”áŸ’ážšáž¶ážŸáŸ‹áž•áŸ’áž‘áž¶áŸ†áž„áž‚áŸ’ážšáž”áŸ‹áž‚áŸ’ážšáž„" : "Require OTP or authenticator verification on all admin/manager logins"}</span>
               </div>
               <label className="toggle-switch">
                 <input
@@ -2385,11 +2384,11 @@ function SettingsPage() {
                   </div>
                   <div>
                     <h4 style={{ margin: 0, fontSize: "15px", fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a" }}>
-                      {isKhmer ? "កូដ PIN សុវត្ថិភាព ៦ ខ្ទង់ (6-Digit Security PIN)" : "6-Digit Staff Security PIN"}
+                      {isKhmer ? "áž€áž¼ážŠ PIN ážŸáž»ážœážáŸ’ážáž·áž—áž¶áž– áŸ¦ ážáŸ’áž‘áž„áŸ‹ (6-Digit Security PIN)" : "6-Digit Staff Security PIN"}
                     </h4>
                     <small style={{ color: isDark ? "#94a3b8" : "#64748b" }}>
                       {isKhmer
-                        ? "កំណត់ ឬប្តូរកូដ PIN ៦ ខ្ទង់សម្រាប់ផ្ទៀងផ្ទាត់ពេលចូលប្រព័ន្ធ Admin"
+                        ? "áž€áŸ†ážŽážáŸ‹ áž¬áž”áŸ’ážáž¼ážšáž€áž¼ážŠ PIN áŸ¦ ážáŸ’áž‘áž„áŸ‹ážŸáž˜áŸ’ážšáž¶áž”áŸ‹áž•áŸ’áž‘áŸ€áž„áž•áŸ’áž‘áž¶ážáŸ‹áž–áŸáž›áž…áž¼áž›áž”áŸ’ážšáž–áŸáž“áŸ’áž’ Admin"
                         : "Set or update your 6-digit PIN required during staff authentication"}
                     </small>
                   </div>
@@ -2406,8 +2405,8 @@ function SettingsPage() {
                     border: currentUser?.two_fa_enabled ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(148, 163, 184, 0.3)"
                   }}>
                     {currentUser?.two_fa_enabled
-                      ? (isKhmer ? "● កំពុងបើកដំណើរការ PIN ៦ ខ្ទង់" : "● 6-Digit PIN Active")
-                      : (isKhmer ? "○ មិនទាន់កំណត់ PIN" : "○ No PIN Active")}
+                      ? (isKhmer ? "â— áž€áŸ†áž–áž»áž„áž”áž¾áž€ážŠáŸ†ážŽáž¾ážšáž€áž¶ážš PIN áŸ¦ ážáŸ’áž‘áž„áŸ‹" : "â— 6-Digit PIN Active")
+                      : (isKhmer ? "â—‹ áž˜áž·áž“áž‘áž¶áž“áŸ‹áž€áŸ†ážŽážáŸ‹ PIN" : "â—‹ No PIN Active")}
                   </span>
 
                   {currentUser?.two_fa_enabled && (
@@ -2418,7 +2417,7 @@ function SettingsPage() {
                       onClick={handleDisablePin}
                       disabled={isUpdatingPin}
                     >
-                      {isKhmer ? "បិទ PIN" : "Disable PIN"}
+                      {isKhmer ? "áž”áž·áž‘ PIN" : "Disable PIN"}
                     </button>
                   )}
                 </div>
@@ -2427,7 +2426,7 @@ function SettingsPage() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px", marginTop: "14px" }}>
                 <div>
                   <label className="form-label" style={{ fontSize: "13px" }}>
-                    {isKhmer ? "បញ្ចូលកូដ PIN ថ្មី (៦ ខ្ទង់)" : "New 6-Digit PIN"}
+                    {isKhmer ? "áž”áž‰áŸ’áž…áž¼áž›áž€áž¼ážŠ PIN ážáŸ’áž˜áž¸ (áŸ¦ ážáŸ’áž‘áž„áŸ‹)" : "New 6-Digit PIN"}
                   </label>
                   <input
                     type="password"
@@ -2443,7 +2442,7 @@ function SettingsPage() {
 
                 <div>
                   <label className="form-label" style={{ fontSize: "13px" }}>
-                    {isKhmer ? "ផ្ទៀងផ្ទាត់កូដ PIN ម្តងទៀត" : "Confirm 6-Digit PIN"}
+                    {isKhmer ? "áž•áŸ’áž‘áŸ€áž„áž•áŸ’áž‘áž¶ážáŸ‹áž€áž¼ážŠ PIN áž˜áŸ’ážáž„áž‘áŸ€áž" : "Confirm 6-Digit PIN"}
                   </label>
                   <input
                     type="password"
@@ -2467,7 +2466,7 @@ function SettingsPage() {
                   style={{ fontSize: "13px", padding: "8px 18px" }}
                 >
                   <Key size={14} />
-                  <span>{isUpdatingPin ? (isKhmer ? "កំពុងរក្សាទុក..." : "Saving...") : (isKhmer ? "រក្សាទុកកូដ PIN ៦ ខ្ទង់" : "Save 6-Digit Security PIN")}</span>
+                  <span>{isUpdatingPin ? (isKhmer ? "áž€áŸ†áž–áž»áž„ážšáž€áŸ’ážŸáž¶áž‘áž»áž€..." : "Saving...") : (isKhmer ? "ážšáž€áŸ’ážŸáž¶áž‘áž»áž€áž€áž¼ážŠ PIN áŸ¦ ážáŸ’áž‘áž„áŸ‹" : "Save 6-Digit Security PIN")}</span>
                 </button>
               </div>
             </div>
@@ -2475,8 +2474,8 @@ function SettingsPage() {
             {/* Maintenance Mode */}
             <div className="switch-container" style={{ borderLeft: "4px solid #ef4444" }}>
               <div className="switch-label-group">
-                <span className="switch-title" style={{ color: "#dc2626" }}>{isKhmer ? "របៀបថែទាំប្រព័ន្ធ (Maintenance Mode)" : "Store Maintenance Mode"}</span>
-                <span className="switch-desc">{isKhmer ? "បិទគេហទំព័រជាបណ្តោះអាសន្នពេលកំពុងធ្វើបច្ចុប្បន្នភាពទិន្នន័យ" : "Temporarily lock the customer-facing storefront during database or inventory audits"}</span>
+                <span className="switch-title" style={{ color: "#dc2626" }}>{isKhmer ? "ážšáž”áŸ€áž”ážáŸ‚áž‘áž¶áŸ†áž”áŸ’ážšáž–áŸáž“áŸ’áž’ (Maintenance Mode)" : "Store Maintenance Mode"}</span>
+                <span className="switch-desc">{isKhmer ? "áž”áž·áž‘áž‚áŸáž áž‘áŸ†áž–áŸážšáž‡áž¶áž”ážŽáŸ’ážáŸ„áŸ‡áž¢áž¶ážŸáž“áŸ’áž“áž–áŸáž›áž€áŸ†áž–áž»áž„áž’áŸ’ážœáž¾áž”áž…áŸ’áž…áž»áž”áŸ’áž”áž“áŸ’áž“áž—áž¶áž–áž‘áž·áž“áŸ’áž“áž“áŸáž™" : "Temporarily lock the customer-facing storefront during database or inventory audits"}</span>
               </div>
               <label className="toggle-switch">
                 <input
@@ -2490,7 +2489,7 @@ function SettingsPage() {
 
             {settings.maintenanceMode && (
               <div className="form-group-item">
-                <label className="form-label">{isKhmer ? "សារជូនដំណឹងទៅកាន់អតិថិជនពេលបិទថែទាំ" : "Customer Maintenance Notice Banner"}</label>
+                <label className="form-label">{isKhmer ? "ážŸáž¶ážšáž‡áž¼áž“ážŠáŸ†ážŽáž¹áž„áž‘áŸ…áž€áž¶áž“áŸ‹áž¢ážáž·ážáž·áž‡áž“áž–áŸáž›áž”áž·áž‘ážáŸ‚áž‘áž¶áŸ†" : "Customer Maintenance Notice Banner"}</label>
                 <textarea
                   className="settings-textarea"
                   value={settings.maintenanceMessage}
@@ -2509,7 +2508,7 @@ function SettingsPage() {
         <div className="settings-modal-overlay" onClick={() => setRoleModalOpen(false)}>
           <div className="settings-modal-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="settings-modal-header">
-              <h3>{isKhmer ? "បង្កើតតួនាទីថ្មី" : "Create New Role"}</h3>
+              <h3>{isKhmer ? "áž”áž„áŸ’áž€áž¾ážážáž½áž“áž¶áž‘áž¸ážáŸ’áž˜áž¸" : "Create New Role"}</h3>
               <button
                 type="button"
                 className="btn-outline-secondary"
@@ -2522,7 +2521,7 @@ function SettingsPage() {
             <form onSubmit={handleCreateRole}>
               <div className="settings-modal-body">
                 <div className="form-group-item">
-                  <label className="form-label">{isKhmer ? "ឈ្មោះតួនាទី *" : "Role Title *"}</label>
+                  <label className="form-label">{isKhmer ? "ážˆáŸ’áž˜áŸ„áŸ‡ážáž½áž“áž¶áž‘áž¸ *" : "Role Title *"}</label>
                   <input
                     type="text"
                     required
@@ -2533,7 +2532,7 @@ function SettingsPage() {
                   />
                 </div>
                 <div className="form-group-item">
-                  <label className="form-label">{isKhmer ? "ការពិពណ៌នា" : "Description"}</label>
+                  <label className="form-label">{isKhmer ? "áž€áž¶ážšáž–áž·áž–ážŽáŸŒáž“áž¶" : "Description"}</label>
                   <textarea
                     placeholder="Describe responsibilities and scope of this role..."
                     className="settings-textarea"
@@ -2544,10 +2543,10 @@ function SettingsPage() {
               </div>
               <div className="settings-modal-footer">
                 <button type="button" className="btn-outline-secondary" onClick={() => setRoleModalOpen(false)}>
-                  {isKhmer ? "បោះបង់" : "Cancel"}
+                  {isKhmer ? "áž”áŸ„áŸ‡áž”áž„áŸ‹" : "Cancel"}
                 </button>
                 <button type="submit" className="btn-save-primary">
-                  {isKhmer ? "បង្កើតតួនាទី" : "Create Role"}
+                  {isKhmer ? "áž”áž„áŸ’áž€áž¾ážážáž½áž“áž¶áž‘áž¸" : "Create Role"}
                 </button>
               </div>
             </form>
@@ -2562,7 +2561,7 @@ function SettingsPage() {
         <div className="settings-modal-overlay" onClick={() => setStaffModalOpen(false)}>
           <div className="settings-modal-dialog" onClick={(e) => e.stopPropagation()}>
             <div className="settings-modal-header">
-              <h3>{selectedStaff ? (isKhmer ? "កែប្រែព័ត៌មានបុគ្គលិក" : "Edit Staff User") : (isKhmer ? "បន្ថែមបុគ្គលិកថ្មី" : "Add New Staff Member")}</h3>
+              <h3>{selectedStaff ? (isKhmer ? "áž€áŸ‚áž”áŸ’ážšáŸ‚áž–áŸážáŸŒáž˜áž¶áž“áž”áž»áž‚áŸ’áž‚áž›áž·áž€" : "Edit Staff User") : (isKhmer ? "áž”áž“áŸ’ážáŸ‚áž˜áž”áž»áž‚áŸ’áž‚áž›áž·áž€ážáŸ’áž˜áž¸" : "Add New Staff Member")}</h3>
               <button
                 type="button"
                 className="btn-outline-secondary"
@@ -2575,7 +2574,7 @@ function SettingsPage() {
             <form onSubmit={handleSaveStaff}>
               <div className="settings-modal-body">
                 <div className="form-group-item">
-                  <label className="form-label">{isKhmer ? "ឈ្មោះពេញ *" : "Full Name *"}</label>
+                  <label className="form-label">{isKhmer ? "ážˆáŸ’áž˜áŸ„áŸ‡áž–áŸáž‰ *" : "Full Name *"}</label>
                   <input
                     type="text"
                     required
@@ -2585,7 +2584,7 @@ function SettingsPage() {
                   />
                 </div>
                 <div className="form-group-item">
-                  <label className="form-label">{isKhmer ? "អាសយដ្ឋានអ៊ីមែល *" : "Email Address *"}</label>
+                  <label className="form-label">{isKhmer ? "áž¢áž¶ážŸáž™ážŠáŸ’áž‹áž¶áž“áž¢áŸŠáž¸áž˜áŸ‚áž› *" : "Email Address *"}</label>
                   <input
                     type="email"
                     required
@@ -2595,7 +2594,7 @@ function SettingsPage() {
                   />
                 </div>
                 <div className="form-group-item">
-                  <label className="form-label">{isKhmer ? "លេខទូរស័ព្ទ" : "Phone Number"}</label>
+                  <label className="form-label">{isKhmer ? "áž›áŸážáž‘áž¼ážšážŸáŸáž–áŸ’áž‘" : "Phone Number"}</label>
                   <input
                     type="tel"
                     className="settings-input"
@@ -2606,13 +2605,13 @@ function SettingsPage() {
                 </div>
                 {!selectedStaff && (
                   <div className="form-group-item">
-                    <label className="form-label">{isKhmer ? "លេខសម្ងាត់ដំបូង *" : "Initial Password *"}</label>
+                    <label className="form-label">{isKhmer ? "áž›áŸážážŸáž˜áŸ’áž„áž¶ážáŸ‹ážŠáŸ†áž”áž¼áž„ *" : "Initial Password *"}</label>
                     <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
                       <input
                         type={showStaffPassword ? "text" : "password"}
                         required
                         minLength={6}
-                        placeholder={isKhmer ? "យ៉ាងតិច ៦ តួអក្សរ" : "Min 6 characters"}
+                        placeholder={isKhmer ? "áž™áŸ‰áž¶áž„ážáž·áž… áŸ¦ ážáž½áž¢áž€áŸ’ážŸážš" : "Min 6 characters"}
                         className="settings-input"
                         style={{ paddingRight: "40px" }}
                         value={staffForm.password}
@@ -2636,7 +2635,7 @@ function SettingsPage() {
                   </div>
                 )}
                 <div className="form-group-item">
-                  <label className="form-label">{isKhmer ? "ជ្រើសរើសតួនាទី *" : "Assign Role *"}</label>
+                  <label className="form-label">{isKhmer ? "áž‡áŸ’ážšáž¾ážŸážšáž¾ážŸážáž½áž“áž¶áž‘áž¸ *" : "Assign Role *"}</label>
                   <select
                     className="settings-select"
                     value={staffForm.roleId}
@@ -2650,29 +2649,30 @@ function SettingsPage() {
                   </select>
                 </div>
                 <div className="form-group-item">
-                  <label className="form-label">{isKhmer ? "ស្ថានភាពគណនី" : "Account Status"}</label>
+                  <label className="form-label">{isKhmer ? "ážŸáŸ’ážáž¶áž“áž—áž¶áž–áž‚ážŽáž“áž¸" : "Account Status"}</label>
                   <select
                     className="settings-select"
                     value={staffForm.status}
                     onChange={(e) => setStaffForm({ ...staffForm, status: e.target.value })}
                   >
-                    <option value="Active">{isKhmer ? "សកម្ម (Active)" : "Active"}</option>
-                    <option value="Inactive">{isKhmer ? "អសកម្ម (Inactive)" : "Inactive / Suspended"}</option>
+                    <option value="Active">{isKhmer ? "ážŸáž€áž˜áŸ’áž˜ (Active)" : "Active"}</option>
+                    <option value="Inactive">{isKhmer ? "áž¢ážŸáž€áž˜áŸ’áž˜ (Inactive)" : "Inactive / Suspended"}</option>
                   </select>
                 </div>
               </div>
               <div className="settings-modal-footer">
                 <button type="button" className="btn-outline-secondary" onClick={() => setStaffModalOpen(false)}>
-                  {isKhmer ? "បោះបង់" : "Cancel"}
+                  {isKhmer ? "áž”áŸ„áŸ‡áž”áž„áŸ‹" : "Cancel"}
                 </button>
                 <button type="submit" className="btn-save-primary">
-                  {isKhmer ? "រក្សាទុក" : "Save Staff"}
+                  {isKhmer ? "ážšáž€áŸ’ážŸáž¶áž‘áž»áž€" : "Save Staff"}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
     </div>
   );
 }
