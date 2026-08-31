@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
@@ -351,6 +351,7 @@ function getCleanLocalStorage(keys, fallback) {
           localStorage.removeItem(key);
           continue;
         }
+
         return JSON.parse(raw);
       }
     } catch {
@@ -411,13 +412,13 @@ function SettingsPage() {
 
   const [staffModalOpen, setStaffModalOpen] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState(null);
-  const [staffForm, setStaffForm] = useState({ 
-    name: "", 
-    email: "", 
-    phone: "", 
-    password: "", 
-    roleId: "1", 
-    status: "Active" 
+  const [staffForm, setStaffForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    roleId: "1",
+    status: "Active"
   });
   const [showStaffPassword, setShowStaffPassword] = useState(false);
   const [staffLoading, setStaffLoading] = useState(false);
@@ -469,7 +470,7 @@ function SettingsPage() {
 
       try {
         confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
-      } catch (e) {}
+      } catch (e) { }
 
       Swal.fire({
         icon: "success",
@@ -548,10 +549,10 @@ function SettingsPage() {
               String(r.name).toLowerCase().includes("super")
                 ? "super"
                 : String(r.name).toLowerCase().includes("admin")
-                ? "super"
-                : String(r.name).toLowerCase().includes("manager")
-                ? "manager"
-                : "staff";
+                  ? "super"
+                  : String(r.name).toLowerCase().includes("manager")
+                    ? "manager"
+                    : "staff";
 
             let permissionsMap = {};
             if (r.permissions) {
@@ -694,7 +695,7 @@ function SettingsPage() {
 
       try {
         confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
-      } catch (e) {}
+      } catch (e) { }
 
       Swal.fire({
         icon: "success",
@@ -772,7 +773,7 @@ function SettingsPage() {
 
       try {
         confetti({ particleCount: 70, spread: 70, origin: { y: 0.6 } });
-      } catch (e) {}
+      } catch (e) { }
 
       Swal.fire({
         icon: "success",
@@ -902,7 +903,7 @@ function SettingsPage() {
 
       try {
         confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
-      } catch (e) {}
+      } catch (e) { }
 
       await loadStaffAndRoles();
 
@@ -986,14 +987,14 @@ function SettingsPage() {
           prev.map((s) =>
             s.id === selectedStaff.id
               ? {
-                  ...s,
-                  name: staffForm.name,
-                  email: staffForm.email,
-                  phone: staffForm.phone,
-                  roleId: staffForm.roleId,
-                  roleName,
-                  status: staffForm.status
-                }
+                ...s,
+                name: staffForm.name,
+                email: staffForm.email,
+                phone: staffForm.phone,
+                roleId: staffForm.roleId,
+                roleName,
+                status: staffForm.status
+              }
               : s
           )
         );
