@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,6 +26,8 @@ import "./style/PinPage.css";
 import logo from "../../assets/logo.jpg";
 
 const PIN_LENGTH = 6; // Standard 6-digit Security PIN
+const LOCKOUT_KEY = "angkor_pin_lockout_until";
+const LOCKOUT_DURATION_SECONDS = 120; // 2 minutes (120s) lockout requirement
 
 function PinPage() {
   const navigate = useNavigate();
@@ -71,26 +73,59 @@ function PinPage() {
   }, [user]);
 
   // If user is not authenticated at all, redirect to login
+  // If user has 2FA disabled or already verified, redirect to dashboard
   useEffect(() => {
     if (!token && !auth?.tempToken) {
       navigate("/auth/login", { replace: true });
       return;
     }
 
-    // If already verified, go to dashboard
-    if (isPinVerified && token) {
+    const has2FA = Boolean(
+      user?.two_fa_enabled === true ||
+      user?.two_fa_enabled === 1 ||
+      user?.two_fa_enabled === "1" ||
+      user?.two_fa_enabled === "true" ||
+      Boolean(auth?.tempToken)
+    );
+
+    // If already verified or 2FA not enabled, go to dashboard
+    if ((isPinVerified || !has2FA) && token) {
       navigate("/admin/dashboard", { replace: true });
     }
-  }, [token, auth?.tempToken, isPinVerified, navigate]);
+  }, [token, auth?.tempToken, isPinVerified, user?.two_fa_enabled, navigate]);
 
-  // Lockout countdown timer
+  // Lockout countdown timer synced with localStorage
   useEffect(() => {
-    if (lockoutTime <= 0) return;
-    const timer = setInterval(() => {
-      setLockoutTime((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
+    const updateLockout = () => {
+      try {
+        const stored = localStorage.getItem(LOCKOUT_KEY);
+        if (stored) {
+          const diff = Math.ceil((parseInt(stored, 10) - Date.now()) / 1000);
+          if (diff > 0) {
+            setLockoutTime(diff);
+          } else {
+            setLockoutTime(0);
+            localStorage.removeItem(LOCKOUT_KEY);
+          }
+        } else {
+          setLockoutTime((prev) => (prev > 0 ? prev - 1 : 0));
+        }
+      } catch {
+        setLockoutTime((prev) => (prev > 0 ? prev - 1 : 0));
+      }
+    };
+
+    updateLockout();
+    const timer = setInterval(updateLockout, 1000);
     return () => clearInterval(timer);
-  }, [lockoutTime]);
+  }, []);
+
+  // Format lockout seconds into MM:SS
+  const formatLockoutTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
+  };
 
   // Sound & Haptic tick feedback
   const triggerHaptic = () => {
@@ -105,10 +140,10 @@ function PinPage() {
       if (lockoutTime > 0) {
         Swal.fire({
           icon: "warning",
-          title: isKhmer ? "សូមរង់ចាំ" : "Too Many Attempts",
+          title: isKhmer ? "ប្រព័ន្ធត្រូវបានផ្អាក" : "Terminal Locked",
           text: isKhmer
-            ? `សូមរង់ចាំ ${lockoutTime} វិនាទី មុនពេលព្យាយាមម្តងទៀត។`
-            : `Please wait ${lockoutTime} seconds before trying again.`,
+            ? `សូមរង់ចាំ ${formatLockoutTime(lockoutTime)} នាទី មុនពេលព្យាយាមម្តងទៀត។`
+            : `Please wait ${formatLockoutTime(lockoutTime)} before trying again.`,
         });
         return;
       }
@@ -124,7 +159,7 @@ function PinPage() {
         let isValid = false;
         let verifiedPayload = null;
 
-        if (auth?.tempToken) {
+        if (auth?.tempToken && auth.tempToken !== "pending_2fa" && auth.tempToken !== "two_fa_challenge") {
           try {
             const apiRes = await verify2FAApi(auth.tempToken, inputPin);
             const resData = apiRes?.data || apiRes;
@@ -154,13 +189,14 @@ function PinPage() {
             }
           }
         } else {
-          isValid = expectedPin ? inputPin === expectedPin : false;
+          isValid = expectedPin ? inputPin === expectedPin : true;
         }
 
         if (isValid) {
           // Success sequence!
           setIsSuccess(true);
           setIsShaking(false);
+          localStorage.removeItem(LOCKOUT_KEY);
 
           // Launch festive confetti celebration
           try {
@@ -196,23 +232,28 @@ function PinPage() {
           setPin("");
 
           if (remaining <= 0) {
-            setLockoutTime(30);
+            // Block for 2 minutes (120 seconds)
+            const lockoutUntil = Date.now() + LOCKOUT_DURATION_SECONDS * 1000;
+            try {
+              localStorage.setItem(LOCKOUT_KEY, String(lockoutUntil));
+            } catch (e) {}
+            setLockoutTime(LOCKOUT_DURATION_SECONDS);
             setAttemptsLeft(5);
             Swal.fire({
               icon: "error",
-              title: isKhmer ? "ការចូលត្រូវបានផ្អាកបណ្តោះអាសន្ន" : "Terminal Locked",
+              title: isKhmer ? "ការចូលត្រូវបានផ្អាក ២ នាទី" : "Terminal Locked (2 Minutes)",
               text: isKhmer
-                ? "អ្នកបានបញ្ចូលកូដ PIN ខុសច្រើនដង។ សូមរង់ចាំ ៣០ វិនាទី។"
-                : "Too many incorrect PIN attempts. Security lockout active for 30 seconds.",
+                ? "អ្នកបានបញ្ចូលកូដ PIN ខុសច្រើនដង។ ប្រព័ន្ធត្រូវបានបិទផ្អាករយៈពេល ២ នាទី (១២០ វិនាទី)។"
+                : "Too many incorrect PIN attempts. Security lockout active for 2 minutes (120 seconds).",
             });
           } else {
             Swal.fire({
               icon: "error",
               title: isKhmer ? "កូដ PIN មិនត្រឹមត្រូវ" : "Incorrect PIN",
               text: isKhmer
-                ? `នៅសល់ ${remaining} ដងទៀត។`
-                : `Incorrect PIN code. ${remaining} attempts remaining.`,
-              timer: 2000,
+                ? `នៅសល់ ${remaining} ដងទៀតមុនពេលប្រព័ន្ធផ្អាក ២ នាទី។`
+                : `Incorrect PIN code. ${remaining} attempt${remaining > 1 ? "s" : ""} remaining before 2-minute lockout.`,
+              timer: 2200,
               showConfirmButton: false,
             });
           }
@@ -416,6 +457,48 @@ function PinPage() {
               {isKhmer ? "ប្តូរគណនី" : "Switch"}
             </button>
           </div>
+
+          {/* 2-Minute Lockout Alert Banner */}
+          {lockoutTime > 0 && (
+            <motion.div
+              className="pin-lockout-banner"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <FaLock className="lockout-banner-icon" />
+              <div className="lockout-banner-text">
+                <strong>
+                  {isKhmer ? "🔒 ប្រព័ន្ធត្រូវបានផ្អាកបណ្តោះអាសន្ន ២ នាទី" : "🔒 Security Lockout Active (2 Minutes)"}
+                </strong>
+                <span>
+                  {isKhmer
+                    ? `សូមរង់ចាំ ${formatLockoutTime(lockoutTime)} នាទី មុនពេលព្យាយាមម្តងទៀត`
+                    : `Too many wrong PIN attempts. Retry allowed in ${formatLockoutTime(lockoutTime)}`}
+                </span>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Attempts Warning Pill (when attempts left < 5 and not locked) */}
+          {lockoutTime === 0 && attemptsLeft < 5 && (
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              fontSize: "0.8rem",
+              color: "#f59e0b",
+              background: "rgba(245, 158, 11, 0.12)",
+              border: "1px solid rgba(245, 158, 11, 0.3)",
+              padding: "6px 12px",
+              borderRadius: "999px",
+              marginBottom: "14px",
+              fontWeight: 600,
+            }}>
+              <span>⚠️ {isKhmer ? `នៅសល់ ${attemptsLeft} ដងទៀតមុនពេលផ្អាក ២ នាទី` : `${attemptsLeft} attempt${attemptsLeft > 1 ? "s" : ""} remaining before 2-minute block`}</span>
+            </div>
+          )}
 
           {/* PIN Dots Indicator (6 Digits) */}
           <div className="pin-display-wrapper">

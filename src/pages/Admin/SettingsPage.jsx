@@ -1,6 +1,7 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { setAuth } from "../../store/authSlice";
 import {
   Shield,
   Users,
@@ -363,6 +364,7 @@ function getCleanLocalStorage(keys, fallback) {
 
 function SettingsPage() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { can, isSuperAdmin } = usePermissions();
   const { theme, setTheme, resolvedTheme, isDark } = useTheme();
   const { language, setLanguage, isKhmer, t } = useTranslation();
@@ -483,6 +485,7 @@ function SettingsPage() {
       });
 
       setPinForm({ pin: "", confirmPin: "" });
+      dispatch(setAuth({ user: { ...currentUser, two_fa_enabled: true } }));
       loadStaffAndRoles();
     } catch (err) {
       Swal.fire({
@@ -513,6 +516,7 @@ function SettingsPage() {
           setIsUpdatingPin(true);
           await disableStaff2FAApi(currentUser.id);
           localStorage.removeItem("angkor_staff_pin");
+          dispatch(setAuth({ user: { ...currentUser, two_fa_enabled: false } }));
           Swal.fire({
             icon: "success",
             title: isKhmer ? "បានបិទ PIN រួចរាល់" : "PIN Disabled",

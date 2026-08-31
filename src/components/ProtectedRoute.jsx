@@ -3,11 +3,11 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useSelector } from "react-redux";
 
 function ProtectedRoute() {
-    const { token, role, user, isPinVerified } = useSelector(
+    const { token, tempToken, role, user, isPinVerified } = useSelector(
         (state) => state.auth
     );
 
-    if (!token) {
+    if (!token && !tempToken) {
         return <Navigate to="/auth/login" replace />;
     }
 
@@ -30,8 +30,17 @@ function ProtectedRoute() {
         return <Navigate to="/" replace />;
     }
 
-    // If staff/admin has not passed PIN verification, redirect to PIN challenge page
-    if (!isPinVerified) {
+    // Check if user has 2FA enabled
+    const has2FA = Boolean(
+        user?.two_fa_enabled === true ||
+        user?.two_fa_enabled === 1 ||
+        user?.two_fa_enabled === "1" ||
+        user?.two_fa_enabled === "true" ||
+        Boolean(tempToken)
+    );
+
+    // If staff/admin has 2FA enabled and has not passed PIN verification, redirect to PIN challenge page
+    if (has2FA && !isPinVerified) {
         return <Navigate to="/auth/pin" replace />;
     }
 

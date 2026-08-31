@@ -73,15 +73,23 @@ function LoginAdmin() {
         lowerRole.includes("security") ||
         lowerRole.includes("super"));
 
-    const hasPinChallenge = Boolean(tempToken);
+    const hasTwoFA = Boolean(
+      user?.two_fa_enabled === true ||
+      user?.two_fa_enabled === 1 ||
+      user?.two_fa_enabled === "1" ||
+      user?.two_fa_enabled === "true" ||
+      Boolean(tempToken)
+    );
+
+    const hasPinChallenge = isStaffOrAdmin && hasTwoFA;
 
     dispatch(
       setAuth({
         token: accessToken || null,
-        tempToken: tempToken || null,
+        tempToken: hasPinChallenge ? (tempToken || "pending_2fa") : null,
         refreshToken: refreshToken || null,
         role,
-        user,
+        user: { ...user, two_fa_enabled: hasTwoFA },
         remember: form.remember,
         isPinVerified: !hasPinChallenge,
       })
@@ -91,8 +99,8 @@ function LoginAdmin() {
       Swal.fire({
         icon: "info",
         title: "Security PIN Required",
-        text: `Welcome ${user?.name || "Staff"}. Please enter your 6-digit PIN to unlock.`,
-        timer: 1500,
+        text: `Welcome ${user?.name || "Staff"}. Please enter your 6-digit PIN to access dashboard.`,
+        timer: 1600,
         showConfirmButton: false,
       });
       navigate("/auth/pin");
@@ -133,6 +141,21 @@ function LoginAdmin() {
       const refreshToken = res.data?.refreshToken || res.refresh_token || null;
       const tempToken = res.data?.temp_token || res.temp_token || null;
 
+      const isTwoFa = Boolean(
+        user?.two_fa_enabled === true ||
+        user?.two_fa_enabled === 1 ||
+        user?.two_fa_enabled === "1" ||
+        user?.two_fa_enabled === "true" ||
+        res.requires_2fa ||
+        res.data?.requires_2fa ||
+        tempToken
+      );
+
+      const updatedUser = {
+        ...user,
+        two_fa_enabled: isTwoFa,
+      };
+
       const role =
         user?.roles?.[0]?.name ||
         user?.role ||
@@ -140,7 +163,7 @@ function LoginAdmin() {
         (Array.isArray(user?.roles) ? user.roles.map((r) => r.name || r).join(" ") : "") ||
         "customer";
 
-      completeLogin(user, accessToken, refreshToken, role, tempToken);
+      completeLogin(updatedUser, accessToken, refreshToken, role, isTwoFa ? (tempToken || "pending_2fa") : null);
 
     } catch (error) {
       Swal.fire({
@@ -240,21 +263,23 @@ function LoginAdmin() {
             lowerRole.includes("security") ||
             lowerRole.includes("super"));
 
-        const settings = getSettings();
-        const enforce2FA = settings.enforce2FA !== false;
+        const needs2FA = Boolean(
+          user?.two_fa_enabled === true ||
+          user?.two_fa_enabled === 1 ||
+          user?.two_fa_enabled === "1" ||
+          user?.two_fa_enabled === "true" ||
+          res.requires_2fa ||
+          res.data?.requires_2fa ||
+          res.temp_token ||
+          res.data?.temp_token
+        );
 
-        if (isStaffOrAdmin && enforce2FA) {
-          const needs2FA = res.requires_2fa || res.data?.requires_2fa;
-          if (needs2FA) {
-            setRequires2FA(true);
-            setTempToken(res.temp_token || res.data?.temp_token || null);
-            setPin("");
-            setLoading(false);
-            return;
-          }
-        }
+        const updatedUser = {
+          ...user,
+          two_fa_enabled: needs2FA,
+        };
 
-        completeLogin(user, accessToken, refreshToken, role);
+        completeLogin(updatedUser, accessToken, refreshToken, role, needs2FA ? (res.temp_token || res.data?.temp_token || "pending_2fa") : null);
       } catch (error) {
         Swal.fire({
           icon: "error",

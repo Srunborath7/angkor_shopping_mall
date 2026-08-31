@@ -54,15 +54,30 @@ const authSlice = createSlice({
         if (state.role) {
           localStorage.setItem("role", state.role);
         }
+        if (state.user) {
+          localStorage.setItem("user", JSON.stringify(state.user));
+        }
       } catch (e) {}
 
-      // Customer accounts do not require PIN verification. Staff/Admin require explicit PIN entry.
+      const has2FA = Boolean(
+        state.user?.two_fa_enabled === true ||
+        state.user?.two_fa_enabled === 1 ||
+        state.user?.two_fa_enabled === "1" ||
+        state.user?.two_fa_enabled === "true" ||
+        Boolean(state.tempToken)
+      );
+
+      // Customer accounts do not require PIN verification.
       if (isCustomerRole(role, user)) {
         state.isPinVerified = true;
       } else if (typeof isPinVerified === "boolean") {
         state.isPinVerified = isPinVerified;
-      } else {
+      } else if (has2FA) {
+        // Staff/Admin with 2FA enabled require PIN verification
         state.isPinVerified = false;
+      } else {
+        // Staff/Admin without 2FA enabled do not require PIN verification
+        state.isPinVerified = true;
       }
     },
 
@@ -78,7 +93,12 @@ const authSlice = createSlice({
           } catch (e) {}
         }
         if (refreshToken) state.refreshToken = refreshToken;
-        if (user) state.user = user;
+        if (user) {
+          state.user = user;
+          try {
+            localStorage.setItem("user", JSON.stringify(user));
+          } catch (e) {}
+        }
         if (role) {
           state.role = role;
           try {
@@ -106,6 +126,7 @@ const authSlice = createSlice({
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         localStorage.removeItem("role");
+        localStorage.removeItem("user");
       } catch (e) {}
     },
   },
