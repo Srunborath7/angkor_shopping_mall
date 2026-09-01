@@ -19,7 +19,6 @@ import {
   checkAbaStatusApi,
   simulateAbaPayApi
 } from "../services/abaPaymentService";
-import { generateKhqrString } from "../services/khqrPaymentService";
 import "./AbaPaymentModal.css";
 
 // Official Bakong KHQR Red Octagonal / Star Emblem in pure vector data URI
@@ -59,37 +58,11 @@ export default function AbaPaymentModal({
   const pollIntervalRef = useRef(null);
   const timerIntervalRef = useRef(null);
 
-  // Generate ABA PayWay / KHQR payload directly from backend API
+  // Generate ABA PayWay Sandbox payload directly from backend API
   const fetchAbaQr = useCallback(async (curr = currency) => {
     setIsLoading(true);
     const currentBillNo = orderNumber || (orderId ? `ORD-${orderId}` : `ORD-${Date.now().toString().slice(-6)}`);
     const numAmount = parseFloat(amount) || 0;
-    const directBakongId = import.meta.env.VITE_BAKONG_ACCOUNT_ID || import.meta.env.VITE_ABA_ACCOUNT_ID;
-
-    // If direct real Bakong account is configured in .env, generate live scannable NBC KHQR
-    if (directBakongId && directBakongId.trim()) {
-      const storeName = import.meta.env.VITE_ABA_PAYWAY_STORE_LABEL || "Angkor Shopping Mall";
-      const liveKhqrString = generateKhqrString({
-        bakongId: directBakongId.trim(),
-        merchantName: storeName,
-        merchantCity: "Phnom Penh",
-        amount: numAmount,
-        currency: curr,
-        billNumber: currentBillNo,
-        storeLabel: storeName
-      });
-
-      setQrData({
-        qrString: liveKhqrString,
-        merchantName: storeName,
-        bakongId: directBakongId.trim(),
-        tranId: `TXN-${Date.now()}`,
-        md5: `MD5-${Date.now()}`
-      });
-      setTimeLeft(120);
-      setIsLoading(false);
-      return;
-    }
 
     try {
       const res = await generateAbaQrApi({
