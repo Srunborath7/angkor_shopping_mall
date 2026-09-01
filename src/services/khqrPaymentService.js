@@ -66,7 +66,7 @@ export function getActiveBakongConfig() {
 /**
  * Generate official NBC Bakong KHQR EMVCo 2.0 Dynamic / Static QR String
  * @param {Object} options
- * @param {string} [options.bakongId] - Registered Bakong ID (e.g. your_account@abaa, phone_number@aclb)
+ * @param {string} [options.bakongId] - Registered Bakong ID (e.g. 0974242291@abaa, username@abaa)
  * @param {string} [options.merchantName] - Store or Owner Name
  * @param {string} [options.merchantCity] - City (default: Phnom Penh)
  * @param {number} [options.amount] - Payment amount (0 for static QR)
@@ -78,23 +78,37 @@ export function getActiveBakongConfig() {
  */
 export function generateKhqrString(options = {}) {
   const activeConfig = getActiveBakongConfig();
-  const bakongId = (options.bakongId || activeConfig.bakongId || "angkor_mall@aba").trim();
+  const rawBakongId = (options.bakongId || activeConfig.bakongId || "0974242291@abaa").trim();
+  const bakongId = rawBakongId.includes("@") ? rawBakongId : `${rawBakongId}@abaa`;
+  
   const merchantName = (options.merchantName || activeConfig.merchantName || "Angkor Shopping Mall").slice(0, 25).trim();
   const merchantCity = (options.merchantCity || activeConfig.merchantCity || "Phnom Penh").slice(0, 15).trim();
   
   const isKhr = (options.currency || "USD").toUpperCase() === "KHR";
   const currCode = isKhr ? "116" : "840";
   const numAmount = parseFloat(options.amount) || 0;
-  const formattedAmount = isKhr ? Math.round(numAmount).toString() : numAmount.toFixed(2);
+  
+  // Format amount according to NBC Bakong KHQR specifications
+  let formattedAmount = "";
+  if (numAmount > 0) {
+    if (isKhr) {
+      formattedAmount = Math.round(numAmount).toString();
+    } else {
+      formattedAmount = numAmount % 1 === 0 ? numAmount.toString() : numAmount.toFixed(2);
+    }
+  }
 
-  // Tag 00: Payload Format Indicator
+  const now = Date.now();
+  const exp = now + 15 * 60 * 1000; // 15 minutes validity
+
+  // Tag 00: Payload Format Indicator (01)
   let raw = formatTlv("00", "01");
 
   // Tag 01: Point of Initiation Method (12 = Dynamic with Amount, 11 = Static)
   raw += formatTlv("01", numAmount > 0 ? "12" : "11");
 
   // Tag 29: Individual Bakong Account Identifier
-  // Subtag 00: Bakong Account ID (e.g. name@abaa, 012345678@abaa)
+  // Subtag 00: Bakong Account ID (e.g. 0974242291@abaa)
   const tag29Sub00 = formatTlv("00", bakongId);
   raw += formatTlv("29", tag29Sub00);
 
@@ -105,7 +119,7 @@ export function generateKhqrString(options = {}) {
   raw += formatTlv("53", currCode);
 
   // Tag 54: Transaction Amount
-  if (numAmount > 0) {
+  if (numAmount > 0 && formattedAmount) {
     raw += formatTlv("54", formattedAmount);
   }
 
@@ -118,7 +132,7 @@ export function generateKhqrString(options = {}) {
   // Tag 60: Merchant City
   raw += formatTlv("60", merchantCity);
 
-  // Tag 62: Additional Data Field
+  // Tag 62: Additional Data Field (Bill number, Store label, Terminal)
   let tag62Sub = "";
   if (options.billNumber || options.orderNumber || options.orderId) {
     const bill = String(options.billNumber || options.orderNumber || `ORD-${options.orderId}`).slice(0, 25);
@@ -132,6 +146,12 @@ export function generateKhqrString(options = {}) {
   }
   if (tag62Sub) {
     raw += formatTlv("62", tag62Sub);
+  }
+
+  // Tag 99: Mandatory NBC Bakong Creation & Expiration Timestamps for Dynamic KHQR
+  if (numAmount > 0) {
+    const tag99Sub = formatTlv("00", String(now)) + formatTlv("01", String(exp));
+    raw += formatTlv("99", tag99Sub);
   }
 
   // Tag 63: CRC16 Checksum
