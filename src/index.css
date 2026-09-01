@@ -162,13 +162,19 @@ body.dark-theme,
 }
 
 /* Header & Navigation Bar in Dark Mode */
+.auth-logo-text,
+.home-logo-text {
+  color: #0f172a;
+}
+
 [data-theme="dark"] .home-header {
   background-color: rgba(7, 10, 18, 0.94);
   border-bottom-color: #1e293b;
 }
 
-[data-theme="dark"] .auth-logo-text {
-  color: #f8fafc;
+[data-theme="dark"] .auth-logo-text,
+[data-theme="dark"] .home-logo-text {
+  color: #f8fafc !important;
 }
 
 [data-theme="dark"] .desktop-nav .nav-item {
@@ -1681,4 +1687,515 @@ body.dark-theme,
 
 [data-theme="dark"] .search-input-wrapper .search-input::placeholder {
   color: #64748b;
+}
+
+/* ==========================================================================
+   UNIFIED ADMIN KPI CARDS DESIGN SYSTEM (DASHBOARD-MATCHED)
+   Matches Dashboard.jsx: Emerald Forest Theme (#10b981 / #059669 / #0f172a)
+   Applicable to: Dashboard, Orders, Products, Flash Sales, Trading, Suppliers,
+   Purchases, Reports, Customers, Attendance, Messages, Categories, Brands
+   ========================================================================== */
+
+/* Universal Stat Grids */
+.stats-grid,
+.kpi-grid,
+.order-stats,
+.supplier-stats,
+.purchase-stats,
+.trading-stats-grid,
+.flash-stats-grid,
+.messages-stats-grid,
+.report-stats,
+.detail-stats-grid,
+.logistics-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+/* Universal Stat Cards Base */
+.stat-card,
+.kpi-card,
+.order-stat-card,
+.supplier-stat-card,
+.purchase-stat-card,
+.trading-stat-card,
+.flash-stat-card,
+.report-stat-card,
+.report-kpi-card,
+.attendance-kpi-card {
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+  cursor: pointer;
+  min-height: 140px;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+/* Dark Mode Universal Stat Cards */
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .kpi-card,
+[data-theme="dark"] .order-stat-card,
+[data-theme="dark"] .supplier-stat-card,
+[data-theme="dark"] .purchase-stat-card,
+[data-theme="dark"] .trading-stat-card,
+[data-theme="dark"] .flash-stat-card,
+[data-theme="dark"] .report-stat-card,
+[data-theme="dark"] .report-kpi-card,
+[data-theme="dark"] .attendance-kpi-card,
+body.dark-theme .stat-card,
+body.dark-theme .kpi-card,
+body.dark-theme .order-stat-card,
+body.dark-theme .supplier-stat-card,
+body.dark-theme .purchase-stat-card,
+body.dark-theme .trading-stat-card,
+body.dark-theme .flash-stat-card,
+body.dark-theme .report-stat-card,
+body.dark-theme .report-kpi-card,
+body.dark-theme .attendance-kpi-card {
+  background: rgba(15, 23, 42, 0.75) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Interactive Hover & Tap */
+.stat-card:hover,
+.kpi-card:hover,
+.order-stat-card:hover,
+.supplier-stat-card:hover,
+.purchase-stat-card:hover,
+.trading-stat-card:hover,
+.flash-stat-card:hover,
+.report-stat-card:hover,
+.report-kpi-card:hover,
+.attendance-kpi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(16, 185, 129, 0.16) !important;
+  border-color: rgba(16, 185, 129, 0.55) !important;
+}
+
+.stat-card:active,
+.kpi-card:active,
+.order-stat-card:active,
+.supplier-stat-card:active,
+.purchase-stat-card:active,
+.trading-stat-card:active,
+.flash-stat-card:active,
+.report-stat-card:active,
+.report-kpi-card:active,
+.attendance-kpi-card:active {
+  transform: scale(0.98);
+}
+
+.stat-card.active-kpi {
+  border-color: #10b981 !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.4), 0 12px 28px rgba(16, 185, 129, 0.25) !important;
+  transform: translateY(-2px);
+}
+
+/* Card Header (Icon + Tag) */
+.stat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  width: 100%;
+}
+
+/* Universal Icon Wrappers */
+.stat-icon-wrapper,
+.stat-icon,
+.icon-box,
+.stat-icon-box,
+.attendance-kpi-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover .stat-icon-wrapper,
+.stat-card:hover .stat-icon,
+.stat-card:hover .icon-box,
+.stat-card:hover .attendance-kpi-icon {
+  transform: scale(1.08);
+}
+
+/* Growth & Status Tags */
+.growth-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.growth-tag.positive {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.growth-tag.warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+/* Card Body (Title + Large Value) */
+.stat-card-body {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.stat-card-body h4 {
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+  margin: 0 0 6px 0 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.4px !important;
+}
+
+[data-theme="dark"] .stat-card-body h4 {
+  color: #94a3b8 !important;
+}
+
+.stat-card-body .stat-value {
+  font-size: 1.65rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  margin: 0 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.5px !important;
+}
+
+[data-theme="dark"] .stat-card-body .stat-value {
+  color: #f8fafc !important;
+}
+
+/* Card Footer (Subtitle + Chevron) */
+.stat-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(226, 232, 240, 0.6);
+  width: 100%;
+}
+
+[data-theme="dark"] .stat-footer-row {
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+.stat-footer-row small {
+  font-size: 0.74rem !important;
+  color: #94a3b8 !important;
+  font-weight: 500 !important;
+}
+
+.kpi-click-hint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover .kpi-click-hint {
+  transform: translateX(3px);
+}
+
+/* Universal Theme Colors for Icons */
+.green-bg,
+.bg-green,
+.active-status .icon-box,
+.active-status .stat-icon,
+.active .stat-icon,
+.received .stat-icon,
+.order-stat-card.active-status .icon-box,
+.supplier-stat-card.active .stat-icon,
+.report-stat-card.revenue .icon-box,
+.report-stat-card.profit .icon-box {
+  background: rgba(16, 185, 129, 0.18) !important;
+  color: #10b981 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.blue-bg,
+.bg-blue,
+.total-status .icon-box,
+.total-status .stat-icon,
+.total .stat-icon,
+.amount .stat-icon,
+.order-stat-card.total-status .icon-box,
+.supplier-stat-card.total .stat-icon,
+.purchase-stat-card.total .stat-icon,
+.purchase-stat-card.amount .stat-icon,
+.report-stat-card.orders .icon-box {
+  background: rgba(37, 99, 235, 0.18) !important;
+  color: #3b82f6 !important;
+  border: 1px solid rgba(37, 99, 235, 0.3) !important;
+}
+
+.purple-bg,
+.bg-purple,
+.stock-value .icon-box,
+.stock-value .stat-icon,
+.report-stat-card.aov .icon-box {
+  background: rgba(139, 92, 246, 0.18) !important;
+  color: #8b5cf6 !important;
+  border: 1px solid rgba(139, 92, 246, 0.3) !important;
+}
+
+.orange-bg,
+.bg-orange,
+.stock-warning .icon-box,
+.stock-warning .stat-icon,
+.pending .stat-icon,
+.purchase-stat-card.pending .stat-icon,
+.flash-stat-card.stock-warning .icon-box {
+  background: rgba(245, 158, 11, 0.18) !important;
+  color: #f59e0b !important;
+  border: 1px solid rgba(245, 158, 11, 0.3) !important;
+}
+
+.red-bg,
+.bg-red,
+.inactive-status .icon-box,
+.inactive-status .stat-icon,
+.inactive .stat-icon,
+.supplier-stat-card.inactive .stat-icon,
+.flash-stat-card.inactive-status .icon-box {
+  background: rgba(239, 68, 68, 0.18) !important;
+  color: #ef4444 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Universal Typography within Cards */
+.stat-info,
+.kpi-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stat-info p,
+.stat-card-body h4,
+.kpi-content p,
+.trading-stat-card p,
+.supplier-stat-card .stat-info p,
+.purchase-stat-card .stat-info p,
+.report-stat-card .stat-info p,
+.flash-stat-card .stat-info p {
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  color: #64748b !important;
+  margin: 0 0 4px !important;
+}
+
+[data-theme="dark"] .stat-info p,
+[data-theme="dark"] .stat-card-body h4,
+[data-theme="dark"] .kpi-content p,
+[data-theme="dark"] .trading-stat-card p,
+[data-theme="dark"] .supplier-stat-card .stat-info p,
+[data-theme="dark"] .purchase-stat-card .stat-info p,
+[data-theme="dark"] .report-stat-card .stat-info p,
+[data-theme="dark"] .flash-stat-card .stat-info p,
+body.dark-theme .stat-info p,
+body.dark-theme .stat-card-body h4,
+body.dark-theme .kpi-content p {
+  color: #94a3b8 !important;
+}
+
+.stat-info h1,
+.stat-info h2,
+.stat-info h3,
+.stat-card-body h2,
+.kpi-content h1,
+.trading-stat-card h3,
+.supplier-stat-card .stat-info h3,
+.purchase-stat-card .stat-info h3,
+.report-stat-card .stat-info h1,
+.flash-stat-card .stat-info h1 {
+  font-size: 1.6rem !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.4px !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+}
+
+[data-theme="dark"] .stat-info h1,
+[data-theme="dark"] .stat-info h2,
+[data-theme="dark"] .stat-info h3,
+[data-theme="dark"] .stat-card-body h2,
+[data-theme="dark"] .kpi-content h1,
+[data-theme="dark"] .trading-stat-card h3,
+[data-theme="dark"] .supplier-stat-card .stat-info h3,
+[data-theme="dark"] .purchase-stat-card .stat-info h3,
+[data-theme="dark"] .report-stat-card .stat-info h1,
+[data-theme="dark"] .flash-stat-card .stat-info h1,
+body.dark-theme .stat-info h1,
+body.dark-theme .stat-info h2,
+body.dark-theme .stat-info h3,
+body.dark-theme .stat-card-body h2,
+body.dark-theme .kpi-content h1 {
+  color: #f8fafc !important;
+}
+
+/* Universal Subtext & Badges */
+.stat-info small,
+.report-stat-card .stat-info small {
+  font-size: 0.75rem !important;
+  color: #94a3b8 !important;
+  margin-top: 4px !important;
+}
+
+/* Universal Mobile Responsiveness for All Stat Grids */
+@media (max-width: 992px) {
+  .stats-grid,
+  .kpi-grid,
+  .order-stats,
+  .supplier-stats,
+  .purchase-stats,
+  .trading-stats-grid,
+  .flash-stats-grid,
+  .messages-stats-grid,
+  .report-stats,
+  .detail-stats-grid,
+  .logistics-stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 14px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid,
+  .kpi-grid,
+  .order-stats,
+  .supplier-stats,
+  .purchase-stats,
+  .trading-stats-grid,
+  .flash-stats-grid,
+  .messages-stats-grid,
+  .report-stats,
+  .detail-stats-grid,
+  .logistics-stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .stat-card,
+  .kpi-card,
+  .order-stat-card,
+  .supplier-stat-card,
+  .purchase-stat-card,
+  .trading-stat-card,
+  .flash-stat-card,
+  .report-stat-card,
+  .report-kpi-card {
+    padding: 16px !important;
+    border-radius: 16px !important;
+  }
+
+  .stat-info h1,
+  .stat-info h2,
+  .stat-info h3,
+  .stat-card-body h2,
+  .kpi-content h1,
+  .trading-stat-card h3,
+  .supplier-stat-card .stat-info h3,
+  .purchase-stat-card .stat-info h3,
+  .report-stat-card .stat-info h1,
+  .flash-stat-card .stat-info h1 {
+    font-size: 1.4rem !important;
+  }
+}
+
+/* ============================================================
+   GLOBAL PRESENCE / ONLINE STATUS INDICATORS
+   ============================================================ */
+.presence-dot-bubble {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  box-sizing: content-box;
+  z-index: 2;
+}
+
+.presence-dot-bubble.online {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+  animation: presencePulseGlobal 2s infinite;
+}
+
+.presence-dot-bubble.offline {
+  background: #94a3b8;
+}
+
+@keyframes presencePulseGlobal {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.online-mini-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #059669;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 9999px;
+  padding: 1px 7px;
+  width: fit-content;
+}
+
+[data-theme="dark"] .presence-dot-bubble {
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .online-mini-chip {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #34d399;
 }

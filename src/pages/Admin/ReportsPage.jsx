@@ -21,7 +21,9 @@ import {
   CreditCard,
   Truck,
   Layers,
-  ChevronDown
+  ChevronDown,
+  ChevronRight,
+  ArrowUp
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { useTranslation } from "../../context/LanguageContext";
@@ -270,75 +272,107 @@ function ReportsPage() {
       {isLoading ? (
         <KpiCardSkeleton count={4} />
       ) : (
-        <div className="reports-kpi-grid">
+        <div className="stats-grid" style={{ marginBottom: "24px" }}>
           {/* KPI 1: Gross Revenue */}
-          <div className="report-kpi-card">
-          <div className="kpi-card-header">
-            <span className="kpi-title">{isKhmer ? "ចំណូលសរុប (Gross Revenue)" : "Gross Total Revenue"}</span>
-            <div className="kpi-icon-box green">
-              <DollarSign size={18} />
+          <div
+            className={`stat-card ${activeReportTab === "overview" ? "active-kpi" : ""}`}
+            onClick={() => setActiveReportTab("overview")}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="stat-card-header">
+              <div className="stat-icon-wrapper green-bg">
+                <DollarSign size={18} />
+              </div>
+              <span className="growth-tag positive">
+                <ArrowUpRight size={13} /> +22.4%
+              </span>
+            </div>
+            <div className="stat-card-body">
+              <h4>{isKhmer ? "ចំណូលសរុប (Gross Revenue)" : "Gross Total Revenue"}</h4>
+              <h2 className="stat-value">$128,450.00</h2>
+              <div className="stat-footer-row">
+                <small>≈ 526,645,000 ៛ (KHR)</small>
+                <span className="kpi-click-hint"><ChevronRight size={11} /></span>
+              </div>
             </div>
           </div>
-          <div className="kpi-main-val">$128,450.00</div>
-          <div className="kpi-footer-row">
-            <span className="kpi-badge positive">
-              <ArrowUpRight size={13} /> +22.4%
-            </span>
-            <span className="kpi-sub-text">≈ 526,645,000 ៛ (KHR)</span>
-          </div>
-        </div>
 
-        {/* KPI 2: Total Orders */}
-        <div className="report-kpi-card">
-          <div className="kpi-card-header">
-            <span className="kpi-title">{isKhmer ? "ការបញ្ជាទិញជោគជ័យ" : "Completed Orders"}</span>
-            <div className="kpi-icon-box blue">
-              <ShoppingCart size={18} />
+          {/* KPI 2: Total Orders */}
+          <div
+            className={`stat-card ${activeReportTab === "products" ? "active-kpi" : ""}`}
+            onClick={() => setActiveReportTab("products")}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="stat-card-header">
+              <div className="stat-icon-wrapper blue-bg">
+                <ShoppingCart size={18} />
+              </div>
+              <span className="growth-tag positive">
+                <ArrowUpRight size={13} /> +14.8%
+              </span>
+            </div>
+            <div className="stat-card-body">
+              <h4>{isKhmer ? "ការបញ្ជាទិញជោគជ័យ" : "Completed Orders"}</h4>
+              <h2 className="stat-value">1,420 {isKhmer ? "កញ្ចប់" : "Orders"}</h2>
+              <div className="stat-footer-row">
+                <small>{isKhmer ? "មធ្យម 47 កញ្ចប់/ថ្ងៃ" : "Avg. 47 orders/day"}</small>
+                <span className="kpi-click-hint"><ChevronRight size={11} /></span>
+              </div>
             </div>
           </div>
-          <div className="kpi-main-val">1,420 {isKhmer ? "កញ្ចប់" : "Orders"}</div>
-          <div className="kpi-footer-row">
-            <span className="kpi-badge positive">
-              <ArrowUpRight size={13} /> +14.8%
-            </span>
-            <span className="kpi-sub-text">{isKhmer ? "មធ្យម 47 កញ្ចប់/ថ្ងៃ" : "Avg. 47 orders/day"}</span>
-          </div>
-        </div>
 
-        {/* KPI 3: Average Order Value */}
-        <div className="report-kpi-card">
-          <div className="kpi-card-header">
-            <span className="kpi-title">{isKhmer ? "តម្លៃជាមធ្យមក្នុងមួយកន្ត្រក" : "Average Order Value (AOV)"}</span>
-            <div className="kpi-icon-box purple">
-              <TrendingUp size={18} />
+          {/* KPI 3: Average Order Value */}
+          <div
+            className={`stat-card ${activeReportTab === "payments" ? "active-kpi" : ""}`}
+            onClick={() => setActiveReportTab("payments")}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="stat-card-header">
+              <div className="stat-icon-wrapper purple-bg">
+                <TrendingUp size={18} />
+              </div>
+              <span className="growth-tag positive">
+                <ArrowUpRight size={13} /> +6.2%
+              </span>
+            </div>
+            <div className="stat-card-body">
+              <h4>{isKhmer ? "តម្លៃជាមធ្យមក្នុងមួយកន្ត្រក" : "Average Order Value (AOV)"}</h4>
+              <h2 className="stat-value">$90.45</h2>
+              <div className="stat-footer-row">
+                <small>{isKhmer ? "កើនឡើងពី $85.10" : "Up from $85.10"}</small>
+                <span className="kpi-click-hint"><ChevronRight size={11} /></span>
+              </div>
             </div>
           </div>
-          <div className="kpi-main-val">$90.45</div>
-          <div className="kpi-footer-row">
-            <span className="kpi-badge positive">
-              <ArrowUpRight size={13} /> +6.2%
-            </span>
-            <span className="kpi-sub-text">{isKhmer ? "កើនឡើងពី $85.10" : "Up from $85.10"}</span>
-          </div>
-        </div>
 
-        {/* KPI 4: Net Profit */}
-        <div className="report-kpi-card">
-          <div className="kpi-card-header">
-            <span className="kpi-title">{isKhmer ? "ប្រាក់ចំណេញសុទ្ធ (Net Profit)" : "Estimated Net Profit"}</span>
-            <div className="kpi-icon-box orange">
-              <Sparkles size={18} />
+          {/* KPI 4: Net Profit */}
+          <div
+            className={`stat-card ${activeReportTab === "inventory" ? "active-kpi" : ""}`}
+            onClick={() => setActiveReportTab("inventory")}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="stat-card-header">
+              <div className="stat-icon-wrapper orange-bg">
+                <Sparkles size={18} />
+              </div>
+              <span className="growth-tag positive">
+                <ArrowUpRight size={13} /> 30% Margin
+              </span>
+            </div>
+            <div className="stat-card-body">
+              <h4>{isKhmer ? "ប្រាក់ចំណេញសុទ្ធ (Net Profit)" : "Estimated Net Profit"}</h4>
+              <h2 className="stat-value">$38,535.00</h2>
+              <div className="stat-footer-row">
+                <small>{isKhmer ? "ចំណេញសុទ្ធ" : "Healthy profit margin"}</small>
+                <span className="kpi-click-hint"><ChevronRight size={11} /></span>
+              </div>
             </div>
           </div>
-          <div className="kpi-main-val">$38,535.00</div>
-          <div className="kpi-footer-row">
-            <span className="kpi-badge positive">
-              <ArrowUpRight size={13} /> 30.0% Margin
-            </span>
-            <span className="kpi-sub-text">{isKhmer ? "ចំណេញសុទ្ធ" : "Healthy profit margin"}</span>
-          </div>
         </div>
-      </div>
       )}
 
       {/* Report View Mode Tabs */}

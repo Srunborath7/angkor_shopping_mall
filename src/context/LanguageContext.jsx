@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import kmTranslations from "../locales/km.json";
 import enTranslations from "../locales/en.json";
 import toast from "react-hot-toast";
@@ -11,27 +11,44 @@ const translations = {
 const LanguageContext = createContext(null);
 
 export const LanguageProvider = ({ children }) => {
-  const [language, setLanguageState] = useState(() => {
+  const initialLang = (() => {
     try {
       const saved = localStorage.getItem("angkor_language") || localStorage.getItem("angkor_preferred_voice_lang");
       return saved === "en" ? "en" : "km";
     } catch {
       return "km";
     }
-  });
+  })();
 
-  const setLanguage = useCallback((newLang, showToast = true) => {
+  const [language, setLanguageState] = useState(initialLang);
+  const langRef = useRef(initialLang);
+  const isBroadcastingRef = useRef(false);
+
+  const setLanguage = useCallback((newLang, showToast = true, fromExternal = false) => {
     const lang = newLang === "en" ? "en" : "km";
+    const prevLang = langRef.current;
+
+    // Guard against identical changes when no toast is requested
+    if (lang === prevLang && !showToast) return;
+
+    langRef.current = lang;
     setLanguageState(lang);
+
     try {
       localStorage.setItem("angkor_language", lang);
       localStorage.setItem("angkor_preferred_voice_lang", lang);
       document.documentElement.lang = lang;
       
-      // Dispatch custom event so non-context scripts or ChatBot sync seamlessly
-      window.dispatchEvent(new CustomEvent("angkor-language-change", { detail: lang }));
+      // Dispatch custom event only when not triggered from external listener to prevent recursion
+      if (!fromExternal && !isBroadcastingRef.current) {
+        isBroadcastingRef.current = true;
+        window.dispatchEvent(new CustomEvent("angkor-language-change", { 
+          detail: { lang, source: "LanguageContext" } 
+        }));
+        isBroadcastingRef.current = false;
+      }
       
-      if (showToast) {
+      if (showToast && prevLang !== lang) {
         if (lang === "km") {
           toast.success("🇰🇭 បានប្តូរភាសាទៅជា៖ ភាសាខ្មែរ", { id: "lang-change" });
         } else {
@@ -46,13 +63,17 @@ export const LanguageProvider = ({ children }) => {
   // Listen to external language change triggers (e.g. from ChatBot language selector)
   useEffect(() => {
     const handleExternalChange = (e) => {
-      if (e.detail && (e.detail === "km" || e.detail === "en") && e.detail !== language) {
-        setLanguage(e.detail, false);
+      const targetLang = typeof e.detail === "object" ? e.detail?.lang : e.detail;
+      const source = typeof e.detail === "object" ? e.detail?.source : null;
+      if (source === "LanguageContext") return; // Ignore own events
+
+      if (targetLang && (targetLang === "km" || targetLang === "en") && targetLang !== langRef.current) {
+        setLanguage(targetLang, false, true);
       }
     };
     window.addEventListener("angkor-language-change", handleExternalChange);
     return () => window.removeEventListener("angkor-language-change", handleExternalChange);
-  }, [language, setLanguage]);
+  }, [setLanguage]);
 
   // Set document language attribute on mount
   useEffect(() => {

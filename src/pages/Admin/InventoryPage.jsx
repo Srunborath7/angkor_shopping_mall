@@ -12,6 +12,7 @@ import {
     FaPlus,
     FaMinus,
     FaCheck,
+    FaArrowUp,
     FaSpinner
 } from "react-icons/fa";
 import Swal from "sweetalert2";
@@ -275,63 +276,95 @@ function InventoryPage() {
             </div>
 
             {/* KPI Cards */}
-            <div className="row g-4 mb-4">
+            <div className="stats-grid" style={{ marginBottom: "24px" }}>
                 {/* Total Stock */}
-                <div className="col-xl-3 col-md-6">
-                    <div className="kpi-card stock-total">
-                        <div className="kpi-content">
-                            <div>
-                                <p>Total Items in Stock</p>
-                                <h1>{totalStockCount.toLocaleString()}</h1>
-                            </div>
-                            <div className="icon-box">
-                                <FaBoxes />
-                            </div>
+                <div
+                    className={`stat-card ${stockFilter === "all" ? "active-kpi" : ""}`}
+                    onClick={() => setStockFilter("all")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper blue-bg">
+                            <FaBoxes />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> Stock</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Total In-Stock Items</h4>
+                        <h2 className="stat-value">{totalStockCount.toLocaleString()}</h2>
+                        <div className="stat-footer-row">
+                            <small>Physical unit inventory</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
                         </div>
                     </div>
                 </div>
 
                 {/* Low Stock alerts */}
-                <div className="col-xl-3 col-md-6">
-                    <div className="kpi-card stock-warning">
-                        <div className="kpi-content">
-                            <div>
-                                <p>Low Stock Alerts</p>
-                                <h1>{lowStockItems.length}</h1>
-                            </div>
-                            <div className="icon-box">
-                                <FaExclamationTriangle />
-                            </div>
+                <div
+                    className={`stat-card ${stockFilter === "lowstock" ? "active-kpi" : ""}`}
+                    onClick={() => setStockFilter(stockFilter === "lowstock" ? "all" : "lowstock")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper orange-bg">
+                            <FaExclamationTriangle />
+                        </div>
+                        <span className="growth-tag warning">{lowStockItems.length} alerts</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Low Stock Alerts</h4>
+                        <h2 className="stat-value">{lowStockItems.length}</h2>
+                        <div className="stat-footer-row">
+                            <small>Items with stock ≤ 5</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
                         </div>
                     </div>
                 </div>
 
                 {/* Out of Stock */}
-                <div className="col-xl-3 col-md-6">
-                    <div className="kpi-card stock-danger">
-                        <div className="kpi-content">
-                            <div>
-                                <p>Out of Stock</p>
-                                <h1>{outOfStockItems.length}</h1>
-                            </div>
-                            <div className="icon-box">
-                                <FaTimesCircle />
-                            </div>
+                <div
+                    className={`stat-card ${stockFilter === "outofstock" ? "active-kpi" : ""}`}
+                    onClick={() => setStockFilter(stockFilter === "outofstock" ? "all" : "outofstock")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper red-bg" style={{ background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)", color: "#fff" }}>
+                            <FaTimesCircle />
+                        </div>
+                        <span className="growth-tag warning">{outOfStockItems.length} zero</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Out of Stock</h4>
+                        <h2 className="stat-value">{outOfStockItems.length}</h2>
+                        <div className="stat-footer-row">
+                            <small>Needs immediate purchase</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
                         </div>
                     </div>
                 </div>
 
                 {/* Inventory Value */}
-                <div className="col-xl-3 col-md-6">
-                    <div className="kpi-card stock-value">
-                        <div className="kpi-content">
-                            <div>
-                                <p>Total Inventory Value</p>
-                                <h1>${totalInventoryValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h1>
-                            </div>
-                            <div className="icon-box">
-                                <FaDollarSign />
-                            </div>
+                <div
+                    className={`stat-card ${stockFilter === "instock" ? "active-kpi" : ""}`}
+                    onClick={() => setStockFilter(stockFilter === "instock" ? "all" : "instock")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper green-bg">
+                            <FaDollarSign />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> Value</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Total Asset Valuation</h4>
+                        <h2 className="stat-value">${totalInventoryValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
+                        <div className="stat-footer-row">
+                            <small>Warehouse retail value</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
                         </div>
                     </div>
                 </div>

@@ -401,10 +401,16 @@ function Navbar({ setOpen, user, logout }) {
                 onClick={() => setDropdownOpen(!dropdownOpen)}
                 title="Profile options"
               >
-                <FaUserCircle className="profile-icon" />
+                <div className="profile-avatar-wrap" style={{ position: "relative", display: "inline-flex" }}>
+                  <FaUserCircle className="profile-icon" />
+                  <span className="presence-dot-bubble online" title="Online Active" />
+                </div>
 
-                <div>
-                  <strong>{user?.name || "Administrator"}</strong>
+                <div className="profile-text-info">
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <strong>{user?.name || "Administrator"}</strong>
+                    <span className="online-mini-chip">🟢 Live</span>
+                  </div>
                   <small>{currentRoleName}</small>
                 </div>
 
@@ -414,7 +420,10 @@ function Navbar({ setOpen, user, logout }) {
               {dropdownOpen && (
                 <div className="profile-dropdown-card">
                   <div className="dropdown-user-info">
-                    <span className="info-name">{user?.name || "Administrator"}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span className="info-name">{user?.name || "Administrator"}</span>
+                      <span className="online-mini-chip">🟢 Online</span>
+                    </div>
                     <span className="info-email">{user?.email || "admin@angkor.com"}</span>
                     <span className="info-role">{currentRoleName.toUpperCase()}</span>
                   </div>

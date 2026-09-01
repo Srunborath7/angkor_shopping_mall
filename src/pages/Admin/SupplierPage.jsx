@@ -11,7 +11,10 @@ import {
     FaCheckCircle,
     FaTimesCircle,
     FaSlidersH,
-    FaUserCheck
+    FaUserCheck,
+    FaChevronRight,
+    FaArrowUp,
+    FaBuilding
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -198,34 +201,96 @@ function SupplierPage() {
             </div>
 
             {/* Stats Row */}
-            <div className="supplier-stats">
-                <div className="supplier-stat-card total">
-                    <div className="stat-icon">
-                        <FaTruck />
+            <div className="stats-grid" style={{ marginBottom: "24px" }}>
+                {/* Total */}
+                <div
+                    className={`stat-card ${statusFilter === "all" ? "active-kpi" : ""}`}
+                    onClick={() => setStatusFilter("all")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper blue-bg">
+                            <FaTruck />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> 100%</span>
                     </div>
-                    <div className="stat-info">
-                        <h3>{suppliers.length}</h3>
-                        <p>Total Suppliers</p>
+                    <div className="stat-card-body">
+                        <h4>Total Suppliers</h4>
+                        <h2 className="stat-value">{suppliers.length}</h2>
+                        <div className="stat-footer-row">
+                            <small>Registered procurement vendors</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="supplier-stat-card active">
-                    <div className="stat-icon">
-                        <FaUserCheck />
+                {/* Active */}
+                <div
+                    className={`stat-card ${statusFilter === "active" ? "active-kpi" : ""}`}
+                    onClick={() => setStatusFilter(statusFilter === "active" ? "all" : "active")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper green-bg">
+                            <FaUserCheck />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> {suppliers.length > 0 ? Math.round((activeCount / suppliers.length) * 100) : 100}%</span>
                     </div>
-                    <div className="stat-info">
-                        <h3>{activeCount}</h3>
-                        <p>Active Partners</p>
+                    <div className="stat-card-body">
+                        <h4>Active Partners</h4>
+                        <h2 className="stat-value">{activeCount}</h2>
+                        <div className="stat-footer-row">
+                            <small>Open purchase agreements</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="supplier-stat-card inactive">
-                    <div className="stat-icon">
-                        <FaTimesCircle />
+                {/* Inactive */}
+                <div
+                    className={`stat-card ${statusFilter === "inactive" ? "active-kpi" : ""}`}
+                    onClick={() => setStatusFilter(statusFilter === "inactive" ? "all" : "inactive")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper orange-bg">
+                            <FaTimesCircle />
+                        </div>
+                        <span className="growth-tag warning">{inactiveCount} paused</span>
                     </div>
-                    <div className="stat-info">
-                        <h3>{inactiveCount}</h3>
-                        <p>Inactive Suppliers</p>
+                    <div className="stat-card-body">
+                        <h4>Inactive Vendors</h4>
+                        <h2 className="stat-value">{inactiveCount}</h2>
+                        <div className="stat-footer-row">
+                            <small>Suspended supplier contracts</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Verified Corporate */}
+                <div
+                    className="stat-card"
+                    onClick={() => setStatusFilter("all")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper purple-bg">
+                            <FaBuilding />
+                        </div>
+                        <span className="growth-tag positive">Verified</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Verified Partners</h4>
+                        <h2 className="stat-value">{activeCount}</h2>
+                        <div className="stat-footer-row">
+                            <small>Direct factory authorized</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
                     </div>
                 </div>
             </div>

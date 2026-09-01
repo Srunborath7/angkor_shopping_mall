@@ -8,6 +8,11 @@ import {
     FaSlidersH,
     FaSpinner,
     FaCheck,
+    FaCheckCircle,
+    FaExclamationTriangle,
+    FaChevronRight,
+    FaArrowUp,
+    FaTag,
     FaImages,
     FaPlusCircle,
     FaTimes,
@@ -21,7 +26,6 @@ import {
     createProductApi,
     updateProductApi,
     deleteProductApi,
-    brandsApi,
     getProductByIdApi,
     upsertProductDetailApi,
     createProductVariantApi,
@@ -31,6 +35,7 @@ import {
     deleteProductImageApi
 } from "../../services/productsService";
 import { categoriesApi } from "../../services/categoriesService";
+import { brandsApi } from "../../services/brandsService";
 import { StaffApi } from "../../services/customerService";
 import Modal from "../../components/Modal";
 import { TableSkeleton, KpiCardSkeleton } from "../../components/loading/LoadingSkeleton";
@@ -44,6 +49,7 @@ function ProductPage() {
     const [brands, setBrands] = useState([]);
     const [staffUsers, setStaffUsers] = useState([]);
     const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
     const [loading, setLoading] = useState(false);
 
     // Column visibility states
@@ -111,8 +117,8 @@ function ProductPage() {
         try {
             setLoading(true);
             const [prodRes, catRes, brandRes, staffRes] = await Promise.all([
-                productsApi(),
-                categoriesApi(),
+                productsApi().catch(() => ({ data: [] })),
+                categoriesApi().catch(() => ({ data: [] })),
                 brandsApi().catch(() => ({ data: [] })),
                 StaffApi().catch(() => ({ data: [] }))
             ]);
@@ -133,7 +139,7 @@ function ProductPage() {
             });
 
             setProducts(formattedProducts);
-            setCategories(catRes?.data?.data || catRes?.data || (Array.isArray(catRes) ? catRes : []));
+            setCategories(catRes?.data?.categories || catRes?.data?.data || catRes?.data || (Array.isArray(catRes) ? catRes : []));
             setBrands(brandRes?.data?.brands || brandRes?.data?.data || brandRes?.data || (Array.isArray(brandRes) ? brandRes : []));
             setStaffUsers(staffRes?.data?.data || staffRes?.data || (Array.isArray(staffRes) ? staffRes : []));
         } catch (error) {
@@ -653,11 +659,17 @@ function ProductPage() {
         });
     };
 
-    const filteredProducts = products.filter(item =>
-        item.name?.toLowerCase().includes(search.toLowerCase()) ||
-        item.category?.name?.toLowerCase().includes(search.toLowerCase()) ||
-        item.brand?.name?.toLowerCase().includes(search.toLowerCase())
-    );
+    const lowStockCount = products.filter(p => (Number(p.stock_quantity) || 0) <= 5).length;
+
+    const filteredProducts = products.filter(item => {
+        const matchesSearch = item.name?.toLowerCase().includes(search.toLowerCase()) ||
+            item.category?.name?.toLowerCase().includes(search.toLowerCase()) ||
+            item.brand?.name?.toLowerCase().includes(search.toLowerCase());
+        if (statusFilter === "active") return matchesSearch && item.is_active;
+        if (statusFilter === "inactive") return matchesSearch && !item.is_active;
+        if (statusFilter === "low_stock") return matchesSearch && (Number(item.stock_quantity) || 0) <= 5;
+        return matchesSearch;
+    });
 
     const totalProductCount = products.length;
     const activeProductCount = products.filter(product => product.is_active).length;
@@ -682,48 +694,95 @@ function ProductPage() {
 
     return (
         <div className="product-page">
-            <div>
-                <div className="row g-4 mb-4">
-                    {/* Total Products */}
-                    <div className="col-xl-4 col-md-6">
-                        <div className="kpi-card total">
-                            <div className="kpi-content">
-                                <div>
-                                    <p>Total Products</p>
-                                    <h1>{totalProductCount}</h1>
-                                </div>
-                                <div className="icon-box">
-                                    <FaBox />
-                                </div>
-                            </div>
+            <div className="stats-grid" style={{ marginBottom: "24px" }}>
+                {/* Total Products */}
+                <div
+                    className={`stat-card ${statusFilter === "all" ? "active-kpi" : ""}`}
+                    onClick={() => setStatusFilter("all")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper blue-bg">
+                            <FaBox />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> 100%</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Total Products</h4>
+                        <h2 className="stat-value">{totalProductCount}</h2>
+                        <div className="stat-footer-row">
+                            <small>Full inventory catalog</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
                         </div>
                     </div>
-                    {/* Active Products */}
-                    <div className="col-xl-4 col-md-6">
-                        <div className="kpi-card active-status">
-                            <div className="kpi-content">
-                                <div>
-                                    <p>Active Products</p>
-                                    <h1>{activeProductCount}</h1>
-                                </div>
-                                <div className="icon-box">
-                                    <FaBox />
-                                </div>
-                            </div>
+                </div>
+
+                {/* Active Products */}
+                <div
+                    className={`stat-card ${statusFilter === "active" ? "active-kpi" : ""}`}
+                    onClick={() => setStatusFilter(statusFilter === "active" ? "all" : "active")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper green-bg">
+                            <FaCheckCircle />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> {totalProductCount > 0 ? Math.round((activeProductCount / totalProductCount) * 100) : 100}%</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Active Catalog</h4>
+                        <h2 className="stat-value">{activeProductCount}</h2>
+                        <div className="stat-footer-row">
+                            <small>Published on website</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
                         </div>
                     </div>
-                    {/* Inactive Products */}
-                    <div className="col-xl-4 col-md-6">
-                        <div className="kpi-card inactive-status">
-                            <div className="kpi-content">
-                                <div>
-                                    <p>Inactive Products</p>
-                                    <h1>{inactiveProductCount}</h1>
-                                </div>
-                                <div className="icon-box">
-                                    <FaBox />
-                                </div>
-                            </div>
+                </div>
+
+                {/* Low / Out of Stock */}
+                <div
+                    className={`stat-card ${statusFilter === "low_stock" ? "active-kpi" : ""}`}
+                    onClick={() => setStatusFilter(statusFilter === "low_stock" ? "all" : "low_stock")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper orange-bg">
+                            <FaExclamationTriangle />
+                        </div>
+                        <span className="growth-tag warning">{lowStockCount} items</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Low Stock Alert</h4>
+                        <h2 className="stat-value">{lowStockCount}</h2>
+                        <div className="stat-footer-row">
+                            <small>Stock quantity ≤ 5</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Inactive / Draft */}
+                <div
+                    className={`stat-card ${statusFilter === "inactive" ? "active-kpi" : ""}`}
+                    onClick={() => setStatusFilter(statusFilter === "inactive" ? "all" : "inactive")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper purple-bg">
+                            <FaTag />
+                        </div>
+                        <span className="growth-tag warning">Drafts</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Draft & Inactive</h4>
+                        <h2 className="stat-value">{inactiveProductCount}</h2>
+                        <div className="stat-footer-row">
+                            <small>Hidden from storefront</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
                         </div>
                     </div>
                 </div>

@@ -17,7 +17,8 @@ import toast from "react-hot-toast";
 import {
   generateAbaQrApi,
   checkAbaStatusApi,
-  simulateAbaPayApi
+  simulateAbaPayApi,
+  ABA_CONFIG
 } from "../services/abaPaymentService";
 import "./AbaPaymentModal.css";
 
@@ -58,7 +59,7 @@ export default function AbaPaymentModal({
   const pollIntervalRef = useRef(null);
   const timerIntervalRef = useRef(null);
 
-  // Generate ABA PayWay payload
+  // Generate ABA PayWay / KHQR payload directly from Integrated Payment API
   const fetchAbaQr = useCallback(async (curr = currency) => {
     setIsLoading(true);
     try {
@@ -67,13 +68,27 @@ export default function AbaPaymentModal({
         amount: parseFloat(amount),
         currency: curr
       });
-
       const data = res?.data?.data || res?.data || res;
-      setQrData(data);
+
+      // Extract QR string & details directly from backend API
+      const apiQr = data?.qrString || data?.qr_string || data?.abapay_qr || data?.qr;
+      const merchantName = data?.merchantName || data?.merchant_name || ABA_CONFIG.storeLabel;
+
+      if (!apiQr) {
+        throw new Error(data?.message || "Payment QR string not provided by API");
+      }
+
+      setQrData({
+        ...data,
+        qrString: apiQr,
+        merchantName: merchantName,
+        tranId: data?.tranId || data?.tran_id || `TXN-${Date.now()}`,
+        md5: data?.md5 || `MD5-${Date.now()}`
+      });
       setTimeLeft(120);
       setIsLoading(false);
     } catch (err) {
-      console.error("ABA PayWay Generation Error:", err);
+      console.error("Payment API Error:", err);
       const errMsg = err?.response?.data?.message || err?.message || "";
       if (typeof errMsg === "string" && errMsg.toLowerCase().includes("already been paid")) {
         setIsPaid(true);
@@ -85,7 +100,7 @@ export default function AbaPaymentModal({
         });
         return;
       }
-      toast.error(errMsg || "Failed to generate ABA PayWay QR");
+      toast.error(errMsg || "Failed to generate payment QR");
       setIsLoading(false);
     }
   }, [orderId, amount, currency]);
@@ -276,7 +291,7 @@ export default function AbaPaymentModal({
       ? `${(parseFloat(amount) * 4100).toLocaleString()} ៛`
       : `$${parseFloat(amount).toFixed(2)}`;
 
-  const accountOwner = qrData?.merchantName || "BORATH SRUN";
+  const accountOwner = qrData?.merchantName || qrData?.merchant_name || ABA_CONFIG.storeLabel;
 
   return (
     <div className="aba-modal-backdrop" onClick={onClose}>
@@ -518,7 +533,7 @@ export default function AbaPaymentModal({
               type="button"
               className="aba-simulation-button"
               onClick={handleSimulatePayment}
-              disabled={isSimulating || (!qrData?.tranId && !qrData?.md5)}
+              disabled={isSimulating}
               title="Simulate instant payment completion for demo testing"
             >
               <Sparkles size={12} />

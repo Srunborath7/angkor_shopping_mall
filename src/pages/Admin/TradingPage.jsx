@@ -9,6 +9,9 @@ import {
   FaEye,
   FaCheckCircle,
   FaClock,
+  FaHandshake,
+  FaChevronRight,
+  FaArrowUp,
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -309,44 +312,92 @@ function TradingPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="trading-stats-grid">
-        <div className="trading-stat-card">
-          <div className="stat-icon-box bg-blue">
-            <FaTag />
+      <div className="stats-grid" style={{ marginBottom: "24px" }}>
+        <div
+          className={`stat-card ${statusFilter === "all" ? "active-kpi" : ""}`}
+          onClick={() => setStatusFilter("all")}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-wrapper blue-bg">
+              <FaTag />
+            </div>
+            <span className="growth-tag positive"><FaArrowUp /> 100%</span>
           </div>
-          <div>
-            <h3>{totalListings}</h3>
-            <p>Total Trade Listings</p>
-          </div>
-        </div>
-
-        <div className="trading-stat-card">
-          <div className="stat-icon-box bg-green">
-            <FaCheckCircle />
-          </div>
-          <div>
-            <h3>{availableCount}</h3>
-            <p>Active & Available</p>
-          </div>
-        </div>
-
-        <div className="trading-stat-card">
-          <div className="stat-icon-box bg-orange">
-            <FaClock />
-          </div>
-          <div>
-            <h3>{negotiatingCount}</h3>
-            <p>In Negotiation</p>
+          <div className="stat-card-body">
+            <h4>Total Trade Listings</h4>
+            <h2 className="stat-value">{totalListings}</h2>
+            <div className="stat-footer-row">
+              <small>All peer exchange items</small>
+              <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+            </div>
           </div>
         </div>
 
-        <div className="trading-stat-card">
-          <div className="stat-icon-box bg-red">
-            <FaExchangeAlt />
+        <div
+          className={`stat-card ${statusFilter === "available" ? "active-kpi" : ""}`}
+          onClick={() => setStatusFilter(statusFilter === "available" ? "all" : "available")}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-wrapper green-bg">
+              <FaCheckCircle />
+            </div>
+            <span className="growth-tag positive"><FaArrowUp /> Active</span>
           </div>
-          <div>
-            <h3>{tradedCount}</h3>
-            <p>Successfully Traded</p>
+          <div className="stat-card-body">
+            <h4>Active & Available</h4>
+            <h2 className="stat-value">{availableCount}</h2>
+            <div className="stat-footer-row">
+              <small>Open for barter offers</small>
+              <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={`stat-card ${statusFilter === "in_negotiation" ? "active-kpi" : ""}`}
+          onClick={() => setStatusFilter(statusFilter === "in_negotiation" ? "all" : "in_negotiation")}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-wrapper orange-bg">
+              <FaClock />
+            </div>
+            <span className="growth-tag warning">{negotiatingCount} pending</span>
+          </div>
+          <div className="stat-card-body">
+            <h4>In Negotiation</h4>
+            <h2 className="stat-value">{negotiatingCount}</h2>
+            <div className="stat-footer-row">
+              <small>Active chat discussions</small>
+              <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+            </div>
+          </div>
+        </div>
+
+        <div
+          className={`stat-card ${statusFilter === "traded" ? "active-kpi" : ""}`}
+          onClick={() => setStatusFilter(statusFilter === "traded" ? "all" : "traded")}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-wrapper purple-bg">
+              <FaHandshake />
+            </div>
+            <span className="growth-tag positive">Complete</span>
+          </div>
+          <div className="stat-card-body">
+            <h4>Completed Swaps</h4>
+            <h2 className="stat-value">{tradedCount}</h2>
+            <div className="stat-footer-row">
+              <small>Successfully swapped</small>
+              <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+            </div>
           </div>
         </div>
       </div>

@@ -1,5 +1,13 @@
 import { api } from "../api/api";
 
+export const ABA_CONFIG = {
+  apiUrl: import.meta.env.VITE_ABA_PAYWAY_API_URL || "https://checkout-sandbox.payway.com.kh/api/payment-gateway/v1/payments/purchase",
+  merchantId: import.meta.env.VITE_ABA_PAYWAY_MERCHANT_ID || "ec477y777",
+  apiKey: import.meta.env.VITE_ABA_PAYWAY_API_KEY || "bff7e9c4570225fc",
+  storeLabel: import.meta.env.VITE_ABA_PAYWAY_STORE_LABEL || "Angkor Shopping Mall",
+  accountId: import.meta.env.VITE_ABA_ACCOUNT_ID || "974242291@abaa"
+};
+
 /**
  * Generate ABA PayWay Dynamic QR code & Deep Link
  * @param {Object} params
@@ -9,7 +17,13 @@ import { api } from "../api/api";
  * @param {string} [params.currency='USD'] - 'USD' | 'KHR'
  */
 export const generateAbaQrApi = (params) => {
-  return api("/api/payments/aba/generate-qr", "post", params);
+  const payload = {
+    merchantId: ABA_CONFIG.merchantId,
+    bakongAccountId: ABA_CONFIG.accountId,
+    storeLabel: ABA_CONFIG.storeLabel,
+    ...params
+  };
+  return api("/api/payments/aba/generate-qr", "post", payload);
 };
 
 /**

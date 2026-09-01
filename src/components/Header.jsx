@@ -233,7 +233,7 @@ function Header() {
             <span className="home-logo-icon">
               <img src={logo} alt="AngkorMall Logo" />
             </span>
-            <span className="auth-logo-text">AngkorMall</span>
+            <span className="home-logo-text auth-logo-text">AngkorMall</span>
           </div>
 
           {/* Desktop Navigation */}
@@ -255,12 +255,6 @@ function Header() {
               onClick={() => navigate("/recommendations")}
             >
               {t("nav.aiRecommendations", "AI Recommendations")} <Sparkles size={12} className="sparkle-icon" />
-            </span>
-            <span
-              className={`nav-item ${currentPath === "/trading" ? "active" : ""}`}
-              onClick={() => navigate("/trading")}
-            >
-              {t("nav.tradeIn", "Trade & Exchange")}
             </span>
             <span
               className={`nav-item ${currentPath === "/orders" ? "active" : ""}`}
@@ -386,8 +380,9 @@ function Header() {
                   className="profile-logged-trigger"
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
                 >
-                  <div className="avatar-circle">
+                  <div className="avatar-circle" style={{ position: "relative" }}>
                     {user?.name ? user.name[0].toUpperCase() : <User size={16} />}
+                    <span className="presence-dot-bubble online" title="Active Online" />
                   </div>
                   <span className="profile-username mobile-hide-username">{user?.name?.split(" ")[0]}</span>
                   <ChevronDown size={14} className={`arrow-icon mobile-hide-arrow ${profileDropdownOpen ? "open" : ""}`} />
@@ -402,7 +397,10 @@ function Header() {
               {profileDropdownOpen && isLoggedIn && (
                 <div className="profile-dropdown-card">
                   <div className="dropdown-user-info">
-                    <span className="info-name">{user?.name || "Member User"}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span className="info-name">{user?.name || "Member User"}</span>
+                      <span className="online-mini-chip">🟢 Online</span>
+                    </div>
                     <span className="info-email">{user?.email || ""}</span>
                     <span className="info-role">{displayRoleName.toUpperCase()}</span>
                   </div>
@@ -449,11 +447,15 @@ function Header() {
               {/* User Account Brief Card inside Mobile Drawer */}
               {isLoggedIn && (
                 <div className="mobile-user-card">
-                  <div className="avatar-circle">
+                  <div className="avatar-circle" style={{ position: "relative" }}>
                     {user?.name ? user.name[0].toUpperCase() : <User size={16} />}
+                    <span className="presence-dot-bubble online" title="Active Online" />
                   </div>
                   <div className="mobile-user-info">
-                    <span className="info-name">{user?.name || "Member User"}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span className="info-name">{user?.name || "Member User"}</span>
+                      <span className="online-mini-chip">🟢 Online</span>
+                    </div>
                     <span className="info-email">{user?.email || ""}</span>
                     <span className="info-role-badge">{displayRoleName.toUpperCase()}</span>
                   </div>
@@ -535,20 +537,6 @@ function Header() {
                   <div className="nav-item-left">
                     <Sparkles size={18} className="text-green-icon" />
                     <span>{t("nav.aiRecommendations", "AI Recommendations")}</span>
-                  </div>
-                  <ChevronRight size={16} className="arrow-dim" />
-                </div>
-
-                <div
-                  className={`mobile-nav-item ${currentPath === "/trading" ? "active" : ""}`}
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    navigate("/trading");
-                  }}
-                >
-                  <div className="nav-item-left">
-                    <Repeat size={18} />
-                    <span>{t("nav.tradeIn", "Trade & Exchange")}</span>
                   </div>
                   <ChevronRight size={16} className="arrow-dim" />
                 </div>

@@ -372,29 +372,38 @@ function PinPage() {
       {/* Top Bar */}
       <header className="pin-topbar">
         <div className="pin-topbar-brand" onClick={() => navigate("/")} title="Go to Storefront">
-          <img src={logo} alt="Angkor Mall" className="pin-topbar-logo" />
-          <span className="pin-topbar-name">Angkor Shopping Mall</span>
-          <span className="pin-topbar-badge">🇰🇭 Security Portal</span>
+          <div className="pin-logo-wrapper">
+            <img src={logo} alt="Angkor Mall" className="pin-topbar-logo" />
+            <span className="pin-logo-status" />
+          </div>
+          <div className="pin-brand-text">
+            <span className="pin-topbar-name">Angkor Mall</span>
+            <span className="pin-topbar-badge">🇰🇭 Security Portal</span>
+          </div>
         </div>
 
         <div className="pin-topbar-actions">
           {/* Language Switch */}
           <button
+            type="button"
             className="pin-icon-btn pin-lang-btn"
             onClick={() => setLanguage(language === "km" ? "en" : "km")}
             title="Switch Language"
+            aria-label="Switch Language"
           >
-            <Globe size={15} />
-            <span>{language === "km" ? "🇰🇭 KH" : "🇺🇸 EN"}</span>
+            <Globe size={14} />
+            <span className="pin-lang-text">{language === "km" ? "🇰🇭 KH" : "🇺🇸 EN"}</span>
           </button>
 
           {/* Theme Toggle */}
           <button
-            className="pin-icon-btn"
+            type="button"
+            className="pin-icon-btn pin-theme-btn"
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
             title="Toggle Dark/Light Mode"
+            aria-label="Toggle Dark/Light Mode"
           >
-            {resolvedTheme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+            {resolvedTheme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
           </button>
         </div>
       </header>
@@ -438,12 +447,15 @@ function PinPage() {
 
           {/* Staff Member Pill */}
           <div className="pin-staff-pill">
-            <div className="pin-staff-avatar">
-              {user?.avatar ? (
-                <img src={user.avatar} alt={user?.name || "Staff"} />
-              ) : (
-                <span>{(user?.name || "S").charAt(0).toUpperCase()}</span>
-              )}
+            <div className="pin-staff-avatar-wrapper">
+              <div className="pin-staff-avatar">
+                {user?.avatar ? (
+                  <img src={user.avatar} alt={user?.name || "Staff"} />
+                ) : (
+                  <span>{(user?.name || "S").charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <span className="pin-staff-status-dot" />
             </div>
             <div className="pin-staff-info">
               <div className="pin-staff-name">{user?.name || "Staff Administrator"}</div>
@@ -482,20 +494,7 @@ function PinPage() {
 
           {/* Attempts Warning Pill (when attempts left < 5 and not locked) */}
           {lockoutTime === 0 && attemptsLeft < 5 && (
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "6px",
-              fontSize: "0.8rem",
-              color: "#f59e0b",
-              background: "rgba(245, 158, 11, 0.12)",
-              border: "1px solid rgba(245, 158, 11, 0.3)",
-              padding: "6px 12px",
-              borderRadius: "999px",
-              marginBottom: "14px",
-              fontWeight: 600,
-            }}>
+            <div className="pin-attempts-warning">
               <span>⚠️ {isKhmer ? `នៅសល់ ${attemptsLeft} ដងទៀតមុនពេលផ្អាក ២ នាទី` : `${attemptsLeft} attempt${attemptsLeft > 1 ? "s" : ""} remaining before 2-minute block`}</span>
             </div>
           )}

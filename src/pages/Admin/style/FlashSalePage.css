@@ -8,6 +8,7 @@
 }
 
 .flash-stats-grid {
+  padding-top: 20px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
@@ -42,10 +43,21 @@
   color: #ffffff;
 }
 
-.stat-icon-box.bg-red { background: linear-gradient(135deg, #ef4444, #dc2626); }
-.stat-icon-box.bg-orange { background: linear-gradient(135deg, #f97316, #ea580c); }
-.stat-icon-box.bg-green { background: linear-gradient(135deg, #166534, #15803d); }
-.stat-icon-box.bg-blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.stat-icon-box.bg-red {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.stat-icon-box.bg-orange {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+}
+
+.stat-icon-box.bg-green {
+  background: linear-gradient(135deg, #166534, #15803d);
+}
+
+.stat-icon-box.bg-blue {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+}
 
 .flash-stat-card h3 {
   font-size: 20px;
@@ -232,10 +244,216 @@
   color: #f8fafc;
 }
 
+/* ==========================================================================
+   Mobile Cards Layout (< 768px)
+   ========================================================================== */
+.mobile-cards-container {
+  display: none;
+}
+
+.flash-timer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+
 @media (max-width: 992px) {
   .flash-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+@media (max-width: 768px) {
+  .flash-sale-page-container {
+    padding: 12px 14px;
+  }
+
+  .desktop-table {
+    display: none !important;
+  }
+
+  .mobile-cards-container {
+    display: flex !important;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 12px;
+  }
+
+  .flash-mobile-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .flash-mobile-card-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .flash-mobile-prod-media {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+  }
+
+  .flash-mobile-thumb {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 1px solid #e2e8f0;
+  }
+
+  .flash-mobile-rank-badge {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    background: #00294B;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 8px;
+    border: 1.5px solid #ffffff;
+  }
+
+  .flash-mobile-prod-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .flash-mobile-badge-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+
+  .flash-mobile-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 2px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .flash-mobile-card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 12px;
+  }
+
+  .flash-mobile-price-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .flash-mobile-progress-box {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .flash-mobile-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 12px;
+  }
+
+  .mobile-card-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .mobile-card-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-card-actions .edit-btn {
+    background: #e0f2fe;
+    color: #0369a1;
+  }
+
+  .mobile-card-actions .edit-btn:hover {
+    background: #bae6fd;
+  }
+
+  .mobile-card-actions .delete-btn {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+
+  .mobile-card-actions .delete-btn:hover {
+    background: #fecaca;
+  }
+}
+
+/* Dark theme for mobile cards */
+[data-theme="dark"] .flash-mobile-card {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .flash-mobile-thumb {
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .flash-mobile-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .flash-mobile-card-details {
+  background: #090d16;
+}
+
+[data-theme="dark"] .flash-mobile-card-footer {
+  border-top-color: #1e293b;
+}
+
+[data-theme="dark"] .mobile-card-actions .edit-btn {
+  background: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+}
+
+[data-theme="dark"] .mobile-card-actions .delete-btn {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
 }
 
 @media (max-width: 576px) {

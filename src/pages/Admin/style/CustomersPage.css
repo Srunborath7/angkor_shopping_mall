@@ -8,80 +8,7 @@
     margin-bottom:25px;
 }
 
-/* ===============================
-   KPI Metric Cards
-================================ */
-.kpi-card {
-    background: white;
-    border-radius: 16px;
-    padding: 24px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
-    border: 1px solid var(--border-color);
-    transition: var(--transition-all);
-    height: auto;
-}
-
-.kpi-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 15px 35px rgba(78, 125, 78, 0.08);
-}
-
-.kpi-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.kpi-content p {
-    color: var(--text-muted);
-    font-size: 14px;
-    font-weight: 500;
-    margin: 0;
-    margin-bottom: 8px;
-}
-
-.kpi-content h1 {
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--text-dark);
-    margin: 0;
-    margin-top: 6px;
-}
-
-.icon-box {
-    width: 56px;
-    height: 56px;
-    border-radius: 14px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 24px;
-}
-
-/* Color schemes for KPI cards */
-.kpi-card.total {
-    border-left: 5px solid #0288d1;
-}
-.kpi-card.total .icon-box {
-    background-color: #e1f5fe;
-    color: #0288d1;
-}
-
-.kpi-card.active-status {
-    border-left: 5px solid #2e7d32;
-}
-.kpi-card.active-status .icon-box {
-    background-color: #e8f5e9;
-    color: #2e7d32;
-}
-
-.kpi-card.inactive-status {
-    border-left: 5px solid #d32f2f;
-}
-.kpi-card.inactive-status .icon-box {
-    background-color: #ffebee;
-    color: #d32f2f;
-}
+/* KPI Metric Cards now use universal .stats-grid & .stat-card from index.css */
 
 
 
@@ -835,4 +762,110 @@ table{
         font-size: 0.85rem;
         font-weight: 600;
     }
+}
+
+/* Presence / Real-time Online Indicator Styles */
+.presence-dot-bubble {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+    box-sizing: content-box;
+}
+
+.presence-dot-bubble.online {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);
+    animation: presencePulse 2s infinite;
+}
+
+.presence-dot-bubble.offline {
+    background: #94a3b8;
+}
+
+@keyframes presencePulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+.online-mini-chip {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #059669;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 12px;
+    padding: 1px 6px;
+    width: fit-content;
+}
+
+.presence-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    width: fit-content;
+}
+
+.presence-pill.online {
+    background: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.presence-pill.offline {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.presence-indicator-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+.presence-pill.online .presence-indicator-dot {
+    background: #10b981;
+    box-shadow: 0 0 4px #10b981;
+}
+
+.presence-pill.offline .presence-indicator-dot {
+    background: #94a3b8;
+}
+
+[data-theme="dark"] .presence-dot-bubble {
+    border-color: #1e293b;
+}
+
+[data-theme="dark"] .online-mini-chip {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #34d399;
+}
+
+[data-theme="dark"] .presence-pill.online {
+    background: rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.3);
+    color: #34d399;
+}
+
+[data-theme="dark"] .presence-pill.offline {
+    background: rgba(148, 163, 184, 0.1);
+    border-color: rgba(148, 163, 184, 0.2);
+    color: #94a3b8;
 }

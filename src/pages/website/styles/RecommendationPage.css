@@ -934,26 +934,33 @@
     white-space: nowrap;
   }
   .rec-image-box {
-    height: 140px;
+    aspect-ratio: 1 / 1;
+    height: auto;
+    width: 100%;
   }
   .rec-generic-badge,
   .rec-rank-badge {
-    font-size: 9px;
-    padding: 2px 6px;
-    top: 8px;
-    left: 8px;
+    font-size: 9px !important;
+    padding: 2px 6px !important;
+    top: 6px !important;
+    left: 6px !important;
+    max-width: calc(100% - 50px) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
   }
   .rec-discount-tag {
-    font-size: 9.5px;
-    padding: 2px 5px;
-    top: 8px;
-    right: 8px;
+    font-size: 9.5px !important;
+    padding: 2px 5px !important;
+    top: 6px !important;
+    right: 6px !important;
+    z-index: 3 !important;
   }
   .rec-wishlist-btn {
-    width: 28px;
-    height: 28px;
-    bottom: 8px;
-    right: 8px;
+    width: 28px !important;
+    height: 28px !important;
+    bottom: 6px !important;
+    right: 6px !important;
   }
   .rec-price-amount {
     font-size: 14px;

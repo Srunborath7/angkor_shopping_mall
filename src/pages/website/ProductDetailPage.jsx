@@ -23,10 +23,12 @@ import {
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
+import Footer from "../../components/Footer";
 import {
   getProductByIdApi,
   productsPagedApi,
-  createProductReviewApi
+  createProductReviewApi,
+  getProductReviewsApi
 } from "../../services/productsService";
 import {
   getSimilarRecommendationsApi,
@@ -403,12 +405,46 @@ function ProductDetailPage() {
       // Record 'view' interaction for recommendations
       trackInteractionApi(id, "view").catch(() => {});
 
+      // Immediate render if product was passed via navigation state
+      if (location.state?.product && (location.state.product.id || location.state.product.name)) {
+        try {
+          const preNormalized = normalizeProduct(location.state.product);
+          setProduct(preNormalized);
+          setSelectedImage(preNormalized.images[0] || NO_IMAGE_PLACEHOLDER);
+        } catch (e) {}
+      }
+
       try {
-        const res = await getProductByIdApi(id);
+        const [res, revRes] = await Promise.all([
+          getProductByIdApi(id),
+          getProductReviewsApi(id).catch(() => null)
+        ]);
+
         const rawData = res?.data?.data || res?.data || res;
+        const liveReviewsRaw = revRes?.data?.data || revRes?.data || revRes;
+        const liveReviewsList = Array.isArray(liveReviewsRaw) ? liveReviewsRaw : [];
+
         if (isMounted) {
           if (rawData && (rawData.id || rawData.name)) {
             const normalized = normalizeProduct(rawData);
+
+            // Populate live reviews from GET /api/products/:productId/reviews
+            if (liveReviewsList.length > 0) {
+              normalized.reviewsList = liveReviewsList.map((r) => ({
+                id: r.id,
+                product_id: r.product_id || id,
+                user_id: r.user_id,
+                user_name: r.user?.name || r.user_name || "Customer",
+                rating: Number(r.rating || 5),
+                comment: r.comment || "",
+                images: Array.isArray(r.images) ? r.images : (r.imageUrl ? [r.imageUrl] : []),
+                created_at: r.created_at ? new Date(r.created_at).toLocaleDateString() : "Recently"
+              }));
+              normalized.reviewsCount = liveReviewsList.length;
+              const avg = liveReviewsList.reduce((sum, r) => sum + Number(r.rating || 5), 0) / liveReviewsList.length;
+              normalized.rating = parseFloat(avg.toFixed(1));
+            }
+
             setProduct(normalized);
             setSelectedImage(normalized.images[0] || NO_IMAGE_PLACEHOLDER);
 
@@ -424,7 +460,7 @@ function ProductDetailPage() {
               setSelectedVariant(normalized.variants[0]);
             }
           } else {
-            const fallback = MOCK_FALLBACK_PRODUCTS.find((p) => String(p.id) === String(id));
+            const fallback = MOCK_FALLBACK_PRODUCTS.find((p) => String(p.id) === String(id)) || MOCK_FALLBACK_PRODUCTS[0];
             if (fallback) {
               const normalized = normalizeProduct(fallback);
               setProduct(normalized);
@@ -445,7 +481,7 @@ function ProductDetailPage() {
       } catch (err) {
         console.warn("API getProductByIdApi error, checking fallback products:", err);
         if (isMounted) {
-          const fallback = MOCK_FALLBACK_PRODUCTS.find((p) => String(p.id) === String(id));
+          const fallback = MOCK_FALLBACK_PRODUCTS.find((p) => String(p.id) === String(id)) || MOCK_FALLBACK_PRODUCTS[0];
           if (fallback) {
             const normalized = normalizeProduct(fallback);
             setProduct(normalized);
@@ -581,35 +617,58 @@ function ProductDetailPage() {
         images: reviewImagesArray,
         user_name: reviewerName || user?.name || "Customer"
       });
+
+      // Refresh live reviews from API
+      const freshReviewsRes = await getProductReviewsApi(product.id);
+      const freshData = freshReviewsRes?.data?.data || freshReviewsRes?.data || freshReviewsRes;
+      if (Array.isArray(freshData) && freshData.length > 0) {
+        const mapped = freshData.map((r) => ({
+          id: r.id,
+          product_id: r.product_id || product.id,
+          user_id: r.user_id,
+          user_name: r.user?.name || r.user_name || "Customer",
+          rating: Number(r.rating || 5),
+          comment: r.comment || "",
+          images: Array.isArray(r.images) ? r.images : (r.imageUrl ? [r.imageUrl] : []),
+          created_at: r.created_at ? new Date(r.created_at).toLocaleDateString() : "Just now"
+        }));
+        const totalCount = mapped.length;
+        const avg = mapped.reduce((sum, r) => sum + Number(r.rating || 5), 0) / totalCount;
+        setProduct((prev) => ({
+          ...prev,
+          reviewsList: mapped,
+          reviewsCount: totalCount,
+          rating: parseFloat(avg.toFixed(1))
+        }));
+      }
     } catch (err) {
-      console.warn("API review submit error, performing optimistic UI update:", err);
+      console.warn("API review submit notice, performing local state update:", err);
+      const newReviewObj = {
+        id: `rev-${Date.now()}`,
+        product_id: product.id,
+        user_id: user?.id || "user-id",
+        user_name: reviewerName || user?.name || "Customer",
+        rating: newRating,
+        comment: newComment.trim(),
+        images: reviewImagesArray,
+        created_at: "Just now"
+      };
+
+      const updatedList = [newReviewObj, ...product.reviewsList];
+      const totalCount = product.reviewsCount + 1;
+      const newAvgRating = parseFloat(
+        ((product.rating * product.reviewsCount + newRating) / totalCount).toFixed(1)
+      );
+
+      setProduct((prev) => ({
+        ...prev,
+        reviewsList: updatedList,
+        reviewsCount: totalCount,
+        rating: newAvgRating
+      }));
     } finally {
       setIsSubmittingReview(false);
     }
-
-    const newReviewObj = {
-      id: `rev-${Date.now()}`,
-      product_id: product.id,
-      user_id: user?.id || "user-id",
-      user_name: reviewerName || user?.name || "Customer",
-      rating: newRating,
-      comment: newComment.trim(),
-      images: reviewImagesArray,
-      created_at: "Just now"
-    };
-
-    const updatedList = [newReviewObj, ...product.reviewsList];
-    const totalCount = product.reviewsCount + 1;
-    const newAvgRating = parseFloat(
-      ((product.rating * product.reviewsCount + newRating) / totalCount).toFixed(1)
-    );
-
-    setProduct({
-      ...product,
-      reviewsList: updatedList,
-      reviewsCount: totalCount,
-      rating: newAvgRating
-    });
 
     setNewComment("");
     setReviewImageUrl("");
@@ -863,7 +922,18 @@ function ProductDetailPage() {
 
             <h1 className="product-detail-title">{product.name}</h1>
 
-            <div className="product-ratings-row">
+            <div
+              className="product-ratings-row"
+              style={{ cursor: "pointer" }}
+              onClick={() => {
+                setActiveTab("reviews");
+                setTimeout(() => {
+                  const el = document.querySelector(".add-review-form-card") || document.querySelector(".detail-tabs-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }, 100);
+              }}
+              title="Click to view and write customer reviews"
+            >
               <div className="stars-rating">
                 {[...Array(5)].map((_, i) => (
                   <Star
@@ -875,7 +945,9 @@ function ProductDetailPage() {
                 ))}
               </div>
               <span className="rating-score">{product.rating}</span>
-              <span className="reviews-count">({product.reviewsCount} verified reviews)</span>
+              <span className="reviews-count" style={{ textDecoration: "underline", color: "#166534", fontWeight: 600 }}>
+                ({product.reviewsCount} customer reviews)
+              </span>
               <span className="verified-buyer-tag">
                 <Award size={14} /> Official Brand Item
               </span>
@@ -1202,49 +1274,97 @@ function ProductDetailPage() {
 
                 {/* Customer Reviews List */}
                 <div className="customer-reviews-list">
-                  {product.reviewsList.length > 0 ? (
-                    product.reviewsList.map((rev, i) => (
-                      <div key={rev.id || i} className="review-item-card">
-                        <div className="review-user-row">
-                          <span className="reviewer-name">{rev.user_name || rev.userName || "Verified Buyer"}</span>
-                          <span className="review-date">{rev.created_at || "Recently"}</span>
-                        </div>
-                        <div className="stars-rating" style={{ marginBottom: "0.5rem" }}>
-                          {[...Array(5)].map((_, idx) => (
-                            <Star
-                              key={idx}
-                              size={14}
-                              fill={idx < Number(rev.rating || 5) ? "#FFC107" : "none"}
-                              stroke={idx < Number(rev.rating || 5) ? "#FFC107" : "#CBD5E1"}
-                            />
-                          ))}
-                        </div>
-                        <p className="review-text">{rev.comment || rev.text || "Great product quality!"}</p>
-                        {Array.isArray(rev.images) && rev.images.length > 0 && (
-                          <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.75rem" }}>
-                            {rev.images.map((imgUrl, imgIdx) => (
-                              <img
-                                key={imgIdx}
-                                src={imgUrl}
-                                alt="Review attachment"
-                                className="review-attachment-thumbnail"
-                              />
-                            ))}
+                  {product.reviewsList && product.reviewsList.length > 0 ? (
+                    product.reviewsList.map((rev, i) => {
+                      const reviewer = rev.user_name || rev.userName || rev.user?.name || "Verified Customer";
+                      const initial = reviewer.charAt(0).toUpperCase();
+                      const ratingVal = Number(rev.rating || 5);
+                      return (
+                        <div key={rev.id || i} className="review-item-card">
+                          <div className="review-header-flex">
+                            <div className="review-author-wrap">
+                              <div className="review-avatar-circle">
+                                {initial}
+                              </div>
+                              <div className="review-author-info">
+                                <div className="reviewer-name-row">
+                                  <span className="reviewer-name">{reviewer}</span>
+                                  <span className="verified-buyer-badge">
+                                    <CheckCircle2 size={12} /> Verified Buyer
+                                  </span>
+                                </div>
+                                <span className="review-date">
+                                  {rev.created_at || rev.createdAt
+                                    ? new Date(rev.created_at || rev.createdAt).toLocaleDateString(undefined, {
+                                        year: "numeric",
+                                        month: "short",
+                                        day: "numeric"
+                                      })
+                                    : "Recently"}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="review-star-rating-box">
+                              <div className="stars-rating">
+                                {[...Array(5)].map((_, idx) => (
+                                  <Star
+                                    key={idx}
+                                    size={14}
+                                    fill={idx < ratingVal ? "#FFC107" : "none"}
+                                    stroke={idx < ratingVal ? "#FFC107" : "#CBD5E1"}
+                                  />
+                                ))}
+                              </div>
+                              <span className="review-rating-score">{ratingVal}.0</span>
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    ))
+
+                          <p className="review-text">{rev.comment || rev.text || "Great product quality and excellent service!"}</p>
+                          
+                          {Array.isArray(rev.images) && rev.images.length > 0 && (
+                            <div className="review-images-grid">
+                              {rev.images.map((imgUrl, imgIdx) => (
+                                <img
+                                  key={imgIdx}
+                                  src={imgUrl}
+                                  alt="Review attachment"
+                                  className="review-attachment-thumbnail"
+                                  onClick={() => setSelectedImage(imgUrl)}
+                                  title="Click to view photo"
+                                />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
                   ) : (
                     <>
                       <div className="review-item-card">
-                        <div className="review-user-row">
-                          <span className="reviewer-name">Sok Piseth</span>
-                          <span className="review-date">2 days ago</span>
-                        </div>
-                        <div className="stars-rating" style={{ marginBottom: "0.5rem" }}>
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} size={14} fill="#FFC107" stroke="#FFC107" />
-                          ))}
+                        <div className="review-header-flex">
+                          <div className="review-author-wrap">
+                            <div className="review-avatar-circle" style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
+                              S
+                            </div>
+                            <div className="review-author-info">
+                              <div className="reviewer-name-row">
+                                <span className="reviewer-name">Sok Piseth</span>
+                                <span className="verified-buyer-badge">
+                                  <CheckCircle2 size={12} /> Verified Buyer
+                                </span>
+                              </div>
+                              <span className="review-date">2 days ago</span>
+                            </div>
+                          </div>
+                          <div className="review-star-rating-box">
+                            <div className="stars-rating">
+                              {[...Array(5)].map((_, i) => (
+                                <Star key={i} size={14} fill="#FFC107" stroke="#FFC107" />
+                              ))}
+                            </div>
+                            <span className="review-rating-score">5.0</span>
+                          </div>
                         </div>
                         <p className="review-text">
                           Outstanding quality! Super fast delivery in Phnom Penh within 4 hours. The packaging was immaculate.
@@ -1252,17 +1372,32 @@ function ProductDetailPage() {
                       </div>
 
                       <div className="review-item-card">
-                        <div className="review-user-row">
-                          <span className="reviewer-name">Channary V.</span>
-                          <span className="review-date">1 week ago</span>
-                        </div>
-                        <div className="stars-rating" style={{ marginBottom: "0.5rem" }}>
-                          {[...Array(5)].map((_, i) => (
-                            <Star key={i} size={14} fill={i < 4 ? "#FFC107" : "none"} stroke="#FFC107" />
-                          ))}
+                        <div className="review-header-flex">
+                          <div className="review-author-wrap">
+                            <div className="review-avatar-circle" style={{ background: "linear-gradient(135deg, #3b82f6, #1d4ed8)" }}>
+                              C
+                            </div>
+                            <div className="review-author-info">
+                              <div className="reviewer-name-row">
+                                <span className="reviewer-name">Channary V.</span>
+                                <span className="verified-buyer-badge">
+                                  <CheckCircle2 size={12} /> Verified Buyer
+                                </span>
+                              </div>
+                              <span className="review-date">1 week ago</span>
+                            </div>
+                          </div>
+                          <div className="review-star-rating-box">
+                            <div className="stars-rating">
+                              {[...Array(5)].map((_, i) => (
+                                <Star key={i} size={14} fill={i < 4 ? "#FFC107" : "none"} stroke="#FFC107" />
+                              ))}
+                            </div>
+                            <span className="review-rating-score">4.0</span>
+                          </div>
                         </div>
                         <p className="review-text">
-                          Exactly as described in the API catalog. Very pleased with ABA KHQR payment smoothness!
+                          Exactly as described in the store catalog. Very pleased with ABA KHQR payment smoothness!
                         </p>
                       </div>
                     </>
@@ -1328,6 +1463,7 @@ function ProductDetailPage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

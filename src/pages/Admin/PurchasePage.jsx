@@ -12,7 +12,9 @@ import {
     FaSlidersH,
     FaDollarSign,
     FaBoxOpen,
-    FaBoxes
+    FaBoxes,
+    FaChevronRight,
+    FaArrowUp
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -327,54 +329,96 @@ function PurchasePage() {
             </div>
 
             {/* KPI Stats */}
-            <div className="purchase-stats">
-                <div className="purchase-stat-card total">
-                    <div className="stat-icon">
-                        <FaFileInvoiceDollar />
+            <div className="stats-grid" style={{ marginBottom: "24px" }}>
+                {/* Total Orders */}
+                <div
+                    className={`stat-card ${statusFilter === "all" ? "active-kpi" : ""}`}
+                    onClick={() => setStatusFilter("all")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper blue-bg">
+                            <FaFileInvoiceDollar />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> 100%</span>
                     </div>
-                    <div className="stat-info">
-                        <h3>{purchaseOrders.length}</h3>
-                        <p>Total Orders</p>
-                    </div>
-                </div>
-
-                <div className="purchase-stat-card amount">
-                    <div className="stat-icon">
-                        <FaDollarSign />
-                    </div>
-                    <div className="stat-info">
-                        <h3>${totalSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
-                        <p>Total Procurement Cost</p>
-                    </div>
-                </div>
-
-                <div className="purchase-stat-card pending">
-                    <div className="stat-icon">
-                        <FaClock />
-                    </div>
-                    <div className="stat-info">
-                        <h3>{pendingCount}</h3>
-                        <p>Pending Orders</p>
+                    <div className="stat-card-body">
+                        <h4>Total Purchase Orders</h4>
+                        <h2 className="stat-value">{purchaseOrders.length}</h2>
+                        <div className="stat-footer-row">
+                            <small>All vendor procurement POs</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="purchase-stat-card received">
-                    <div className="stat-icon">
-                        <FaCheckCircle />
+                {/* Total Spend */}
+                <div
+                    className="stat-card"
+                    onClick={() => setStatusFilter("all")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper green-bg">
+                            <FaDollarSign />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> Spend</span>
                     </div>
-                    <div className="stat-info">
-                        <h3>{receivedCount}</h3>
-                        <p>Received / Restocked</p>
+                    <div className="stat-card-body">
+                        <h4>Total Procurement Cost</h4>
+                        <h2 className="stat-value">${totalSpend.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
+                        <div className="stat-footer-row">
+                            <small>Restock capital investment</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="purchase-stat-card cancelled">
-                    <div className="stat-icon">
-                        <FaBan />
+                {/* Pending */}
+                <div
+                    className={`stat-card ${statusFilter === "pending" ? "active-kpi" : ""}`}
+                    onClick={() => setStatusFilter(statusFilter === "pending" ? "all" : "pending")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper orange-bg">
+                            <FaClock />
+                        </div>
+                        <span className="growth-tag warning">{pendingCount} pending</span>
                     </div>
-                    <div className="stat-info">
-                        <h3>{cancelledCount}</h3>
-                        <p>Cancelled</p>
+                    <div className="stat-card-body">
+                        <h4>Pending Orders</h4>
+                        <h2 className="stat-value">{pendingCount}</h2>
+                        <div className="stat-footer-row">
+                            <small>Awaiting vendor delivery</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Received / Restocked */}
+                <div
+                    className={`stat-card ${statusFilter === "received" ? "active-kpi" : ""}`}
+                    onClick={() => setStatusFilter(statusFilter === "received" ? "all" : "received")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper purple-bg">
+                            <FaCheckCircle />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> Stocked</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Received & Restocked</h4>
+                        <h2 className="stat-value">{receivedCount}</h2>
+                        <div className="stat-footer-row">
+                            <small>Added to warehouse inventory</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
                     </div>
                 </div>
             </div>

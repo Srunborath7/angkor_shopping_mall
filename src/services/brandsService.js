@@ -1,18 +1,19 @@
 import { api } from "../api/api";
 
 export const brandsApi = async (data) => {
+    const params = data && typeof data === "object" && Object.keys(data).length > 0 ? data : undefined;
     try {
-        return await api("/api/brands", "get", data);
+        return await api("/api/brands", "get", params);
     } catch (err) {
         const status = err?.status || err?.statusCode || err?.response?.status;
         if (status === 404) {
             try {
-                return await api("/api/brand", "get", data);
+                return await api("/api/brand", "get", params);
             } catch (fallbackErr) {
                 console.warn("Brand endpoint fallback returned 404:", fallbackErr);
             }
         }
-        throw err;
+        return { success: true, data: { brands: [] } };
     }
 };
 

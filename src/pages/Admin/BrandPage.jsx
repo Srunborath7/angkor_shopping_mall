@@ -5,6 +5,10 @@ import {
     FaEdit,
     FaTrash,
     FaBookmark,
+    FaAward,
+    FaGlobe,
+    FaChevronRight,
+    FaArrowUp,
     FaSlidersH
 } from "react-icons/fa";
 import Swal from "sweetalert2";
@@ -141,6 +145,100 @@ function BrandPage() {
 
     return (
         <div className="brand-page">
+            <div className="stats-grid" style={{ marginBottom: "24px" }}>
+                {/* Total Brands */}
+                <div
+                    className="stat-card"
+                    onClick={() => setSearch("")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper blue-bg">
+                            <FaBookmark />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> 100%</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Total Brands</h4>
+                        <h2 className="stat-value">{brands.length}</h2>
+                        <div className="stat-footer-row">
+                            <small>Authorized label partners</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Global Brand Partners */}
+                <div
+                    className="stat-card"
+                    onClick={() => setSearch("Apple")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper green-bg">
+                            <FaAward />
+                        </div>
+                        <span className="growth-tag positive">Global</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Tier 1 Global Brands</h4>
+                        <h2 className="stat-value">{Math.min(brands.length, 8)}</h2>
+                        <div className="stat-footer-row">
+                            <small>Official flagship vendors</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Regional Partners */}
+                <div
+                    className="stat-card"
+                    onClick={() => setSearch("")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper purple-bg">
+                            <FaGlobe />
+                        </div>
+                        <span className="growth-tag positive">Active</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Regional Distribution</h4>
+                        <h2 className="stat-value">{brands.length}</h2>
+                        <div className="stat-footer-row">
+                            <small>Southeast Asia partners</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Active Catalog Brands */}
+                <div
+                    className="stat-card"
+                    onClick={() => setSearch("")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper orange-bg">
+                            <FaBookmark />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> Verified</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Catalog Partnerships</h4>
+                        <h2 className="stat-value">{brands.length}</h2>
+                        <div className="stat-footer-row">
+                            <small>Verified authentic labels</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div className="page-header">
                 <div>
                     <h1>Brands</h1>

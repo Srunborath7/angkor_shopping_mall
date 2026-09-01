@@ -78,7 +78,6 @@ const INITIAL_MESSAGES_EN = [
       { label: "⚡ Flash Sales", path: "/shop?flashSale=true", icon: Flame },
       { label: "🛍️ Browse Shop", path: "/shop", icon: ShoppingBag },
       { label: "✉️ Message Admin", actionType: "contact_admin", icon: Headphones },
-      { label: "🔄 Trade-In Hub", path: "/trading", icon: Repeat },
       { label: "✨ AI Recommendations", path: "/recommendations", icon: Sparkles }
     ]
   }
@@ -94,7 +93,6 @@ const INITIAL_MESSAGES_KM = [
       { label: "⚡ Flash Sales បញ្ចុះតម្លៃ", path: "/shop?flashSale=true", icon: Flame },
       { label: "🛍️ ទិញទំនិញទាំងអស់", path: "/shop", icon: ShoppingBag },
       { label: "✉️ ផ្ញើសារទៅ Admin", actionType: "contact_admin", icon: Headphones },
-      { label: "🔄 សេវាកម្មប្តូរសេរី (Trade-In)", path: "/trading", icon: Repeat },
       { label: "✨ ផលិតផលណែនាំដោយ AI", path: "/recommendations", icon: Sparkles }
     ]
   }

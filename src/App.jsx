@@ -11,16 +11,15 @@ import OrderPage from "./pages/website/OrderPage";
 import ProductDetailPage from "./pages/website/ProductDetailPage";
 import WishlistPage from "./pages/website/WishlistPage";
 import RecommendationPage from "./pages/website/RecommendationPage";
-import WebsiteTradingPage from "./pages/website/TradingPage";
 import Dashboard from "./pages/Admin/Dashboard";
 import CategoryPage from "./pages/Admin/CategoryPage";
 import ProductPage from "./pages/Admin/ProductPage";
-import TradingPage from "./pages/Admin/TradingPage";
 import MainLayout from "./components/MainLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
 import BrandPage from "./pages/Admin/BrandPage";
 import NotFound from "./components/NotFound";
 import CustomersPage from "./pages/Admin/CustomersPage";
+import StaffPage from "./pages/Admin/StaffPage";
 import InventoryPage from "./pages/Admin/InventoryPage";
 import SupplierPage from "./pages/Admin/SupplierPage";
 import PurchasePage from "./pages/Admin/PurchasePage";
@@ -31,8 +30,11 @@ import MessagesPage from "./pages/Admin/MessagesPage";
 import ReportPage from "./pages/Admin/ReportPage";
 import AttendancePage from "./pages/Admin/AttendancePage";
 import ChatBot from "./components/ChatBot";
+import useHeartbeat from "./hooks/useHeartbeat";
 
 function App() {
+  useHeartbeat();
+
   return (
     <ThemeProvider>
       <LanguageProvider>
@@ -41,7 +43,6 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/recommendations" element={<RecommendationPage />} />
-          <Route path="/trading" element={<WebsiteTradingPage />} />
           <Route path="/product/:id" element={<ProductDetailPage />} />
           <Route path="/orders" element={<OrderPage />} />
           <Route path="/wishlist" element={<WishlistPage />} />
@@ -55,10 +56,10 @@ function App() {
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="flash-sale" element={<FlashSalePage />} />
               <Route path="products" element={<ProductPage />} />
-              <Route path="trading" element={<TradingPage />} />
               <Route path="categories" element={<CategoryPage />} />
               <Route path="brands" element={<BrandPage />} />
               <Route path="customers" element={<CustomersPage />} />
+              <Route path="staff" element={<StaffPage />} />
               <Route path="attendance" element={<AttendancePage />} />
               <Route path="inventory" element={<InventoryPage />} />
               <Route path="suppliers" element={<SupplierPage />} />

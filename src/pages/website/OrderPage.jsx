@@ -448,16 +448,7 @@ function OrderPage() {
 
                             {/* Products breakdown */}
                             <div className="details-products-section">
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                                <h5 style={{ margin: 0 }}>Products Purchased</h5>
-                                <button
-                                  type="button"
-                                  className="order-tradein-btn"
-                                  onClick={() => navigate("/trading?tab=eligible")}
-                                >
-                                  🔄 Trade-In / List Items for Exchange
-                                </button>
-                              </div>
+                              <h5 style={{ margin: "0 0 8px 0" }}>Products Purchased</h5>
                               <div className="products-mini-cards-list">
                                 {order.products.map((item, idx) => (
                                   <div

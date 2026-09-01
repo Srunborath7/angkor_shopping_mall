@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { setAuth } from "../../store/authSlice";
 import {
@@ -51,6 +51,7 @@ import {
   enableStaff2FAApi,
   disableStaff2FAApi
 } from "../../services/customerService";
+import { getStoreSettingsApi, updateStoreSettingsApi } from "../../services/storeSettingsService";
 import "./style/SettingsPage.css";
 
 // 1. Initial Permission Modules Configuration (Full RBAC Matrix)
@@ -309,7 +310,11 @@ const DEFAULT_SYSTEM_SETTINGS = {
   storeEmail: "contact@angkormall.com",
   storePhone: "+855 23 888 999",
   supportTelegram: "@AngkorMallSupport",
-  storeAddress: "St. 2004, Phnom Penh, Kingdom of Cambodia",
+  storeAddress: "St. 2004, Sangkat Kakab, Khan Sen Sok, Phnom Penh, Kingdom of Cambodia",
+  operatingHours: "Mon - Sun: 8:00 AM - 10:00 PM (Daily)",
+  facebookUrl: "https://facebook.com/angkorshoppingmall",
+  tiktokUrl: "https://tiktok.com/@angkormall",
+  instagramUrl: "https://instagram.com/angkormall",
   currency: "USD",
   dualCurrencyDisplay: true,
   khrRate: 4100,
@@ -320,10 +325,17 @@ const DEFAULT_SYSTEM_SETTINGS = {
   abaMerchantId: "MCH_ANGKOR_8892",
   abaApiKey: "••••••••••••••••••••••••••••••••",
   abaSandbox: false,
+  bakongEnabled: true,
+  bakongMerchantId: "angkor_mall@aba",
+  bakongMerchantName: "ANGKOR SHOPPING MALL",
   wingEnabled: true,
+  wingBillerCode: "889123",
+  wingApiKey: "••••••••••••••••",
   codEnabled: true,
   codMaxLimit: 500,
   cardEnabled: true,
+  stripePublishableKey: "pk_live_51ANGKORMALL99182374",
+  stripeSecretKey: "••••••••••••••••••••••••••••••••",
 
   // Shipping & Logistics
   expressShippingFee: 1.5,
@@ -391,7 +403,21 @@ function SettingsPage() {
     return <AccessDeniedView moduleName={isKhmer ? "ការកំណត់ប្រព័ន្ធ (System Settings)" : "System Settings & RBAC"} />;
   }
 
-  const [activeTab, setActiveTab] = useState("appearance_language");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTab = searchParams.get("tab") || (typeof window !== "undefined" && window.location.hash ? window.location.hash.replace("#", "") : null);
+  const [activeTab, setActiveTabState] = useState(urlTab || "appearance_language");
+
+  const setActiveTab = (tab) => {
+    setActiveTabState(tab);
+    setSearchParams({ tab });
+  };
+
+  useEffect(() => {
+    const currentTabParam = searchParams.get("tab");
+    if (currentTabParam && currentTabParam !== activeTab) {
+      setActiveTabState(currentTabParam);
+    }
+  }, [searchParams]);
 
   // State Management with LocalStorage Fallback and Auto-Sanitization
   const [roles, setRoles] = useState(() => {
@@ -407,6 +433,17 @@ function SettingsPage() {
   const [settings, setSettings] = useState(() => {
     return getCleanLocalStorage(["angkor_admin_settings_v2", "angkor_admin_settings_v1"], DEFAULT_SYSTEM_SETTINGS);
   });
+
+  // Load latest Store Profile and System Settings from DB
+  useEffect(() => {
+    getStoreSettingsApi()
+      .then((dbData) => {
+        if (dbData && typeof dbData === "object") {
+          setSettings((prev) => ({ ...prev, ...dbData }));
+        }
+      })
+      .catch((e) => console.warn("Could not load store settings from DB:", e));
+  }, []);
 
   // Modal States
   const [roleModalOpen, setRoleModalOpen] = useState(false);
@@ -762,7 +799,12 @@ function SettingsPage() {
       localStorage.setItem("angkor_admin_roles_v1", JSON.stringify(roles));
       localStorage.setItem("angkor_admin_staff_v1", JSON.stringify(staff));
       localStorage.setItem("angkor_admin_settings_v1", JSON.stringify(settings));
+      localStorage.setItem("angkor_store_settings", JSON.stringify(settings));
       window.dispatchEvent(new Event("angkor_roles_updated"));
+      window.dispatchEvent(new Event("angkor_store_settings_updated"));
+
+      // Sync updated store profile & company info to Database API
+      await updateStoreSettingsApi(settings);
 
       // Sync updated role permissions to backend API (/api/roles/:id)
       const roleUpdates = roles.map((r) => {
@@ -791,6 +833,26 @@ function SettingsPage() {
       });
     } catch (e) {
       Swal.fire("Error", "Could not save settings", "error");
+    }
+  };
+
+  // Dedicated Save for Store Profile & Company Info Tab
+  const handleSaveStoreProfile = async () => {
+    try {
+      await updateStoreSettingsApi(settings);
+
+      Swal.fire({
+        icon: "success",
+        title: isKhmer ? "ព័ត៌មានក្រុមហ៊ុនត្រូវបានរក្សាទុកក្នុង Database!" : "Store Profile Saved to Database!",
+        text: isKhmer
+          ? "ព័ត៌មានឈ្មោះហាង ពាក្យស្លោក អាសយដ្ឋាន ទូរស័ព្ទ អ៊ីមែល និងម៉ោងបម្រើការងារ ត្រូវបានរក្សាទុកក្នុង DB & ផ្សាយផ្ទាល់លើគេហទំព័រ។"
+          : "Store name, tagline, address, hotline, email, and operating hours are now saved in Database & live across the website.",
+        timer: 2000,
+        showConfirmButton: false,
+        confirmButtonColor: "#166534"
+      });
+    } catch (err) {
+      Swal.fire("Error", "Failed to update store profile", "error");
     }
   };
 
@@ -2021,10 +2083,19 @@ function SettingsPage() {
             <div className="settings-card-header-left">
               <h3>
                 <Store size={18} color="#166534" />
-                <span>{isKhmer ? "ព័ត៌មានទូទៅរបស់ហាង" : "Store Profile & Official Information"}</span>
+                <span>{isKhmer ? "ព័ត៌មានទូទៅរបស់ហាង & ក្រុមហ៊ុន" : "Store Profile & Official Information"}</span>
               </h3>
-              <p>{isKhmer ? "កំណត់ឈ្មោះហាង ពាក្យស្លោក ព័ត៌មានទំនាក់ទំនង និងរូបិយប័ណ្ណ" : "Customize store branding, operating details, contact channels, and currency."}</p>
+              <p>{isKhmer ? "កំណត់ឈ្មោះហាង ពាក្យស្លោក ព័ត៌មានទំនាក់ទំនង អាសយដ្ឋាន និងម៉ោងបម្រើការងារដែលត្រូវបង្ហាញលើគេហទំព័រ" : "Customize official company information, contact hotlines, address, and hours shown live on the website."}</p>
             </div>
+
+            <button
+              type="button"
+              className="btn btn-primary d-inline-flex align-items-center gap-2"
+              onClick={handleSaveStoreProfile}
+              style={{ background: "#166534", borderColor: "#166534", padding: "8px 18px", fontWeight: 700, borderRadius: "10px" }}
+            >
+              <Save size={16} /> {isKhmer ? "រក្សាទុកព័ត៌មានហាង" : "Save Store Profile"}
+            </button>
           </div>
 
           <div className="settings-form-grid">
@@ -2049,7 +2120,7 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">{isKhmer ? "អ៊ីមែលជំនួយការ" : "Support Email"}</label>
+              <label className="form-label">{isKhmer ? "អ៊ីមែលជំនួយការផ្លូវការ" : "Official Support Email"}</label>
               <input
                 type="email"
                 className="settings-input"
@@ -2069,12 +2140,46 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item">
-              <label className="form-label">{isKhmer ? "ឆានែល Telegram ផ្លូវការ" : "Official Telegram Channel"}</label>
+              <label className="form-label">{isKhmer ? "ឆានែល Telegram ផ្លូវការ" : "Official Telegram Channel / Handle"}</label>
               <input
                 type="text"
                 className="settings-input"
                 value={settings.supportTelegram}
                 onChange={(e) => setSettings({ ...settings, supportTelegram: e.target.value })}
+                placeholder="@AngkorMallSupport"
+              />
+            </div>
+
+            <div className="form-group-item">
+              <label className="form-label">{isKhmer ? "ម៉ោងបម្រើការងារផ្លូវការ" : "Official Operating Hours"}</label>
+              <input
+                type="text"
+                className="settings-input"
+                value={settings.operatingHours || "Mon - Sun: 8:00 AM - 10:00 PM (Daily)"}
+                onChange={(e) => setSettings({ ...settings, operatingHours: e.target.value })}
+                placeholder="Mon - Sun: 8:00 AM - 10:00 PM"
+              />
+            </div>
+
+            <div className="form-group-item">
+              <label className="form-label">{isKhmer ? "Facebook Page URL" : "Official Facebook Page"}</label>
+              <input
+                type="text"
+                className="settings-input"
+                value={settings.facebookUrl || "https://facebook.com/angkorshoppingmall"}
+                onChange={(e) => setSettings({ ...settings, facebookUrl: e.target.value })}
+                placeholder="https://facebook.com/..."
+              />
+            </div>
+
+            <div className="form-group-item">
+              <label className="form-label">{isKhmer ? "TikTok Channel URL" : "Official TikTok"}</label>
+              <input
+                type="text"
+                className="settings-input"
+                value={settings.tiktokUrl || "https://tiktok.com/@angkormall"}
+                onChange={(e) => setSettings({ ...settings, tiktokUrl: e.target.value })}
+                placeholder="https://tiktok.com/@..."
               />
             </div>
 
@@ -2111,13 +2216,26 @@ function SettingsPage() {
             </div>
 
             <div className="form-group-item full-width">
-              <label className="form-label">{isKhmer ? "អាសយដ្ឋានទីស្នាក់ការកណ្តាល" : "Physical Store / Headquarters Address"}</label>
+              <label className="form-label">{isKhmer ? "អាសយដ្ឋានទីស្នាក់ការកណ្តាលក្នុងប្រទេសកម្ពុជា" : "Physical Store / Headquarters Address (Cambodia)"}</label>
               <textarea
                 className="settings-textarea"
+                rows={3}
                 value={settings.storeAddress}
                 onChange={(e) => setSettings({ ...settings, storeAddress: e.target.value })}
+                placeholder="Building, Street, Sangkat, Khan, Phnom Penh, Kingdom of Cambodia"
               />
             </div>
+          </div>
+
+          <div style={{ marginTop: "20px", display: "flex", justifyContent: "flex-end" }}>
+            <button
+              type="button"
+              className="btn btn-primary d-inline-flex align-items-center gap-2"
+              onClick={handleSaveStoreProfile}
+              style={{ background: "#166534", borderColor: "#166534", padding: "10px 24px", fontWeight: 700, borderRadius: "10px" }}
+            >
+              <Save size={16} /> {isKhmer ? "រក្សាទុក & ផ្សាយផ្ទាល់លើគេហទំព័រ" : "Save & Publish on Website"}
+            </button>
           </div>
         </div>
       )}
@@ -2126,134 +2244,338 @@ function SettingsPage() {
           TAB 5: PAYMENT GATEWAYS
          ========================================================================= */}
       {activeTab === "payments" && (
-        <div className="settings-card">
-          <div className="settings-card-header">
-            <div className="settings-card-header-left">
-              <h3>
-                <CreditCard size={18} color="#166534" />
-                <span>{isKhmer ? "ធនាគារទូទាត់ប្រាក់ & KHQR" : "Payment Gateways & Checkout Methods"}</span>
-              </h3>
-              <p>{isKhmer ? "កំណត់ ABA KHQR, Wing Bank, Cash on Delivery និងកាតធនាគារ" : "Configure ABA KHQR, Wing Bank, Cash on Delivery, and Credit/Debit cards."}</p>
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px" }}>
-            {/* ABA Payway Card */}
-            <div className="payment-gateway-item">
-              <div className="payment-gateway-top">
-                <div className="payment-gateway-info">
-                  <div className="gateway-icon-badge">🏦</div>
-                  <div>
-                    <strong style={{ fontSize: "14.5px" }}>ABA KHQR & PayWay</strong>
-                    <div style={{ fontSize: "12px", color: "var(--text-muted, #64748b)" }}>Instant QR scan & in-app checkout</div>
-                  </div>
-                </div>
-                <label className="toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={settings.abaEnabled}
-                    onChange={(e) => setSettings({ ...settings, abaEnabled: e.target.checked })}
-                  />
-                  <span className="toggle-slider" />
-                </label>
+        <div className="payment-gateways-container">
+          <div className="settings-card">
+            <div className="settings-card-header">
+              <div className="settings-card-header-left">
+                <h3>
+                  <CreditCard size={19} color="#166534" />
+                  <span>{isKhmer ? "ធនាគារទូទាត់ប្រាក់ & KHQR (Payment Gateways)" : "Payment Gateways & Checkout Methods"}</span>
+                </h3>
+                <p>
+                  {isKhmer
+                    ? "កំណត់រចនាសម្ព័ន្ធ ABA PayWay, NBC Bakong KHQR, Wing Bank, កាតឥណទាន និងការទូទាត់ពេលទទួលទំនិញ (COD)"
+                    : "Configure live payment integrations for ABA PayWay, NBC Bakong KHQR, Wing Bank, Stripe Credit Cards, and Cash on Delivery."}
+                </p>
               </div>
+              <div className="theme-current-pill">
+                <span className="dot-pulse" />
+                <span>
+                  {isKhmer ? "អត្រាប្តូរប្រាក់៖ " : "Rate: "}
+                  <strong>1 USD = {settings.khrRate || 4100} KHR</strong>
+                </span>
+              </div>
+            </div>
 
-              {settings.abaEnabled && (
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
-                  <div>
-                    <label style={{ fontSize: "12px", color: "var(--text-muted, #475569)", fontWeight: 600 }}>Merchant ID</label>
+            <div className="payment-gateways-grid">
+              {/* 1. ABA Payway & KHQR Card */}
+              <div className={`payment-gateway-card ${settings.abaEnabled ? "active-gateway" : "inactive-gateway"}`}>
+                <div className="gateway-card-header">
+                  <div className="gateway-brand-info">
+                    <div className="gateway-logo-box aba-logo">
+                      <span>ABA'</span>
+                    </div>
+                    <div>
+                      <div className="gateway-title-row">
+                        <h4>ABA PayWay & KHQR</h4>
+                        <span className={`gateway-status-pill ${settings.abaEnabled ? "online" : "offline"}`}>
+                          {settings.abaEnabled ? (settings.abaSandbox ? "Sandbox Test" : "Live Active") : "Disabled"}
+                        </span>
+                      </div>
+                      <p>Instant ABA Mobile QR scan & in-app deep link checkout</p>
+                    </div>
+                  </div>
+
+                  <label className="gateway-toggle-switch">
                     <input
-                      type="text"
-                      className="settings-input"
-                      value={settings.abaMerchantId}
-                      onChange={(e) => setSettings({ ...settings, abaMerchantId: e.target.value })}
+                      type="checkbox"
+                      checked={settings.abaEnabled}
+                      onChange={(e) => setSettings({ ...settings, abaEnabled: e.target.checked })}
                     />
+                    <span className="gateway-toggle-slider" />
+                  </label>
+                </div>
+
+                {settings.abaEnabled && (
+                  <div className="gateway-config-body">
+                    <div className="gateway-form-row">
+                      <div className="gateway-field-item">
+                        <label className="gateway-field-label">Merchant ID</label>
+                        <input
+                          type="text"
+                          className="settings-input"
+                          value={settings.abaMerchantId || ""}
+                          placeholder="e.g. MCH_ANGKOR_8892"
+                          onChange={(e) => setSettings({ ...settings, abaMerchantId: e.target.value })}
+                        />
+                      </div>
+                      <div className="gateway-field-item">
+                        <label className="gateway-field-label">API Key / Public Key</label>
+                        <input
+                          type="password"
+                          className="settings-input"
+                          value={settings.abaApiKey || ""}
+                          placeholder="Enter ABA API key"
+                          onChange={(e) => setSettings({ ...settings, abaApiKey: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="gateway-form-row">
+                      <div className="gateway-field-item">
+                        <label className="gateway-field-label">Environment Mode</label>
+                        <select
+                          className="settings-select"
+                          value={settings.abaSandbox ? "sandbox" : "live"}
+                          onChange={(e) => setSettings({ ...settings, abaSandbox: e.target.value === "sandbox" })}
+                        >
+                          <option value="live">🟢 Live Production</option>
+                          <option value="sandbox">🟡 Sandbox Testing Mode</option>
+                        </select>
+                      </div>
+                      <div className="gateway-field-item">
+                        <label className="gateway-field-label">Accepted Currencies</label>
+                        <input
+                          type="text"
+                          className="settings-input"
+                          value="USD ($) & KHR (៛)"
+                          readOnly
+                          style={{ background: isDark ? "#1e293b" : "#f1f5f9" }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="gateway-footer-hint">
+                      <span>Webhook Callback: <code>/api/payment/aba/callback</code></span>
+                      <span className="gateway-feature-tag">✓ Instant Push Notification</span>
+                    </div>
                   </div>
-                  <div>
-                    <label style={{ fontSize: "12px", color: "var(--text-muted, #475569)", fontWeight: 600 }}>API Key / Secret</label>
+                )}
+              </div>
+
+              {/* 2. NBC Bakong KHQR Card */}
+              <div className={`payment-gateway-card ${settings.bakongEnabled ? "active-gateway" : "inactive-gateway"}`}>
+                <div className="gateway-card-header">
+                  <div className="gateway-brand-info">
+                    <div className="gateway-logo-box bakong-logo">
+                      <span>KHQR</span>
+                    </div>
+                    <div>
+                      <div className="gateway-title-row">
+                        <h4>NBC Bakong KHQR</h4>
+                        <span className={`gateway-status-pill ${settings.bakongEnabled ? "online" : "offline"}`}>
+                          {settings.bakongEnabled ? "Live Active" : "Disabled"}
+                        </span>
+                      </div>
+                      <p>Universal National Bank of Cambodia standard QR for all local banks</p>
+                    </div>
+                  </div>
+
+                  <label className="gateway-toggle-switch">
                     <input
-                      type="password"
-                      className="settings-input"
-                      value={settings.abaApiKey}
-                      onChange={(e) => setSettings({ ...settings, abaApiKey: e.target.value })}
+                      type="checkbox"
+                      checked={settings.bakongEnabled}
+                      onChange={(e) => setSettings({ ...settings, bakongEnabled: e.target.checked })}
                     />
-                  </div>
+                    <span className="gateway-toggle-slider" />
+                  </label>
                 </div>
-              )}
-            </div>
 
-            {/* Wing Bank Card */}
-            <div className="payment-gateway-item">
-              <div className="payment-gateway-top">
-                <div className="payment-gateway-info">
-                  <div className="gateway-icon-badge" style={{ color: "#84cc16" }}>💸</div>
-                  <div>
-                    <strong style={{ fontSize: "14.5px" }}>Wing Bank Wallet</strong>
-                    <div style={{ fontSize: "12px", color: "var(--text-muted, #64748b)" }}>Wing KHQR & mobile account</div>
-                  </div>
-                </div>
-                <label className="toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={settings.wingEnabled}
-                    onChange={(e) => setSettings({ ...settings, wingEnabled: e.target.checked })}
-                  />
-                  <span className="toggle-slider" />
-                </label>
-              </div>
-            </div>
+                {settings.bakongEnabled && (
+                  <div className="gateway-config-body">
+                    <div className="gateway-form-row">
+                      <div className="gateway-field-item">
+                        <label className="gateway-field-label">Bakong Account ID</label>
+                        <input
+                          type="text"
+                          className="settings-input"
+                          value={settings.bakongMerchantId || ""}
+                          placeholder="e.g. angkor_mall@aba"
+                          onChange={(e) => setSettings({ ...settings, bakongMerchantId: e.target.value })}
+                        />
+                      </div>
+                      <div className="gateway-field-item">
+                        <label className="gateway-field-label">Merchant Registered Name</label>
+                        <input
+                          type="text"
+                          className="settings-input"
+                          value={settings.bakongMerchantName || ""}
+                          placeholder="e.g. ANGKOR SHOPPING MALL"
+                          onChange={(e) => setSettings({ ...settings, bakongMerchantName: e.target.value })}
+                        />
+                      </div>
+                    </div>
 
-            {/* Cash on Delivery Card */}
-            <div className="payment-gateway-item">
-              <div className="payment-gateway-top">
-                <div className="payment-gateway-info">
-                  <div className="gateway-icon-badge">📦</div>
-                  <div>
-                    <strong style={{ fontSize: "14.5px" }}>Cash on Delivery (COD)</strong>
-                    <div style={{ fontSize: "12px", color: "var(--text-muted, #64748b)" }}>Pay driver upon parcel receipt</div>
+                    <div className="gateway-footer-hint">
+                      <span>Standard: <strong>EMVCo & NBC Bakong Specification 2.0</strong></span>
+                      <span className="gateway-feature-tag">✓ Supports 30+ Banks</span>
+                    </div>
                   </div>
-                </div>
-                <label className="toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={settings.codEnabled}
-                    onChange={(e) => setSettings({ ...settings, codEnabled: e.target.checked })}
-                  />
-                  <span className="toggle-slider" />
-                </label>
+                )}
               </div>
 
-              {settings.codEnabled && (
-                <div style={{ marginTop: "8px" }}>
-                  <label style={{ fontSize: "12px", color: "var(--text-muted, #475569)", fontWeight: 600 }}>Max Order Limit for COD ($)</label>
-                  <input
-                    type="number"
-                    className="settings-input"
-                    value={settings.codMaxLimit}
-                    onChange={(e) => setSettings({ ...settings, codMaxLimit: Number(e.target.value) })}
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Credit/Debit Cards */}
-            <div className="payment-gateway-item">
-              <div className="payment-gateway-top">
-                <div className="payment-gateway-info">
-                  <div className="gateway-icon-badge">💳</div>
-                  <div>
-                    <strong style={{ fontSize: "14.5px" }}>Credit / Debit Cards</strong>
-                    <div style={{ fontSize: "12px", color: "var(--text-muted, #64748b)" }}>Visa, MasterCard, UnionPay</div>
+              {/* 3. Wing Bank Wallet Card */}
+              <div className={`payment-gateway-card ${settings.wingEnabled ? "active-gateway" : "inactive-gateway"}`}>
+                <div className="gateway-card-header">
+                  <div className="gateway-brand-info">
+                    <div className="gateway-logo-box wing-logo">
+                      <span>Wing</span>
+                    </div>
+                    <div>
+                      <div className="gateway-title-row">
+                        <h4>Wing Bank & WingPay</h4>
+                        <span className={`gateway-status-pill ${settings.wingEnabled ? "online" : "offline"}`}>
+                          {settings.wingEnabled ? "Live Active" : "Disabled"}
+                        </span>
+                      </div>
+                      <p>Wing digital wallet, WingPay QR and agent payment channels</p>
+                    </div>
                   </div>
+
+                  <label className="gateway-toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={settings.wingEnabled}
+                      onChange={(e) => setSettings({ ...settings, wingEnabled: e.target.checked })}
+                    />
+                    <span className="gateway-toggle-slider" />
+                  </label>
                 </div>
-                <label className="toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={settings.cardEnabled}
-                    onChange={(e) => setSettings({ ...settings, cardEnabled: e.target.checked })}
-                  />
-                  <span className="toggle-slider" />
-                </label>
+
+                {settings.wingEnabled && (
+                  <div className="gateway-config-body">
+                    <div className="gateway-form-row">
+                      <div className="gateway-field-item">
+                        <label className="gateway-field-label">Wing Biller Code / Merchant ID</label>
+                        <input
+                          type="text"
+                          className="settings-input"
+                          value={settings.wingBillerCode || ""}
+                          placeholder="e.g. 889123"
+                          onChange={(e) => setSettings({ ...settings, wingBillerCode: e.target.value })}
+                        />
+                      </div>
+                      <div className="gateway-field-item">
+                        <label className="gateway-field-label">Wing API Security Token</label>
+                        <input
+                          type="password"
+                          className="settings-input"
+                          value={settings.wingApiKey || ""}
+                          placeholder="Enter Wing API key"
+                          onChange={(e) => setSettings({ ...settings, wingApiKey: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 4. Credit & Debit Cards Card */}
+              <div className={`payment-gateway-card ${settings.cardEnabled ? "active-gateway" : "inactive-gateway"}`}>
+                <div className="gateway-card-header">
+                  <div className="gateway-brand-info">
+                    <div className="gateway-logo-box card-logo">
+                      <span>💳</span>
+                    </div>
+                    <div>
+                      <div className="gateway-title-row">
+                        <h4>Credit & Debit Cards</h4>
+                        <span className={`gateway-status-pill ${settings.cardEnabled ? "online" : "offline"}`}>
+                          {settings.cardEnabled ? "Live Active" : "Disabled"}
+                        </span>
+                      </div>
+                      <p>Visa, MasterCard, JCB, and UnionPay 3D-Secure payments</p>
+                    </div>
+                  </div>
+
+                  <label className="gateway-toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={settings.cardEnabled}
+                      onChange={(e) => setSettings({ ...settings, cardEnabled: e.target.checked })}
+                    />
+                    <span className="gateway-toggle-slider" />
+                  </label>
+                </div>
+
+                {settings.cardEnabled && (
+                  <div className="gateway-config-body">
+                    <div className="gateway-form-row">
+                      <div className="gateway-field-item">
+                        <label className="gateway-field-label">Stripe / Card Publishable Key</label>
+                        <input
+                          type="text"
+                          className="settings-input"
+                          value={settings.stripePublishableKey || ""}
+                          placeholder="pk_live_..."
+                          onChange={(e) => setSettings({ ...settings, stripePublishableKey: e.target.value })}
+                        />
+                      </div>
+                      <div className="gateway-field-item">
+                        <label className="gateway-field-label">Stripe / Card Secret Key</label>
+                        <input
+                          type="password"
+                          className="settings-input"
+                          value={settings.stripeSecretKey || ""}
+                          placeholder="sk_live_..."
+                          onChange={(e) => setSettings({ ...settings, stripeSecretKey: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 5. Cash on Delivery (COD) Card */}
+              <div className={`payment-gateway-card ${settings.codEnabled ? "active-gateway" : "inactive-gateway"}`}>
+                <div className="gateway-card-header">
+                  <div className="gateway-brand-info">
+                    <div className="gateway-logo-box cod-logo">
+                      <span>📦</span>
+                    </div>
+                    <div>
+                      <div className="gateway-title-row">
+                        <h4>Cash on Delivery (COD)</h4>
+                        <span className={`gateway-status-pill ${settings.codEnabled ? "online" : "offline"}`}>
+                          {settings.codEnabled ? "Active" : "Disabled"}
+                        </span>
+                      </div>
+                      <p>Customers pay the delivery driver upon receiving their physical package</p>
+                    </div>
+                  </div>
+
+                  <label className="gateway-toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={settings.codEnabled}
+                      onChange={(e) => setSettings({ ...settings, codEnabled: e.target.checked })}
+                    />
+                    <span className="gateway-toggle-slider" />
+                  </label>
+                </div>
+
+                {settings.codEnabled && (
+                  <div className="gateway-config-body">
+                    <div className="gateway-form-row">
+                      <div className="gateway-field-item">
+                        <label className="gateway-field-label">Maximum Order Amount for COD ($)</label>
+                        <input
+                          type="number"
+                          className="settings-input"
+                          value={settings.codMaxLimit || 500}
+                          onChange={(e) => setSettings({ ...settings, codMaxLimit: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="gateway-field-item">
+                        <label className="gateway-field-label">Dispatch Verification</label>
+                        <select className="settings-select" defaultValue="phone">
+                          <option value="phone">📞 Phone call confirmation required</option>
+                          <option value="auto">⚡ Auto-dispatch (trusted members)</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

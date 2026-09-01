@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
+import Footer from "../../components/Footer";
 import AISearchInput from "../../components/AISearchInput";
 import { useTranslation } from "../../context/LanguageContext";
 import { productsPagedApi } from "../../services/productsService";
@@ -658,6 +659,7 @@ function ShopPage() {
 
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

@@ -76,9 +76,26 @@
   border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
-.auth-logo-text {
+.auth-split-left .auth-logo-text {
   color: #ffffff;
   font-family: inherit;
+}
+
+.auth-mobile-header .auth-logo-text,
+.auth-form-card .auth-logo-text,
+.auth-logo-brand .auth-logo-text {
+  color: #0f172a;
+  font-family: inherit;
+}
+
+.auth-split-left .auth-logo-brand .auth-logo-text {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .auth-mobile-header .auth-logo-text,
+[data-theme="dark"] .auth-form-card .auth-logo-text,
+[data-theme="dark"] .auth-logo-brand .auth-logo-text {
+  color: #f8fafc;
 }
 
 .auth-left-heading {

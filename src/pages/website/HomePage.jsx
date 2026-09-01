@@ -27,14 +27,19 @@ import {
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
+import Footer from "../../components/Footer";
 import AISearchInput from "../../components/AISearchInput";
 import { useTranslation } from "../../context/LanguageContext";
 import { productsPagedApi, getBestSellersApi } from "../../services/productsService";
 import { categoriesApi } from "../../services/categoriesService";
 import { addToCartApi } from "../../services/cartService";
 import { getFlashSalesApi } from "../../services/flashSaleService";
-import { ProductCardSkeleton } from "../../components/loading/LoadingSkeleton";
+import { getPublishedTestimonialsApi, submitTestimonialApi } from "../../services/testimonialService";
+import Modal from "../../components/Modal";
+import { ProductCardSkeleton, CircularShoppingLoader } from "../../components/loading/LoadingSkeleton";
 import "./styles/HomePage.css";
+
+const KHR_RATE = 4100;
 
 const NO_IMAGE_PLACEHOLDER =
   "data:image/svg+xml;utf8," +
@@ -205,6 +210,63 @@ function HomePage() {
     loadFlashSales();
     window.addEventListener("flash-sale-updated", loadFlashSales);
     return () => window.removeEventListener("flash-sale-updated", loadFlashSales);
+  }, []);
+
+  // Testimonials / Customer Feedback State
+  const [testimonials, setTestimonials] = useState([]);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+  const [feedbackForm, setFeedbackForm] = useState({
+    author_name: "",
+    location: "Phnom Penh",
+    rating: 5,
+    message: ""
+  });
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+
+  const loadTestimonials = async () => {
+    try {
+      const res = await getPublishedTestimonialsApi();
+      if (Array.isArray(res) && res.length > 0) {
+        setTestimonials(res);
+      }
+    } catch (err) {
+      console.warn("Failed to load testimonials:", err);
+    }
+  };
+
+  const handleOpenFeedback = () => {
+    setFeedbackForm({
+      author_name: auth?.user?.name || "",
+      location: "Phnom Penh",
+      rating: 5,
+      message: ""
+    });
+    setIsFeedbackModalOpen(true);
+  };
+
+  const handleFeedbackSubmit = async (e) => {
+    e.preventDefault();
+    if (!feedbackForm.message.trim()) {
+      return toast.error(language === "km" ? "សូមបញ្ចូលសារមតិយោបល់របស់អ្នក" : "Please write your review message.");
+    }
+    try {
+      setIsSubmittingFeedback(true);
+      await submitTestimonialApi(feedbackForm);
+      toast.success(
+        language === "km"
+          ? "សូមអរគុណ! មតិយោបល់របស់អ្នកត្រូវបានបញ្ជូនទៅកាន់ក្រុមការងារដើម្បីត្រួតពិនិត្យរួចហើយ។"
+          : "Thank you! Your review was submitted for admin verification and will appear on the homepage upon review."
+      );
+      setIsFeedbackModalOpen(false);
+    } catch (err) {
+      toast.error(err?.message || "Failed to submit review.");
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTestimonials();
   }, []);
 
   // Fetch Products, Best Sellers (Tracking Order History), & Categories from API on mount
@@ -687,6 +749,9 @@ function HomePage() {
                         {prod.originalPrice > prod.price && (
                           <span className="original-price">${prod.originalPrice}</span>
                         )}
+                        <span style={{ display: "block", fontSize: "10.5px", fontWeight: "600", color: "#64748b" }}>
+                          {Math.round(Number(prod.price) * KHR_RATE).toLocaleString()} ៛
+                        </span>
                       </div>
 
                       <button
@@ -753,10 +818,7 @@ function HomePage() {
 
         {/* Trending Product Grid */}
         {loading ? (
-          <div className="homepage-loading-state">
-            <Loader2 size={36} className="animate-spin text-green" />
-            <p>Loading trending catalog from server...</p>
-          </div>
+          <ProductCardSkeleton count={8} />
         ) : (
           <div className="products-grid">
             {filteredTrendingProducts.map((prod) => (
@@ -820,6 +882,9 @@ function HomePage() {
                       {prod.originalPrice > prod.price && (
                         <span className="original-price">${prod.originalPrice}</span>
                       )}
+                      <span style={{ display: "block", fontSize: "10.5px", fontWeight: "600", color: "#64748b" }}>
+                        {Math.round(Number(prod.price) * KHR_RATE).toLocaleString()} ៛
+                      </span>
                     </div>
 
                     <button
@@ -839,70 +904,228 @@ function HomePage() {
 
       {/* Customer Testimonials Section */}
       <section className="home-section testimonials-section">
-        <div className="section-header-row center-text">
+        <div className="section-header-row center-text" style={{ position: "relative", marginBottom: "2rem" }}>
           <div>
-            <h2>What Our Customers Say</h2>
-            <p>Real experiences from verified buyers across Cambodia</p>
+            <h2>{language === "km" ? "មតិយោបល់ពីអតិថិជនរបស់យើង" : "What Our Customers Say"}</h2>
+            <p>{language === "km" ? "បទពិសោធន៍ពិតជាក់ស្តែងពីអតិថិជននៅទូទាំងប្រទេសកម្ពុជា" : "Real experiences from verified buyers across Cambodia"}</p>
+          </div>
+          <div style={{ marginTop: "1rem" }}>
+            <button
+              type="button"
+              className="btn-share-story"
+              onClick={handleOpenFeedback}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "8px 18px",
+                background: "#166534",
+                color: "#ffffff",
+                borderRadius: "20px",
+                border: "none",
+                fontWeight: "700",
+                fontSize: "0.85rem",
+                cursor: "pointer",
+                boxShadow: "0 4px 12px rgba(22, 101, 52, 0.25)"
+              }}
+            >
+              <Sparkles size={14} />
+              {language === "km" ? "ចែករំលែកបទពិសោធន៍របស់អ្នក" : "Share Your Experience"}
+            </button>
           </div>
         </div>
 
         <div className="testimonials-grid">
-          <div className="testimonial-card">
-            <Quote className="quote-icon" size={28} />
-            <div className="testimonial-stars">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={14} fill="#FFC107" stroke="#FFC107" />
-              ))}
-            </div>
-            <p className="testimonial-quote">
-              "Ordering from Angkor Mall was super smooth! ABA KHQR payment worked instantly, and my smartwatch arrived in Phnom Penh within 4 hours!"
-            </p>
-            <div className="testimonial-author">
-              <div className="author-avatar">SD</div>
-              <div>
-                <h4 className="author-name">Sok Dara</h4>
-                <span className="author-role"><CheckCircle size={12} className="text-green-inline" /> Verified Buyer • Phnom Penh</span>
-              </div>
-            </div>
-          </div>
+          {(testimonials.length > 0 ? testimonials : [
+            {
+              author_name: "Sok Dara",
+              location: "Phnom Penh",
+              rating: 5,
+              message: "Ordering from Angkor Mall was super smooth! ABA KHQR payment worked instantly, and my smartwatch arrived in Phnom Penh within 4 hours!",
+              avatar_color: "green"
+            },
+            {
+              author_name: "Chann Lina",
+              location: "Siem Reap",
+              rating: 5,
+              message: "Great mobile experience and exact map location pin delivery! The quality of the wireless headphones exceeded my expectations.",
+              avatar_color: "blue"
+            },
+            {
+              author_name: "Keo Vanny",
+              location: "Battambang",
+              rating: 5,
+              message: "Customer support is super helpful on Telegram. Genuine products with official warranty. Will definitely buy again!",
+              avatar_color: "purple"
+            }
+          ]).map((item, idx) => {
+            const initials = item.author_name ? item.author_name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase() : "CU";
+            const avatarBg = item.avatar_color === "blue" ? "bg-blue" : item.avatar_color === "purple" ? "bg-purple" : item.avatar_color === "amber" ? "bg-amber" : "";
 
-          <div className="testimonial-card">
-            <Quote className="quote-icon" size={28} />
-            <div className="testimonial-stars">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={14} fill="#FFC107" stroke="#FFC107" />
-              ))}
-            </div>
-            <p className="testimonial-quote">
-              "Great mobile experience and exact map location pin delivery! The quality of the wireless headphones exceeded my expectations."
-            </p>
-            <div className="testimonial-author">
-              <div className="author-avatar bg-blue">CL</div>
-              <div>
-                <h4 className="author-name">Chann Lina</h4>
-                <span className="author-role"><CheckCircle size={12} className="text-green-inline" /> Verified Buyer • Siem Reap</span>
+            return (
+              <div key={item.id || idx} className="testimonial-card">
+                <Quote className="quote-icon" size={28} />
+                <div className="testimonial-stars">
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      size={14}
+                      fill={i < Number(item.rating || 5) ? "#FFC107" : "none"}
+                      stroke={i < Number(item.rating || 5) ? "#FFC107" : "#CBD5E1"}
+                    />
+                  ))}
+                </div>
+                <p className="testimonial-quote">
+                  "{item.message}"
+                </p>
+                <div className="testimonial-author">
+                  <div className={`author-avatar ${avatarBg}`}>{initials}</div>
+                  <div>
+                    <h4 className="author-name">{item.author_name}</h4>
+                    <span className="author-role">
+                      <CheckCircle size={12} className="text-green-inline" /> Verified Buyer • {item.location || "Cambodia"}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })}
+        </div>
+      </section>
 
-          <div className="testimonial-card">
-            <Quote className="quote-icon" size={28} />
-            <div className="testimonial-stars">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={14} fill="#FFC107" stroke="#FFC107" />
-              ))}
+      {/* User Testimonial Submission Modal */}
+      {isFeedbackModalOpen && (
+        <Modal
+          title={language === "km" ? "ចែករំលែកមតិយោបល់របស់អ្នក" : "Share Your Shopping Experience"}
+          isOpen={isFeedbackModalOpen}
+          onClose={() => setIsFeedbackModalOpen(false)}
+        >
+          <form onSubmit={handleFeedbackSubmit} style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+            <div style={{ background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: "10px", padding: "10px 14px", fontSize: "0.825rem", color: "#065f46" }}>
+              ⭐ {language === "km"
+                ? "មតិយោបល់របស់អ្នកនឹងត្រូវបានបញ្ជូនទៅកាន់ក្រុមការងារដើម្បីផ្ទៀងផ្ទាត់ និងបង្ហាញលើទំព័រដើមគេហទំព័រ។"
+                : "Your review will be verified by our team and published on the homepage upon review."}
             </div>
-            <p className="testimonial-quote">
-              "Customer support is super helpful on Telegram. Genuine products with official warranty. Will definitely buy again!"
-            </p>
-            <div className="testimonial-author">
-              <div className="author-avatar bg-purple">KV</div>
-              <div>
-                <h4 className="author-name">Keo Vanny</h4>
-                <span className="author-role"><CheckCircle size={12} className="text-green-inline" /> Verified Buyer • Battambang</span>
+
+            <div className="form-group">
+              <label style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "4px", display: "block" }}>
+                {language === "km" ? "ឈ្មោះរបស់អ្នក *" : "Your Name *"}
+              </label>
+              <input
+                type="text"
+                required
+                className="review-input-text"
+                placeholder="e.g. Sok Dara"
+                value={feedbackForm.author_name}
+                onChange={(e) => setFeedbackForm({ ...feedbackForm, author_name: e.target.value })}
+              />
+            </div>
+
+            <div className="form-group">
+              <label style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "4px", display: "block" }}>
+                {language === "km" ? "រាជធានី / ខេត្ត *" : "Province / City *"}
+              </label>
+              <select
+                className="review-input-text"
+                value={feedbackForm.location}
+                onChange={(e) => setFeedbackForm({ ...feedbackForm, location: e.target.value })}
+              >
+                <option value="Phnom Penh">Phnom Penh (ភ្នំពេញ)</option>
+                <option value="Siem Reap">Siem Reap (សៀមរាប)</option>
+                <option value="Battambang">Battambang (បាត់ដំបង)</option>
+                <option value="Sihanoukville">Sihanoukville (ព្រះសីហនុ)</option>
+                <option value="Kampot">Kampot (កំពត)</option>
+                <option value="Kandal">Kandal (កណ្តាល)</option>
+                <option value="Takeo">Takeo (តាកែវ)</option>
+                <option value="Kampong Cham">Kampong Cham (កំពង់ចាម)</option>
+                <option value="Banteay Meanchey">Banteay Meanchey (បន្ទាយមានជ័យ)</option>
+                <option value="Other Province">Other Province (ខេត្តផ្សេងទៀត)</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "4px", display: "block" }}>
+                {language === "km" ? "ពិន្ទុវាយតម្លៃ (១ ដល់ ៥ ផ្កាយ)" : "Rating (1 to 5 Stars)"}
+              </label>
+              <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setFeedbackForm({ ...feedbackForm, rating: star })}
+                    style={{ background: "none", border: "none", cursor: "pointer", padding: "2px" }}
+                  >
+                    <Star
+                      size={24}
+                      fill={star <= feedbackForm.rating ? "#FFC107" : "none"}
+                      stroke={star <= feedbackForm.rating ? "#FFC107" : "#CBD5E1"}
+                    />
+                  </button>
+                ))}
+                <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#166534", marginLeft: "8px" }}>
+                  {feedbackForm.rating} / 5 Stars
+                </span>
               </div>
             </div>
-          </div>
+
+            <div className="form-group">
+              <label style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "4px", display: "block" }}>
+                {language === "km" ? "មតិយោបល់ និងបទពិសោធន៍របស់អ្នក *" : "Your Review & Shopping Experience *"}
+              </label>
+              <textarea
+                required
+                rows={4}
+                className="review-textarea"
+                placeholder={language === "km" ? "សរសេរពីបទពិសោធន៍នៃការទិញទំនិញរបស់អ្នក..." : "Share what you loved about buying from Angkor Mall..."}
+                value={feedbackForm.message}
+                onChange={(e) => setFeedbackForm({ ...feedbackForm, message: e.target.value })}
+              />
+            </div>
+
+            <div style={{ marginTop: "10px" }}>
+              <button
+                type="submit"
+                disabled={isSubmittingFeedback}
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  background: "#166534",
+                  color: "#ffffff",
+                  borderRadius: "10px",
+                  border: "none",
+                  fontWeight: "700",
+                  fontSize: "0.95rem",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px"
+                }}
+              >
+                {isSubmittingFeedback ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                {language === "km" ? "ផ្ញើមតិយោបល់" : "Submit Review for Approval"}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Authorized Brand Partners */}
+      <section className="brand-partners-section" style={{ padding: "20px 40px", maxWidth: "1280px", margin: "0 auto" }}>
+        <div className="section-header-row" style={{ marginBottom: "16px", textAlign: "center", display: "block" }}>
+          <span style={{ fontSize: "11px", fontWeight: "800", color: "#166534", letterSpacing: "1px", textTransform: "uppercase" }}>
+            AUTHORIZED DISTRIBUTOR
+          </span>
+          <h3 style={{ fontSize: "20px", fontWeight: "800", color: "#0f172a", marginTop: "4px" }}>
+            {language === "km" ? "ដៃគូម៉ាកល្បីៗលំដាប់ពិភពលោក" : "Official Global Brand Partners"}
+          </h3>
+        </div>
+        <div className="brands-marquee-row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", flexWrap: "wrap" }}>
+          {["Apple", "Samsung", "Sony", "Nike", "Adidas", "Asus", "Xiaomi", "Dyson", "Logitech", "LG"].map((b, i) => (
+            <div key={i} className="brand-logo-card" style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "10px 22px", boxShadow: "0 2px 6px rgba(0,0,0,0.03)", fontWeight: "800", color: "#334155", fontSize: "14px" }}>
+              {b}
+            </div>
+          ))}
         </div>
       </section>
 
@@ -913,17 +1136,35 @@ function HomePage() {
           <div className="promo-badge-pill">
             <Tag size={14} /> PROMO CODE: <strong>ANGKOR30</strong>
           </div>
-          <h2>Get 30% Off Your Next Order</h2>
-          <p>Sign up today and unlock member-only prices, priority express delivery, and reward points.</p>
-          {!isLoggedIn ? (
-            <button className="banner-action-btn" onClick={() => navigate("/auth/register")}>
-              Create Free Account <ArrowRight size={18} />
+          <h2>{language === "km" ? "ទទួលបានការបញ្ចុះតម្លៃ ៣០% បន្ថែម" : "Get 30% Off Your Next Order"}</h2>
+          <p>{language === "km" ? "ចុះឈ្មោះថ្ងៃនេះដើម្បីទទួលបានតម្លៃពិសេសសម្រាប់សមាជិក ការដឹកជញ្ជូនរហ័ស និងពិន្ទុរង្វាន់។" : "Sign up today and unlock member-only prices, priority express delivery, and reward points."}</p>
+          
+          <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap", marginTop: "12px" }}>
+            <button
+              type="button"
+              className="copy-voucher-btn"
+              style={{ background: "#ffffff", color: "#166534", border: "none", borderRadius: "12px", padding: "10px 18px", fontSize: "13px", fontWeight: "800", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
+              onClick={() => {
+                navigator.clipboard.writeText("ANGKOR30");
+                toast.success("Voucher ANGKOR30 copied! 30% discount ready at checkout.", {
+                  icon: "🎉",
+                  style: { borderRadius: "10px", background: "#166534", color: "#fff" }
+                });
+              }}
+            >
+              <Award size={15} /> Copy Code: ANGKOR30
             </button>
-          ) : (
-            <button className="banner-action-btn" onClick={() => navigate("/shop")}>
-              Shop Exclusive Deals <ArrowRight size={18} />
-            </button>
-          )}
+
+            {!isLoggedIn ? (
+              <button className="banner-action-btn" onClick={() => navigate("/auth/register")}>
+                {language === "km" ? "បង្កើតគណនីឥតគិតថ្លៃ" : "Create Free Account"} <ArrowRight size={18} />
+              </button>
+            ) : (
+              <button className="banner-action-btn" onClick={() => navigate("/shop")}>
+                {language === "km" ? "ទិញទំនិញពិសេសឥឡូវនេះ" : "Shop Exclusive Deals"} <ArrowRight size={18} />
+              </button>
+            )}
+          </div>
         </div>
       </section>
 
@@ -951,44 +1192,8 @@ function HomePage() {
         </div>
       </section>
 
-      {/* Modern Professional Footer */}
-      <footer className="home-footer-links">
-        <div className="footer-container">
-          <div className="footer-brand-col">
-            <h3 className="footer-logo-title">Angkor Mall</h3>
-            <p>Cambodia's premier online shopping destination. Delivering excellence, quality products, and unbeatable prices daily.</p>
-          </div>
-          <div className="footer-col">
-            <h4>Quick Links</h4>
-            <ul>
-              <li onClick={() => navigate("/")}>Home</li>
-              <li onClick={() => navigate("/shop")}>Shop Catalog</li>
-              <li onClick={() => navigate("/orders")}>My Orders</li>
-              <li onClick={() => navigate("/auth/login")}>Sign In</li>
-            </ul>
-          </div>
-          <div className="footer-col">
-            <h4>Customer Service</h4>
-            <ul>
-              <li>Help & Support</li>
-              <li>Shipping & Delivery</li>
-              <li>Returns & Exchanges</li>
-              <li>Terms & Privacy Policy</li>
-            </ul>
-          </div>
-          <div className="footer-col">
-            <h4>Payment Method</h4>
-            <div className="payment-badges">
-              <span className="pay-badge" style={{ background: "#00294B", color: "#fff", fontWeight: "bold" }}>ABA' QR</span>
-              <span className="pay-badge" style={{ background: "#ED1C24", color: "#fff", fontWeight: "bold" }}>KHQR</span>
-              <span className="pay-badge">Bakong</span>
-            </div>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <small>© 2026 Angkor Shopping Mall. All rights reserved.</small>
-        </div>
-      </footer>
+      {/* Official Company & Store Footer */}
+      <Footer />
     </div>
   );
 }

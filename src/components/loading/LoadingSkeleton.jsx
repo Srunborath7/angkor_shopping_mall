@@ -253,7 +253,114 @@ export function MessageListSkeleton({ count = 5 }) {
 }
 
 /**
- * Modern Orbital Neon Page / Section Loader
+ * Professional Shopping Animation Page & Section Loader
+ */
+export function ShoppingAnimationLoader({
+  title = "Preparing Your Shopping Experience...",
+  subtitle = "Loading catalog items, promotions and store inventory",
+  fullscreen = false,
+  compact = false
+}) {
+  return (
+    <div className={`shopping-loader-container ${fullscreen ? "shopping-loader-fullscreen" : ""} ${compact ? "shopping-loader-compact" : ""}`}>
+      <div className="shopping-anim-backdrop" />
+      
+      <div className="shopping-anim-card">
+        {/* Shimmering Brand Logo Tag */}
+        <div className="shopping-brand-badge">
+          <Sparkles size={13} className="sparkle-spin" />
+          <span>ANGKOR SHOPPING MALL</span>
+        </div>
+
+        {/* Animated Shopping Cart & Flying Items Scene */}
+        <div className="shopping-scene">
+          {/* Glowing Aura Rings */}
+          <div className="shopping-aura-ring ring-outer" />
+          <div className="shopping-aura-ring ring-inner" />
+
+          {/* Flying Product Drops into Cart */}
+          <div className="flying-item item-1">
+            <ShoppingBag size={15} />
+          </div>
+          <div className="flying-item item-2">
+            <Sparkles size={14} />
+          </div>
+          <div className="flying-item item-3">
+            <span className="mini-gift-emoji">🎁</span>
+          </div>
+
+          {/* Main Animated Shopping Cart */}
+          <div className="shopping-cart-rig">
+            <div className="cart-basket">
+              <div className="cart-content-glow" />
+              <ShoppingBag size={34} className="cart-bag-icon" />
+            </div>
+            <div className="cart-wheels">
+              <span className="cart-wheel wheel-left" />
+              <span className="cart-wheel wheel-right" />
+            </div>
+          </div>
+
+          {/* Road / Track with moving speed dashes */}
+          <div className="shopping-track">
+            <span className="track-dash dash-1" />
+            <span className="track-dash dash-2" />
+            <span className="track-dash dash-3" />
+          </div>
+        </div>
+
+        {/* Dynamic Text & Animated Gradient Progress */}
+        <div className="shopping-loader-text">
+          <h3 className="shopping-loader-title">
+            {title}
+            <span className="shopping-dots-pulse">
+              <span>.</span><span>.</span><span>.</span>
+            </span>
+          </h3>
+          {subtitle && <p className="shopping-loader-sub">{subtitle}</p>}
+        </div>
+
+        {/* Animated Progress Bar */}
+        <div className="shopping-progress-bar">
+          <div className="shopping-progress-fill" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * High-Visibility Circular Shopping Animation Spinner
+ */
+export function CircularShoppingLoader({
+  title = "Loading...",
+  size = "default",
+  className = ""
+}) {
+  return (
+    <div className={`circular-shopping-loader size-${size} ${className}`}>
+      <div className="circular-loader-rings">
+        <div className="circular-orbit-outer" />
+        <div className="circular-orbit-inner" />
+        <div className="circular-center-bag">
+          <ShoppingBag className="circular-bag-svg" />
+          <span className="circular-sparkle-dot" />
+        </div>
+      </div>
+      {title && (
+        <span className="circular-loader-title">
+          {title}
+          <span className="shopping-dots-pulse">
+            <span>.</span><span>.</span><span>.</span>
+          </span>
+        </span>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Modern Orbital Neon Page / Section Loader (Backward compatible wrapper)
  */
 export function PageLoader({
   title = "Loading data...",
@@ -262,54 +369,28 @@ export function PageLoader({
   icon: Icon = ShoppingBag
 }) {
   return (
-    <div className={`page-loader-overlay ${fullscreen ? "page-loader-fullscreen" : ""}`}>
-      <div className="orbital-spinner-wrap">
-        <div className="orbital-ring-outer" />
-        <div className="orbital-ring-inner" />
-        <Icon className="orbital-center-icon" />
-      </div>
-      <div className="page-loader-text-group">
-        <h4 className="page-loader-title">
-          {title}{" "}
-          <span className="dots-pulse-loader">
-            <span />
-            <span />
-            <span />
-          </span>
-        </h4>
-        {subtitle && <p className="page-loader-subtitle">{subtitle}</p>}
-      </div>
-    </div>
+    <ShoppingAnimationLoader
+      title={title}
+      subtitle={subtitle}
+      fullscreen={fullscreen}
+    />
   );
 }
 
 /**
- * Section / Box Loader
+ * Section / Box Loader with Shopping Animation
  */
 export function SectionLoader({
-  title = "Loading...",
+  title = "Loading shopping items...",
   height = "240px",
   icon = Sparkles
 }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        height: height,
-        width: "100%",
-        gap: "12px"
-      }}
-    >
-      <div className="orbital-spinner-wrap" style={{ width: 44, height: 44 }}>
-        <div className="orbital-ring-outer" style={{ borderWidth: "2px" }} />
-        <div className="orbital-ring-inner" style={{ borderWidth: "2px" }} />
-      </div>
-      <span style={{ fontSize: "0.875rem", color: "var(--text-muted, #64748b)", fontWeight: 600 }}>
-        {title}
-      </span>
+    <div style={{ height, width: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <CircularShoppingLoader
+        title={title}
+        size="default"
+      />
     </div>
   );
 }
@@ -334,6 +415,8 @@ export default {
   KpiCardSkeleton,
   TradeCardSkeleton,
   MessageListSkeleton,
+  ShoppingAnimationLoader,
+  CircularShoppingLoader,
   PageLoader,
   SectionLoader,
   InlineSpinner

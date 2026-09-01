@@ -15,7 +15,8 @@ import {
   FaExchangeAlt,
   FaEnvelope,
   FaHeadset,
-  FaUserClock
+  FaUserClock,
+  FaUserTie
 } from "react-icons/fa";
 import logo from "../assets/logo.jpg";
 import { NavLink, useLocation } from "react-router-dom";
@@ -126,12 +127,6 @@ function Sidebar({ open, setOpen }) {
           moduleId: "products"
         },
         {
-          name: isKhmer ? "ប្តូរទំនិញ" : "Trading / Trade-In",
-          icon: <FaExchangeAlt />,
-          path: "/admin/trading",
-          moduleId: "trading"
-        },
-        {
           name: isKhmer ? "ការបញ្ជាទិញ" : "Orders",
           icon: <FaShoppingCart />,
           path: "/admin/orders",
@@ -183,6 +178,12 @@ function Sidebar({ open, setOpen }) {
           icon: <FaBookmark />,
           path: "/admin/brands",
           moduleId: "brands"
+        },
+        {
+          name: isKhmer ? "ព័ត៌មានបុគ្គលិក" : "Staff Directory",
+          icon: <FaUserTie />,
+          path: "/admin/staff",
+          moduleId: "staff"
         },
         {
           name: isKhmer ? "វត្តមានបុគ្គលិក" : "Staff Attendance",

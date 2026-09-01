@@ -1,0 +1,419 @@
+/* ==========================================================================
+   Angkor Shopping Mall - Official Store & Company Information Footer
+   Full Responsive Design & Luxury Obsidian Dark Theme
+   ========================================================================== */
+
+.official-store-footer {
+  background: #0f172a;
+  color: #94a3b8;
+  margin-top: 4rem;
+  border-top: 1px solid #1e293b;
+  position: relative;
+  z-index: 20;
+}
+
+/* 1. Value Proposition Bar */
+.footer-perks-bar {
+  background: #090d16;
+  border-bottom: 1px solid #1e293b;
+  padding: 1.5rem 0;
+}
+
+.footer-perks-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.footer-perk-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.perk-icon-circle {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.perk-icon-circle.green { background: linear-gradient(135deg, #10b981, #059669); }
+.perk-icon-circle.blue { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.perk-icon-circle.orange { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.perk-icon-circle.purple { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+
+.footer-perk-item h5 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 2px 0;
+}
+
+.footer-perk-item p {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* 2. Main Content Grid */
+.footer-main-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem;
+}
+
+.footer-content-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1.3fr 1fr 1.2fr;
+  gap: 2.5rem;
+}
+
+.footer-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Column 1: Brand */
+.footer-brand-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo-gem {
+  font-size: 2rem;
+  filter: drop-shadow(0 4px 8px rgba(16, 185, 129, 0.3));
+}
+
+.brand-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.brand-badge-official {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+.brand-tagline {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+.operating-hours-box {
+  background: #090d16;
+  border: 1px solid #1e293b;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.hours-icon {
+  color: #10b981;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.hours-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.4px;
+}
+
+.hours-val {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f8fafc;
+  margin-top: 2px;
+}
+
+/* Headings */
+.footer-heading {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0 0 4px 0;
+  letter-spacing: -0.01em;
+  position: relative;
+  padding-bottom: 8px;
+}
+
+.footer-heading::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 32px;
+  height: 2px;
+  background: #10b981;
+  border-radius: 2px;
+}
+
+/* Column 2: Official Contact List */
+.footer-contact-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-contact-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.contact-icon {
+  color: #10b981;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.footer-contact-list strong {
+  display: block;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  color: #64748b;
+  letter-spacing: 0.3px;
+  margin-bottom: 2px;
+}
+
+.footer-contact-list p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.contact-link {
+  color: #f8fafc;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.contact-link:hover {
+  color: #34d399;
+  text-decoration: underline;
+}
+
+.telegram-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.telegram-pill:hover {
+  background: rgba(14, 165, 233, 0.25);
+  color: #7dd3fc;
+  text-decoration: none;
+}
+
+/* Column 3: Quick Links */
+.footer-nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer-nav-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.footer-nav-list li:hover {
+  color: #34d399;
+  transform: translateX(4px);
+}
+
+/* Column 4: Payment Badges */
+.payments-subtext {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.payment-badges-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.pay-chip {
+  padding: 6px 12px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: #090d16;
+  border: 1px solid #1e293b;
+  min-width: 105px;
+}
+
+.pay-chip.aba { border-color: rgba(0, 41, 75, 0.8); }
+.pay-chip.bakong { border-color: rgba(237, 28, 36, 0.6); }
+.pay-chip.wing { border-color: rgba(139, 195, 74, 0.6); }
+
+.pay-chip-brand {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: 0.5px;
+}
+
+.pay-chip-type {
+  font-size: 0.65rem;
+  color: #94a3b8;
+}
+
+.exchange-rate-pill {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+.exchange-rate-pill strong {
+  color: #34d399;
+  font-weight: 700;
+}
+
+/* 3. Bottom Strip */
+.footer-bottom-strip {
+  background: #070a12;
+  border-top: 1px solid #1e293b;
+  padding: 1.25rem 0;
+}
+
+.footer-bottom-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.copyright-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.copyright-text strong {
+  color: #f8fafc;
+}
+
+.legal-badges {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.75rem;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.vat-badge,
+.secure-badge {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  padding: 3px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   Responsive Adaptations
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  .footer-content-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .footer-main-container {
+    padding: 2.5rem 1rem;
+  }
+
+  .footer-content-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .footer-perks-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .footer-bottom-inner {
+    flex-direction: column;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .legal-badges {
+    justify-content: center;
+  }
+}

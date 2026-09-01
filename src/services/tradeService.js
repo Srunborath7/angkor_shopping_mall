@@ -6,9 +6,19 @@ import { api } from "../api/api";
  */
 export const getTradeProductsApi = async (params = {}) => {
   try {
-    return await api("/api/trade-products", "GET", params);
+    const cleanParams = {};
+    Object.keys(params || {}).forEach((k) => {
+      const val = params[k];
+      if (val !== undefined && val !== null && val !== "all" && val !== "") {
+        cleanParams[k] = val;
+      }
+    });
+    if (cleanParams.limit && Number(cleanParams.limit) > 20) {
+      cleanParams.limit = 20;
+    }
+    return await api("/api/trade-products", "GET", cleanParams);
   } catch (err) {
-    console.warn("Trade products API error or shared memory limit:", err?.message || err);
+    console.warn("Trade products API error or fallback:", err?.message || err);
     return { success: true, data: { tradeProducts: [] } };
   }
 };

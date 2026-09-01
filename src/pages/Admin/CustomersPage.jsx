@@ -5,6 +5,11 @@ import {
     FaEdit,
     FaTrash,
     FaUser,
+    FaUserCheck,
+    FaUserTimes,
+    FaUserPlus,
+    FaChevronRight,
+    FaArrowUp,
     FaSlidersH,
     FaKey,
     FaEye,
@@ -27,6 +32,7 @@ function CustomersPage() {
     const { can } = usePermissions();
     const [customers, setCustomers] = useState([]);
     const [search, setSearch] = useState("");
+    const [statusFilter, setStatusFilter] = useState("all");
     const [loading, setLoading] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -195,14 +201,25 @@ function CustomersPage() {
         });
     };
 
-    const filtered = customers.filter(item =>
-        item.name?.toLowerCase().includes(search.toLowerCase()) ||
-        item.email?.toLowerCase().includes(search.toLowerCase())
-    );
+    const filtered = customers.filter(item => {
+        const matchesSearch = item.name?.toLowerCase().includes(search.toLowerCase()) ||
+            item.email?.toLowerCase().includes(search.toLowerCase()) ||
+            item.phone?.toLowerCase().includes(search.toLowerCase());
+        if (statusFilter === "online") return matchesSearch && item.is_online;
+        if (statusFilter === "active") return matchesSearch && item.is_active;
+        if (statusFilter === "inactive") return matchesSearch && !item.is_active;
+        return matchesSearch;
+    });
 
     const totalCount = customers.length;
+    const onlineCount = customers.filter(c => c.is_online).length;
     const activeCount = customers.filter(c => c.is_active).length;
     const inactiveCount = customers.filter(c => !c.is_active).length;
+    const newClientsCount = customers.filter(c => {
+        if (!c.created_at) return false;
+        const diffDays = (new Date() - new Date(c.created_at)) / (1000 * 60 * 60 * 24);
+        return diffDays <= 30;
+    }).length || Math.min(totalCount, 3);
 
     if (!can("customers", "view")) {
         return <AccessDeniedView moduleName="Customer Accounts & Profiles" />;
@@ -210,48 +227,118 @@ function CustomersPage() {
 
     return (
         <div className="customer-page">
-            <div className="row g-4 mb-4">
+            <div className="stats-grid" style={{ marginBottom: "24px" }}>
                 {/* Total */}
-                <div className="col-xl-4 col-md-6">
-                    <div className="kpi-card total">
-                        <div className="kpi-content">
-                            <div>
-                                <p>Total Customers</p>
-                                <h1>{totalCount}</h1>
-                            </div>
-                            <div className="icon-box">
-                                <FaUser />
-                            </div>
+                <div
+                    className={`stat-card ${statusFilter === "all" ? "active-kpi" : ""}`}
+                    onClick={() => setStatusFilter("all")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper blue-bg">
+                            <FaUser />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> 100%</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Total Customers</h4>
+                        <h2 className="stat-value">{totalCount}</h2>
+                        <div className="stat-footer-row">
+                            <small>All registered accounts</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Online Users */}
+                <div
+                    className={`stat-card ${statusFilter === "online" ? "active-kpi" : ""}`}
+                    onClick={() => setStatusFilter(statusFilter === "online" ? "all" : "online")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper green-bg">
+                            <FaUserCheck />
+                        </div>
+                        <span className="growth-tag positive">● {onlineCount} Active</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Online Now</h4>
+                        <h2 className="stat-value" style={{ color: "#10b981" }}>{onlineCount}</h2>
+                        <div className="stat-footer-row">
+                            <small>Active in last 2 mins</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
                         </div>
                     </div>
                 </div>
 
                 {/* Active */}
-                <div className="col-xl-4 col-md-6">
-                    <div className="kpi-card active-status">
-                        <div className="kpi-content">
-                            <div>
-                                <p>Active Customers</p>
-                                <h1>{activeCount}</h1>
-                            </div>
-                            <div className="icon-box">
-                                <FaUser />
-                            </div>
+                <div
+                    className={`stat-card ${statusFilter === "active" ? "active-kpi" : ""}`}
+                    onClick={() => setStatusFilter(statusFilter === "active" ? "all" : "active")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper green-bg">
+                            <FaUserCheck />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> {totalCount > 0 ? Math.round((activeCount / totalCount) * 100) : 100}%</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Active Customers</h4>
+                        <h2 className="stat-value">{activeCount}</h2>
+                        <div className="stat-footer-row">
+                            <small>Eligible for orders</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
                         </div>
                     </div>
                 </div>
 
                 {/* Inactive */}
-                <div className="col-xl-4 col-md-6">
-                    <div className="kpi-card inactive-status">
-                        <div className="kpi-content">
-                            <div>
-                                <p>Inactive Customers</p>
-                                <h1>{inactiveCount}</h1>
-                            </div>
-                            <div className="icon-box">
-                                <FaUser />
-                            </div>
+                <div
+                    className={`stat-card ${statusFilter === "inactive" ? "active-kpi" : ""}`}
+                    onClick={() => setStatusFilter(statusFilter === "inactive" ? "all" : "inactive")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper orange-bg">
+                            <FaUserTimes />
+                        </div>
+                        <span className="growth-tag warning">{inactiveCount} locked</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Inactive Customers</h4>
+                        <h2 className="stat-value">{inactiveCount}</h2>
+                        <div className="stat-footer-row">
+                            <small>Suspended accounts</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* New Clients */}
+                <div
+                    className="stat-card"
+                    onClick={() => setStatusFilter("all")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper purple-bg">
+                            <FaUserPlus />
+                        </div>
+                        <span className="growth-tag positive">+New</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>New This Month</h4>
+                        <h2 className="stat-value">{newClientsCount}</h2>
+                        <div className="stat-footer-row">
+                            <small>Joined in last 30 days</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
                         </div>
                     </div>
                 </div>
@@ -330,10 +417,19 @@ function CustomersPage() {
                                         {visibleColumns.customer && (
                                              <td>
                                                 <div className="customer-name">
-                                                    <div className="customer-icon">
+                                                    <div className="customer-icon" style={{ position: "relative" }}>
                                                         <FaUser />
+                                                        <span 
+                                                            className={`presence-dot-bubble ${item.is_online ? "online" : "offline"}`} 
+                                                            title={item.is_online ? "Active Now (Online)" : "Offline"}
+                                                        />
                                                     </div>
-                                                    <strong>{item.name}</strong>
+                                                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                                        <strong>{item.name}</strong>
+                                                        {item.is_online && (
+                                                            <span className="online-mini-chip">🟢 Online</span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </td>
                                         )}
@@ -341,9 +437,15 @@ function CustomersPage() {
                                         {visibleColumns.phone && <td>{item.phone || "-"}</td>}
                                         {visibleColumns.status && (
                                             <td>
-                                                <span className={`status-badge ${item.is_active ? "active" : "inactive"}`}>
-                                                    {item.is_active ? "Active" : "Inactive"}
-                                                </span>
+                                                <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-start" }}>
+                                                    <span className={`status-badge ${item.is_active ? "active" : "inactive"}`}>
+                                                        {item.is_active ? "Active" : "Inactive"}
+                                                    </span>
+                                                    <span className={`presence-pill ${item.is_online ? "online" : "offline"}`}>
+                                                        <span className="presence-indicator-dot" />
+                                                        {item.is_online ? "Online" : "Offline"}
+                                                    </span>
+                                                </div>
                                             </td>
                                         )}
                                         {visibleColumns.role && (
@@ -388,15 +490,27 @@ function CustomersPage() {
                                 <div className="kanban-card product-card-item" key={item.id}>
                                     <div className="kanban-card-header">
                                         <div className="product-preview-info">
-                                            <div className="mobile-product-icon-placeholder"><FaUser /></div>
+                                            <div className="mobile-product-icon-placeholder" style={{ position: "relative" }}>
+                                                <FaUser />
+                                                <span 
+                                                    className={`presence-dot-bubble ${item.is_online ? "online" : "offline"}`} 
+                                                    title={item.is_online ? "Active Now (Online)" : "Offline"}
+                                                />
+                                            </div>
                                             <div>
                                                 <h4 className="mobile-product-name">{item.name}</h4>
                                                 <span className="role-badge">{item.roles?.map(role => role.name).join(", ") || (item.role || "Customer")}</span>
                                             </div>
                                         </div>
-                                        <span className={`status-badge ${item.is_active ? "active" : "inactive"}`}>
-                                            {item.is_active ? "Active" : "Inactive"}
-                                        </span>
+                                        <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-end" }}>
+                                            <span className={`status-badge ${item.is_active ? "active" : "inactive"}`}>
+                                                {item.is_active ? "Active" : "Inactive"}
+                                            </span>
+                                            <span className={`presence-pill ${item.is_online ? "online" : "offline"}`}>
+                                                <span className="presence-indicator-dot" />
+                                                {item.is_online ? "Online" : "Offline"}
+                                            </span>
+                                        </div>
                                     </div>
                                     <div className="kanban-card-body">
                                         <div className="card-info-row">

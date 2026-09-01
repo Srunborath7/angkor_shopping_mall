@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
+import Footer from "../../components/Footer";
 import {
   getRecommendationsApi,
   getPopularRecommendationsApi,
@@ -585,6 +586,7 @@ function RecommendationPage() {
           </>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

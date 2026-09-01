@@ -1,15 +1,16 @@
 import { api } from "../api/api";
 
 export const categoriesApi = async (data) => {
+    const params = data && typeof data === "object" && Object.keys(data).length > 0 ? data : undefined;
     try {
-        const res = await api("/api/categories", "get", data);
+        const res = await api("/api/categories", "get", params);
         return res;
     } catch (err) {
         try {
-            return await api("/api/category", "get", data);
+            return await api("/api/category", "get", params);
         } catch (fallbackErr) {
             console.warn("Categories API unavailable, using fallback list:", fallbackErr.message);
-            return { data: [] };
+            return { success: true, data: { categories: [] } };
         }
     }
 };

@@ -1,11 +1,11 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
   Home,
   ShoppingBag,
+  ShoppingCart,
   Sparkles,
-  Repeat,
   Clock
 } from "lucide-react";
 import { useTranslation } from "../context/LanguageContext";
@@ -18,7 +18,29 @@ function MobileBottomNav() {
   const { t } = useTranslation();
   const isLoggedIn = !!auth.token;
 
+  const [cartCount, setCartCount] = useState(() => {
+    return parseInt(localStorage.getItem("cartCount") || "0", 10);
+  });
+
+  useEffect(() => {
+    const handleCartUpdate = () => {
+      setCartCount(parseInt(localStorage.getItem("cartCount") || "0", 10));
+    };
+
+    window.addEventListener("cart-updated", handleCartUpdate);
+    window.addEventListener("storage", handleCartUpdate);
+
+    return () => {
+      window.removeEventListener("cart-updated", handleCartUpdate);
+      window.removeEventListener("storage", handleCartUpdate);
+    };
+  }, []);
+
   const currentPath = location.pathname;
+
+  const handleOpenCart = () => {
+    window.dispatchEvent(new Event("open-cart"));
+  };
 
   return (
     <div className="mobile-bottom-nav-wrapper">
@@ -41,12 +63,12 @@ function MobileBottomNav() {
             {currentPath === "/" && <span className="nav-active-pill" />}
           </button>
 
-          {/* 2. Shopping */}
+          {/* 2. Shop */}
           <button
             type="button"
             className={`bottom-nav-item ${currentPath === "/shop" || currentPath.startsWith("/product") ? "active" : ""}`}
             onClick={() => navigate("/shop")}
-            aria-label="Shopping"
+            aria-label="Shop"
           >
             <div className="nav-icon-bubble">
               <ShoppingBag size={20} className="nav-icon" />
@@ -55,7 +77,25 @@ function MobileBottomNav() {
             {(currentPath === "/shop" || currentPath.startsWith("/product")) && <span className="nav-active-pill" />}
           </button>
 
-          {/* 3. AI */}
+          {/* 3. Center Floating Cart Button */}
+          <button
+            type="button"
+            className="bottom-nav-item bottom-nav-cart-btn"
+            onClick={handleOpenCart}
+            aria-label="Open Cart"
+          >
+            <div className="nav-icon-bubble cart-bubble">
+              <ShoppingCart size={22} className="nav-icon cart-icon" />
+              {cartCount > 0 && (
+                <span className="mobile-nav-cart-badge">
+                  {cartCount > 99 ? "99+" : cartCount}
+                </span>
+              )}
+            </div>
+            <span className="nav-item-label cart-label">{t("nav.cart", "Cart")}</span>
+          </button>
+
+          {/* 4. AI Picks */}
           <button
             type="button"
             className={`bottom-nav-item ${currentPath === "/recommendations" ? "active" : ""}`}
@@ -69,21 +109,7 @@ function MobileBottomNav() {
             {currentPath === "/recommendations" && <span className="nav-active-pill" />}
           </button>
 
-          {/* 4. Trade */}
-          <button
-            type="button"
-            className={`bottom-nav-item ${currentPath === "/trading" ? "active" : ""}`}
-            onClick={() => navigate("/trading")}
-            aria-label="Trade"
-          >
-            <div className="nav-icon-bubble">
-              <Repeat size={20} className="nav-icon" />
-            </div>
-            <span className="nav-item-label">{t("nav.tradeIn", "Trade-In")}</span>
-            {currentPath === "/trading" && <span className="nav-active-pill" />}
-          </button>
-
-          {/* 5. Order */}
+          {/* 5. Orders */}
           <button
             type="button"
             className={`bottom-nav-item ${currentPath === "/orders" ? "active" : ""}`}

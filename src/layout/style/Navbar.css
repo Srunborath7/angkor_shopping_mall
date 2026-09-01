@@ -808,8 +808,9 @@
     .search-box {
         width: 220px;
     }
-    .profile div {
-        display: none;
+    .profile-text-info,
+    .profile-arrow {
+        display: none !important;
     }
 }
 
@@ -844,19 +845,42 @@
         display: none !important;
     }
     
-    .profile div,
-    .profile .profile-arrow {
-        display: none !important;
+    /* Show Profile Avatar Icon & Wrapper on Mobile */
+    .profile-wrapper {
+        display: flex !important;
+        align-items: center;
+        position: relative;
     }
 
     .profile {
-        padding: 0 !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 4px !important;
         background: transparent !important;
         border: none !important;
+        cursor: pointer;
+        border-radius: 50%;
+    }
+
+    .profile-avatar-wrap {
+        display: inline-flex !important;
+        position: relative;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .profile-icon {
+        font-size: 32px !important;
+    }
+
+    .profile-text-info,
+    .profile-arrow {
+        display: none !important;
     }
     
     .navbar-right {
-        gap: 6px !important;
+        gap: 8px !important;
         flex-shrink: 0 !important;
     }
 
@@ -871,32 +895,20 @@
     }
 
     .navbar-theme-btn {
-        width: 34px !important;
-        height: 34px !important;
+        width: 36px !important;
+        height: 36px !important;
         padding: 0 !important;
     }
 
     .notification {
-        width: 34px !important;
-        height: 34px !important;
+        width: 36px !important;
+        height: 36px !important;
         padding: 0 !important;
     }
     
-    .logout-text {
-        display: none !important;
-    }
-    
+    /* Hide Standalone Logout Button on Mobile (Logout is inside Profile Dropdown) */
     .logout {
-        padding: 0 !important;
-        width: 34px !important;
-        height: 34px !important;
-        border-radius: 50% !important;
-        justify-content: center !important;
-        gap: 0 !important;
-    }
-    
-    .logout-icon {
-        font-size: 15px !important;
+        display: none !important;
     }
 
     .notif-dropdown-card {

@@ -2181,3 +2181,34 @@ body.dark-theme .ticket-card-time,
 [data-theme="dark"] .contact-form-group select:focus {
   border-color: #10b981;
 }
+
+/* Mobile Screen Floating FAB Adjustments to Avoid Bottom Nav Overlap */
+@media (max-width: 1024px) {
+  .chatbot-trigger-container {
+    bottom: 84px !important;
+    right: 14px !important;
+  }
+
+  .chatbot-fab-btn {
+    width: 52px !important;
+    height: 52px !important;
+  }
+
+  .chatbot-greeting-callout {
+    max-width: 250px;
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  .chatbot-window {
+    bottom: 0 !important;
+    right: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+    z-index: 10000 !important;
+  }
+}
+

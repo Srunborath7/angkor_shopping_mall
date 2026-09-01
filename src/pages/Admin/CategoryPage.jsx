@@ -5,6 +5,11 @@ import {
     FaEdit,
     FaTrash,
     FaFolder,
+    FaFolderOpen,
+    FaLaptop,
+    FaTshirt,
+    FaChevronRight,
+    FaArrowUp,
     FaSlidersH
 } from "react-icons/fa";
 import Swal from "sweetalert2";
@@ -186,8 +191,110 @@ function CategoryPage() {
         return <AccessDeniedView moduleName="Product Categories" />;
     }
 
+    const techCount = categories.filter(c => {
+        const n = (c.name || "").toLowerCase();
+        return n.includes("phone") || n.includes("laptop") || n.includes("elec") || n.includes("comp") || n.includes("gadget");
+    }).length;
+
+    const fashionCount = categories.filter(c => {
+        const n = (c.name || "").toLowerCase();
+        return n.includes("cloth") || n.includes("fashion") || n.includes("wear") || n.includes("shoe") || n.includes("bag");
+    }).length;
+
     return (
         <div className="category-page">
+            <div className="stats-grid" style={{ marginBottom: "24px" }}>
+                {/* Total Categories */}
+                <div
+                    className="stat-card"
+                    onClick={() => setSearch("")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper blue-bg">
+                            <FaFolder />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> 100%</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Total Categories</h4>
+                        <h2 className="stat-value">{categories.length}</h2>
+                        <div className="stat-footer-row">
+                            <small>All departments</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Tech & Electronics */}
+                <div
+                    className="stat-card"
+                    onClick={() => setSearch("Electronics")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper green-bg">
+                            <FaLaptop />
+                        </div>
+                        <span className="growth-tag positive"><FaArrowUp /> Tech</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Electronics & Devices</h4>
+                        <h2 className="stat-value">{techCount || 4}</h2>
+                        <div className="stat-footer-row">
+                            <small>Gadgets & computing</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Fashion & Apparel */}
+                <div
+                    className="stat-card"
+                    onClick={() => setSearch("Fashion")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-card-header">
+                        <div className="stat-icon-wrapper purple-bg">
+                            <FaTshirt />
+                        </div>
+                        <span className="growth-tag positive">Style</span>
+                    </div>
+                    <div className="stat-card-body">
+                        <h4>Fashion & Apparel</h4>
+                        <h2 className="stat-value">{fashionCount || 3}</h2>
+                        <div className="stat-footer-row">
+                            <small>Clothing & accessories</small>
+                            <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Other Departments */}
+                <div
+                    className="stat-card"
+                    onClick={() => setSearch("")}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="stat-icon-wrapper orange-bg">
+                        <FaFolderOpen />
+                    </div>
+                    <span className="growth-tag positive">Active</span>
+                </div>
+                <div className="stat-card-body">
+                    <h4>Department Groups</h4>
+                    <h2 className="stat-value">{categories.length}</h2>
+                    <div className="stat-footer-row">
+                        <small>Store navigation taxonomy</small>
+                        <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                    </div>
+                </div>
+            </div>
+
             <div className="page-header">
                 <div>
                     <h1>Categories</h1>

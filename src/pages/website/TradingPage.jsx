@@ -122,7 +122,7 @@ function WebsiteTradingPage() {
         search: search || undefined,
         category_id: categoryFilter !== "all" ? categoryFilter : undefined,
         condition: conditionFilter !== "all" ? conditionFilter : undefined,
-        limit: 50
+        limit: 20
       };
       const res = await getTradeProductsApi(params);
       const list = res?.data?.tradeProducts || res?.data?.data || res?.data || (Array.isArray(res) ? res : []);

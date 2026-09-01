@@ -19,6 +19,7 @@ export const DEFAULT_ROLE_PRESETS = {
     suppliers: ["view", "create", "edit", "delete"],
     attendance: ["view", "checkin", "approve", "export"],
     customers: ["view", "edit", "ban"],
+    staff: ["view", "create", "edit", "delete"],
     reports: ["view", "export"],
     settings: ["view", "edit"]
   },
@@ -36,6 +37,7 @@ export const DEFAULT_ROLE_PRESETS = {
     suppliers: ["view", "create", "edit", "delete"],
     attendance: ["view", "checkin", "approve", "export"],
     customers: ["view", "edit", "ban"],
+    staff: ["view", "create", "edit", "delete"],
     reports: ["view", "export"],
     settings: ["view", "edit"]
   },
@@ -53,6 +55,7 @@ export const DEFAULT_ROLE_PRESETS = {
     suppliers: ["view", "create"],
     attendance: ["view", "approve", "export"],
     customers: ["view", "edit"],
+    staff: ["view", "create", "edit"],
     reports: ["view", "export"],
     settings: []
   },
@@ -70,6 +73,7 @@ export const DEFAULT_ROLE_PRESETS = {
     suppliers: ["view", "create"],
     attendance: ["view", "approve", "export"],
     customers: ["view", "edit"],
+    staff: ["view", "create", "edit"],
     reports: ["view", "export"],
     settings: []
   },
@@ -87,6 +91,7 @@ export const DEFAULT_ROLE_PRESETS = {
     suppliers: ["view"],
     attendance: ["view", "checkin"],
     customers: ["view"],
+    staff: ["view"],
     reports: ["view"],
     settings: []
   },
@@ -104,6 +109,7 @@ export const DEFAULT_ROLE_PRESETS = {
     suppliers: ["view", "create"],
     attendance: ["view", "checkin"],
     customers: [],
+    staff: ["view"],
     reports: ["view"],
     settings: []
   },
@@ -121,6 +127,7 @@ export const DEFAULT_ROLE_PRESETS = {
     suppliers: [],
     attendance: ["view", "checkin"],
     customers: ["view"],
+    staff: ["view"],
     reports: [],
     settings: []
   },
@@ -131,6 +138,7 @@ export const DEFAULT_ROLE_PRESETS = {
     attendance: ["view", "checkin"],
     inventory: ["view"],
     messages: ["view", "reply"],
+    staff: ["view"],
     settings: []
   },
   customer: {
@@ -139,6 +147,7 @@ export const DEFAULT_ROLE_PRESETS = {
     categories: ["view"],
     brands: ["view"],
     orders: ["view"],
+    staff: [],
     settings: []
   }
 };
@@ -344,6 +353,16 @@ export function usePermissions() {
   const can = (moduleId, action = "view") => {
     if (isSuperAdmin) return true;
     if (!moduleId) return true;
+
+    // Staff module alias check: if user can view customers or attendance, or has staff perms
+    if (moduleId === "staff" && action === "view") {
+      if (permissionsMap?.staff?.includes("view")) return true;
+      if (permissionsMap?.customers?.includes("view") || permissionsMap?.attendance?.includes("view")) return true;
+      const isStaffOrAdminRole = ["admin", "manager", "staff", "supervisor", "super"].some((r) =>
+        userRoleStr.includes(r)
+      );
+      if (isStaffOrAdminRole) return true;
+    }
 
     const modulePerms = permissionsMap?.[moduleId];
     if (!Array.isArray(modulePerms) || modulePerms.length === 0) {

@@ -40,6 +40,8 @@ import {
   FaCheck,
   FaBan,
   FaFileAlt,
+  FaChevronRight,
+  FaArrowUp,
   FaHistory
 } from "react-icons/fa";
 import Swal from "sweetalert2";
@@ -1099,7 +1101,7 @@ function AttendancePage() {
       {/* ===================================================================
           2. Executive KPI Cards
           =================================================================== */}
-      <div className="attendance-kpi-grid">
+      <div className="stats-grid" style={{ marginBottom: "24px" }}>
         {loading ? (
           <>
             <KpiCardSkeleton />
@@ -1109,55 +1111,91 @@ function AttendancePage() {
           </>
         ) : (
           <>
-            <div className="attendance-kpi-card kpi-present">
-              <div className="kpi-left">
-                <p>{isKhmer ? "វត្តមានថ្ងៃនេះ" : "Present Today"}</p>
-                <h3>{kpiMetrics.presentCount} / {kpiMetrics.totalStaff}</h3>
-                <span className="kpi-subtext">
-                  {kpiMetrics.attendanceRate}% {isKhmer ? "អត្រាវត្តមានសរុប" : "Workforce turn-up"}
-                </span>
+            <div
+              className={`stat-card ${selectedStatusTab === "all" ? "active-kpi" : ""}`}
+              onClick={() => setSelectedStatusTab("all")}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="stat-card-header">
+                <div className="stat-icon-wrapper green-bg">
+                  <FaUserCheck />
+                </div>
+                <span className="growth-tag positive"><FaArrowUp /> {kpiMetrics.attendanceRate}%</span>
               </div>
-              <div className="attendance-kpi-icon">
-                <FaUserCheck />
-              </div>
-            </div>
-
-            <div className="attendance-kpi-card kpi-ontime">
-              <div className="kpi-left">
-                <p>{isKhmer ? "ទាន់ពេលវេលា" : "On Time Check-ins"}</p>
-                <h3>{kpiMetrics.onTimeCount}</h3>
-                <span className="kpi-subtext">
-                  {isKhmer ? "ចូលធ្វើការទាន់ម៉ោងកំណត់" : "Punctual arrivals"}
-                </span>
-              </div>
-              <div className="attendance-kpi-icon">
-                <FaClock />
+              <div className="stat-card-body">
+                <h4>{isKhmer ? "វត្តមានថ្ងៃនេះ" : "Present Today"}</h4>
+                <h2 className="stat-value">{kpiMetrics.presentCount} / {kpiMetrics.totalStaff}</h2>
+                <div className="stat-footer-row">
+                  <small>{kpiMetrics.attendanceRate}% workforce turn-up</small>
+                  <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                </div>
               </div>
             </div>
 
-            <div className="attendance-kpi-card kpi-late">
-              <div className="kpi-left">
-                <p>{isKhmer ? "មកយឺត / សុំច្បាប់" : "Late / On Leave"}</p>
-                <h3>{kpiMetrics.lateCount} <span style={{ fontSize: "15px", color: "#64748b" }}>/ {kpiMetrics.onLeaveCount} Leave</span></h3>
-                <span className="kpi-subtext">
-                  {kpiMetrics.onLeaveCount > 0 ? `${kpiMetrics.onLeaveCount} on approved leave` : "Late arrivals today"}
-                </span>
+            <div
+              className={`stat-card ${selectedStatusTab === "present" ? "active-kpi" : ""}`}
+              onClick={() => setSelectedStatusTab(selectedStatusTab === "present" ? "all" : "present")}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="stat-card-header">
+                <div className="stat-icon-wrapper blue-bg">
+                  <FaClock />
+                </div>
+                <span className="growth-tag positive">Punctual</span>
               </div>
-              <div className="attendance-kpi-icon">
-                <FaExclamationTriangle />
+              <div className="stat-card-body">
+                <h4>{isKhmer ? "ទាន់ពេលវេលា" : "On Time Check-ins"}</h4>
+                <h2 className="stat-value">{kpiMetrics.onTimeCount}</h2>
+                <div className="stat-footer-row">
+                  <small>Arrived on shift schedule</small>
+                  <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                </div>
               </div>
             </div>
 
-            <div className="attendance-kpi-card kpi-overtime">
-              <div className="kpi-left">
-                <p>{isKhmer ? "ម៉ោងថែម & សរុប" : "Total Work & OT"}</p>
-                <h3>{kpiMetrics.totalHoursWorked}h</h3>
-                <span className="kpi-subtext">
-                  +{kpiMetrics.totalOvertimeHours}h {isKhmer ? "ម៉ោងបន្ថែម (OT)" : "Overtime logged"}
-                </span>
+            <div
+              className={`stat-card ${selectedStatusTab === "late" || selectedStatusTab === "on_leave" ? "active-kpi" : ""}`}
+              onClick={() => setSelectedStatusTab(selectedStatusTab === "late" ? "all" : "late")}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="stat-card-header">
+                <div className="stat-icon-wrapper orange-bg">
+                  <FaExclamationTriangle />
+                </div>
+                <span className="growth-tag warning">{kpiMetrics.lateCount} late</span>
               </div>
-              <div className="attendance-kpi-icon">
-                <FaStopwatch />
+              <div className="stat-card-body">
+                <h4>{isKhmer ? "មកយឺត / សុំច្បាប់" : "Late & Leave"}</h4>
+                <h2 className="stat-value">{kpiMetrics.lateCount} <span style={{ fontSize: "16px", color: "#64748b" }}>/ {kpiMetrics.onLeaveCount} Leave</span></h2>
+                <div className="stat-footer-row">
+                  <small>{kpiMetrics.onLeaveCount > 0 ? `${kpiMetrics.onLeaveCount} on leave` : "Late check-ins"}</small>
+                  <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              className="stat-card"
+              onClick={() => setSelectedStatusTab("all")}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="stat-card-header">
+                <div className="stat-icon-wrapper purple-bg">
+                  <FaStopwatch />
+                </div>
+                <span className="growth-tag positive">+{kpiMetrics.totalOvertimeHours}h OT</span>
+              </div>
+              <div className="stat-card-body">
+                <h4>{isKhmer ? "ម៉ោងថែម & សរុប" : "Total Work & OT"}</h4>
+                <h2 className="stat-value">{kpiMetrics.totalHoursWorked}h</h2>
+                <div className="stat-footer-row">
+                  <small>Total productive work hours</small>
+                  <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+                </div>
               </div>
             </div>
           </>

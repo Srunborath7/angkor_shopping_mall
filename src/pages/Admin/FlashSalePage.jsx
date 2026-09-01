@@ -11,7 +11,9 @@ import {
   FaClock,
   FaCheckCircle,
   FaTimesCircle,
-  FaSlidersH
+  FaSlidersH,
+  FaChevronRight,
+  FaArrowUp
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -31,6 +33,26 @@ function getCategoryName(cat) {
   if (typeof cat === "string") return cat;
   if (typeof cat === "object") return cat.name || cat.title || "General";
   return String(cat);
+}
+
+function formatTimeRemaining(item) {
+  if (!item) return "24h Active";
+  const now = Date.now();
+  let end = null;
+  if (item.endTime || item.end_time) {
+    end = new Date(item.endTime || item.end_time).getTime();
+  } else if (item.created_at || item.createdAt) {
+    end = new Date(item.created_at || item.createdAt).getTime() + (item.durationHours || 24) * 3600 * 1000;
+  }
+
+  if (!end || isNaN(end)) return "24h Active";
+  const diff = end - now;
+  if (diff <= 0) return "Expired (Auto-Deleting)";
+
+  const hours = Math.floor(diff / (3600 * 1000));
+  const mins = Math.floor((diff % (3600 * 1000)) / (60 * 1000));
+  if (hours > 0) return `${hours}h ${mins}m left`;
+  return `${mins}m left`;
 }
 
 function FlashSalePage() {
@@ -68,9 +90,41 @@ function FlashSalePage() {
   const fetchFlashSales = async () => {
     try {
       setLoading(true);
-      // flashSaleService already normalizes the API response (image, category strings, etc.)
       const res = await getFlashSalesApi();
-      setFlashSales(Array.isArray(res) ? res : []);
+      const rawList = Array.isArray(res) ? res : (res?.data || []);
+
+      const now = Date.now();
+      const expiredItems = [];
+      const validList = [];
+
+      rawList.forEach((item) => {
+        let end = null;
+        if (item.endTime || item.end_time) {
+          end = new Date(item.endTime || item.end_time).getTime();
+        } else if (item.created_at || item.createdAt) {
+          end = new Date(item.created_at || item.createdAt).getTime() + (item.durationHours || 24) * 3600 * 1000;
+        }
+
+        // Auto-delete check: if campaign duration (e.g. 24h) has elapsed, remove from database
+        if (end && !isNaN(end) && end < now) {
+          expiredItems.push(item);
+        } else {
+          validList.push(item);
+        }
+      });
+
+      // Background auto-delete expired 24h flash sale items from database
+      if (expiredItems.length > 0) {
+        expiredItems.forEach(async (exp) => {
+          try {
+            await deleteFlashSaleApi(exp.id);
+          } catch (e) {
+            console.debug("Auto-cleanup expired flash sale error:", e?.message);
+          }
+        });
+      }
+
+      setFlashSales(validList);
     } catch (err) {
       console.error("Failed to load flash sales:", err);
     } finally {
@@ -271,34 +325,93 @@ function FlashSalePage() {
       </div>
 
       {/* Stats row */}
-      <div className="flash-stats-grid mt-4">
-        <div className="flash-stat-card inactive-status">
-          <div className="stat-info">
-            <p>Live Flash Deals</p>
-            <h1>{activeCount} Active</h1>
+      <div className="stats-grid" style={{ marginBottom: "24px", marginTop: "24px" }}>
+        <div
+          className="stat-card"
+          onClick={() => setSearch("")}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-wrapper orange-bg">
+              <FaFire />
+            </div>
+            <span className="growth-tag warning">Hot Deals</span>
           </div>
-          <div className="icon-box"><FaFire /></div>
+          <div className="stat-card-body">
+            <h4>Live Flash Deals</h4>
+            <h2 className="stat-value">{activeCount} Active</h2>
+            <div className="stat-footer-row">
+              <small>Live on storefront homepage</small>
+              <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+            </div>
+          </div>
         </div>
-        <div className="flash-stat-card stock-warning">
-          <div className="stat-info">
-            <p>Discount Rate</p>
-            <h1>{avgDiscount}% AVG</h1>
+
+        <div
+          className="stat-card"
+          onClick={() => setSearch("")}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-wrapper red-bg" style={{ background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)", color: "#fff" }}>
+              <FaPercentage />
+            </div>
+            <span className="growth-tag positive"><FaArrowUp /> {avgDiscount}%</span>
           </div>
-          <div className="icon-box"><FaPercentage /></div>
+          <div className="stat-card-body">
+            <h4>Average Discount Rate</h4>
+            <h2 className="stat-value">{avgDiscount}% OFF</h2>
+            <div className="stat-footer-row">
+              <small>Across active campaigns</small>
+              <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+            </div>
+          </div>
         </div>
-        <div className="flash-stat-card active-status">
-          <div className="stat-info">
-            <p>Total Configured</p>
-            <h1>{flashSales.length} Deals</h1>
+
+        <div
+          className="stat-card"
+          onClick={() => setSearch("")}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-wrapper blue-bg">
+              <FaTag />
+            </div>
+            <span className="growth-tag positive"><FaArrowUp /> 100%</span>
           </div>
-          <div className="icon-box"><FaTag /></div>
+          <div className="stat-card-body">
+            <h4>Total Configured Deals</h4>
+            <h2 className="stat-value">{flashSales.length}</h2>
+            <div className="stat-footer-row">
+              <small>All scheduled flash items</small>
+              <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+            </div>
+          </div>
         </div>
-        <div className="flash-stat-card total-status">
-          <div className="stat-info">
-            <p>Active Campaign Cycle</p>
-            <h1>24 Hours</h1>
+
+        <div
+          className="stat-card"
+          onClick={() => setSearch("")}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-wrapper purple-bg">
+              <FaClock />
+            </div>
+            <span className="growth-tag positive">24h Cycle</span>
           </div>
-          <div className="icon-box"><FaClock /></div>
+          <div className="stat-card-body">
+            <h4>Active Countdown Timer</h4>
+            <h2 className="stat-value">24 Hours</h2>
+            <div className="stat-footer-row">
+              <small>Automated hourly reset</small>
+              <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -437,6 +550,87 @@ function FlashSalePage() {
                 )}
               </tbody>
             </table>
+
+            {/* Mobile Card List View (< 768px) */}
+            <div className="mobile-cards-container">
+              {filtered.map((item, index) => {
+                const timeRemaining = formatTimeRemaining(item);
+                return (
+                  <div className="flash-mobile-card" key={item.id}>
+                    <div className="flash-mobile-card-top">
+                      <div className="flash-mobile-prod-media">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="flash-mobile-thumb"
+                          onError={(e) => {
+                            e.target.src = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=150&q=80";
+                          }}
+                        />
+                        <span className="flash-mobile-rank-badge">#{index + 1}</span>
+                      </div>
+                      <div className="flash-mobile-prod-info">
+                        <div className="flash-mobile-badge-row">
+                          <span className="flash-badge-pill">{item.badge || "Flash Deal"}</span>
+                          <span className="flash-timer-pill">
+                            <FaClock size={10} /> {timeRemaining}
+                          </span>
+                        </div>
+                        <h4 className="flash-mobile-title">{item.name}</h4>
+                        <span className="block-cat">{typeof item.category === "string" ? item.category : (item.category?.name ?? "General")}</span>
+                      </div>
+                    </div>
+
+                    <div className="flash-mobile-card-details">
+                      <div className="flash-mobile-price-box">
+                        <span className="deal-price">${item.price}</span>
+                        <span className="deal-orig-price">${item.originalPrice}</span>
+                        <span className="deal-discount-badge">-{item.discount}%</span>
+                      </div>
+
+                      <div className="flash-mobile-progress-box">
+                        <div className="progress-labels">
+                          <span>🔥 {item.claimedPct}% Claimed</span>
+                          <small>{item.stockLimit} max</small>
+                        </div>
+                        <div className="mini-track">
+                          <div
+                            className="mini-fill"
+                            style={{ width: `${item.claimedPct}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flash-mobile-card-footer">
+                      <button
+                        className={`status-pill-btn ${item.status === "active" ? "active" : "inactive"}`}
+                        onClick={() => toggleStatus(item)}
+                      >
+                        {item.status === "active" ? <FaCheckCircle /> : <FaTimesCircle />}
+                        {item.status === "active" ? "Active" : "Inactive"}
+                      </button>
+
+                      <div className="mobile-card-actions">
+                        {can("flash_sale", "edit") && (
+                          <button className="edit-btn" onClick={() => openEditModal(item)} title="Edit">
+                            <FaEdit /> Edit
+                          </button>
+                        )}
+                        {can("flash_sale", "delete") && (
+                          <button className="delete-btn" onClick={() => handleDelete(item.id)} title="Delete">
+                            <FaTrash /> Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {filtered.length === 0 && (
+                <div className="no-data">No flash sales configured</div>
+              )}
+            </div>
           </div>
         )}
       </div>

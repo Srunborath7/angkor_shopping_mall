@@ -22,7 +22,9 @@ import {
   FaBox,
   FaEnvelope,
   FaBoxes,
-  FaTimes
+  FaTimes,
+  FaChevronRight,
+  FaArrowUp
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -408,34 +410,97 @@ function OrderPage() {
       </div>
 
       {/* Stats Summary Cards */}
-      <div className="order-stats">
-        <div className="order-stat-card total-status">
-          <div className="stat-info">
-            <p>Total Orders</p>
-            <h1>{stats.totalCount}</h1>
+      <div className="stats-grid" style={{ marginBottom: "24px" }}>
+        {/* Total Orders */}
+        <div
+          className={`stat-card ${statusFilter === "all" ? "active-kpi" : ""}`}
+          onClick={() => setStatusFilter("all")}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-wrapper blue-bg">
+              <FaShoppingCart />
+            </div>
+            <span className="growth-tag positive"><FaArrowUp /> 100%</span>
           </div>
-          <div className="icon-box"><FaShoppingCart /></div>
+          <div className="stat-card-body">
+            <h4>Total Orders</h4>
+            <h2 className="stat-value">{stats.totalCount}</h2>
+            <div className="stat-footer-row">
+              <small>All processed checkouts</small>
+              <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+            </div>
+          </div>
         </div>
-        <div className="order-stat-card active-status">
-          <div className="stat-info">
-            <p>Total Sales</p>
-            <h1>${stats.totalRev.toFixed(2)}</h1>
+
+        {/* Total Sales */}
+        <div
+          className="stat-card"
+          onClick={() => setSortBy(sortBy === "total_high" ? "newest" : "total_high")}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-wrapper green-bg">
+              <FaDollarSign />
+            </div>
+            <span className="growth-tag positive"><FaArrowUp /> Rev</span>
           </div>
-          <div className="icon-box"><FaDollarSign /></div>
+          <div className="stat-card-body">
+            <h4>Total Sales</h4>
+            <h2 className="stat-value">${stats.totalRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h2>
+            <div className="stat-footer-row">
+              <small>Paid & completed volume</small>
+              <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+            </div>
+          </div>
         </div>
-        <div className="order-stat-card stock-warning">
-          <div className="stat-info">
-            <p>Pending Orders</p>
-            <h1>{stats.pendingCount}</h1>
+
+        {/* Pending Orders */}
+        <div
+          className={`stat-card ${statusFilter === "pending" ? "active-kpi" : ""}`}
+          onClick={() => setStatusFilter(statusFilter === "pending" ? "all" : "pending")}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-wrapper orange-bg">
+              <FaClock />
+            </div>
+            <span className="growth-tag warning">{stats.pendingCount} pending</span>
           </div>
-          <div className="icon-box"><FaClock /></div>
+          <div className="stat-card-body">
+            <h4>Pending Orders</h4>
+            <h2 className="stat-value">{stats.pendingCount}</h2>
+            <div className="stat-footer-row">
+              <small>Awaiting payment / dispatch</small>
+              <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+            </div>
+          </div>
         </div>
-        <div className="order-stat-card stock-value">
-          <div className="stat-info">
-            <p>Completed / Paid</p>
-            <h1>{stats.completedCount}</h1>
+
+        {/* Completed / Paid */}
+        <div
+          className={`stat-card ${statusFilter === "completed" ? "active-kpi" : ""}`}
+          onClick={() => setStatusFilter(statusFilter === "completed" ? "all" : "completed")}
+          role="button"
+          tabIndex={0}
+        >
+          <div className="stat-card-header">
+            <div className="stat-icon-wrapper purple-bg">
+              <FaCheckCircle />
+            </div>
+            <span className="growth-tag positive"><FaArrowUp /> Done</span>
           </div>
-          <div className="icon-box"><FaCheckCircle /></div>
+          <div className="stat-card-body">
+            <h4>Completed / Paid</h4>
+            <h2 className="stat-value">{stats.completedCount}</h2>
+            <div className="stat-footer-row">
+              <small>Successfully delivered</small>
+              <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
+            </div>
+          </div>
         </div>
       </div>
 
