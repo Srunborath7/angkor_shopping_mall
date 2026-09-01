@@ -17,9 +17,9 @@ import toast from "react-hot-toast";
 import {
   generateAbaQrApi,
   checkAbaStatusApi,
-  simulateAbaPayApi,
-  ABA_CONFIG
+  simulateAbaPayApi
 } from "../services/abaPaymentService";
+import { generateKhqrString } from "../services/khqrPaymentService";
 import "./AbaPaymentModal.css";
 
 // Official Bakong KHQR Red Octagonal / Star Emblem in pure vector data URI
@@ -59,23 +59,52 @@ export default function AbaPaymentModal({
   const pollIntervalRef = useRef(null);
   const timerIntervalRef = useRef(null);
 
-  // Generate ABA PayWay / KHQR payload directly from Integrated Payment API
+  // Generate ABA PayWay / KHQR payload directly from backend API
   const fetchAbaQr = useCallback(async (curr = currency) => {
     setIsLoading(true);
+    const currentBillNo = orderNumber || (orderId ? `ORD-${orderId}` : `ORD-${Date.now().toString().slice(-6)}`);
+    const numAmount = parseFloat(amount) || 0;
+    const directBakongId = import.meta.env.VITE_BAKONG_ACCOUNT_ID || import.meta.env.VITE_ABA_ACCOUNT_ID;
+
+    // If direct real Bakong account is configured in .env, generate live scannable NBC KHQR
+    if (directBakongId && directBakongId.trim()) {
+      const storeName = import.meta.env.VITE_ABA_PAYWAY_STORE_LABEL || "Angkor Shopping Mall";
+      const liveKhqrString = generateKhqrString({
+        bakongId: directBakongId.trim(),
+        merchantName: storeName,
+        merchantCity: "Phnom Penh",
+        amount: numAmount,
+        currency: curr,
+        billNumber: currentBillNo,
+        storeLabel: storeName
+      });
+
+      setQrData({
+        qrString: liveKhqrString,
+        merchantName: storeName,
+        bakongId: directBakongId.trim(),
+        tranId: `TXN-${Date.now()}`,
+        md5: `MD5-${Date.now()}`
+      });
+      setTimeLeft(120);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const res = await generateAbaQrApi({
         orderId: orderId,
-        amount: parseFloat(amount),
+        orderNumber: currentBillNo,
+        amount: numAmount,
         currency: curr
       });
       const data = res?.data?.data || res?.data || res;
 
-      // Extract QR string & details directly from backend API
       const apiQr = data?.qrString || data?.qr_string || data?.abapay_qr || data?.qr;
-      const merchantName = data?.merchantName || data?.merchant_name || ABA_CONFIG.storeLabel;
+      const merchantName = data?.merchantName || data?.merchant_name || "Angkor Shopping Mall";
 
       if (!apiQr) {
-        throw new Error(data?.message || "Payment QR string not provided by API");
+        throw new Error(data?.message || "Payment QR not returned by gateway API");
       }
 
       setQrData({
@@ -89,7 +118,7 @@ export default function AbaPaymentModal({
       setIsLoading(false);
     } catch (err) {
       console.error("Payment API Error:", err);
-      const errMsg = err?.response?.data?.message || err?.message || "";
+      const errMsg = err?.response?.data?.message || err?.message || "Failed to generate payment QR";
       if (typeof errMsg === "string" && errMsg.toLowerCase().includes("already been paid")) {
         setIsPaid(true);
         setIsLoading(false);
@@ -100,10 +129,10 @@ export default function AbaPaymentModal({
         });
         return;
       }
-      toast.error(errMsg || "Failed to generate payment QR");
+      toast.error(errMsg);
       setIsLoading(false);
     }
-  }, [orderId, amount, currency]);
+  }, [orderId, orderNumber, amount, currency]);
 
   // Initial load on open
   useEffect(() => {
@@ -291,7 +320,7 @@ export default function AbaPaymentModal({
       ? `${(parseFloat(amount) * 4100).toLocaleString()} ៛`
       : `$${parseFloat(amount).toFixed(2)}`;
 
-  const accountOwner = qrData?.merchantName || qrData?.merchant_name || ABA_CONFIG.storeLabel;
+  const accountOwner = qrData?.merchantName || qrData?.merchant_name || "Angkor Shopping Mall";
 
   return (
     <div className="aba-modal-backdrop" onClick={onClose}>
