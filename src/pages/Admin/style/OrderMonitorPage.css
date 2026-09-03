@@ -627,7 +627,7 @@ body.dark-theme,
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 .kanban-column {
@@ -636,9 +636,10 @@ body.dark-theme,
   border-radius: 16px;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 210px);
-  min-height: 480px;
+  height: calc(100vh - 240px);
+  min-height: 540px;
   transition: all 0.2s ease;
+  overflow: hidden;
 }
 
 /* Odoo Drag Over Glow Highlight */
@@ -655,6 +656,8 @@ body.dark-theme,
   align-items: center;
   justify-content: space-between;
   border-bottom: 2px solid transparent;
+  flex-shrink: 0;
+  background: var(--mon-surface);
 }
 
 .column-pending .column-header { border-bottom-color: #3b82f6; }
@@ -698,11 +701,24 @@ body.dark-theme,
 
 .column-body {
   padding: 12px;
-  overflow-y: auto;
+  overflow-y: auto !important;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  flex: 1;
+  flex: 1 1 0px;
+  min-height: 0 !important;
+  scrollbar-width: thin;
+  scrollbar-color: var(--mon-border) transparent;
+}
+
+.column-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.column-body::-webkit-scrollbar-thumb {
+  background: var(--mon-border);
+  border-radius: 6px;
 }
 
 .column-empty {
@@ -731,8 +747,10 @@ body.dark-theme,
   cursor: grab;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  overflow: hidden;
   user-select: none;
+  flex-shrink: 0 !important;
+  min-height: fit-content !important;
+  box-sizing: border-box;
 }
 
 .order-prep-card:active {

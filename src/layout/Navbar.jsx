@@ -56,6 +56,88 @@ function Navbar({ setOpen, user, logout }) {
   const themeRef = useRef(null);
   const langRef = useRef(null);
 
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef(null);
+
+  // Global searchable admin pages
+  const searchablePages = [
+    { nameEn: "Dashboard", nameKm: "ផ្ទាំងគ្រប់គ្រងទូទៅ", path: "/admin/dashboard", icon: "📊", category: "Overview" },
+    { nameEn: "Live Order Prep Monitor", nameKm: "ផ្ទាំងតាមដានការរៀបចំបញ្ជាទិញ Live", path: "/admin/order-monitor", icon: "📺", category: "Sales" },
+    { nameEn: "Orders Management", nameKm: "ការគ្រប់គ្រងការបញ្ជាទិញ", path: "/admin/orders", icon: "🛒", category: "Sales" },
+    { nameEn: "Flash Sales & Promotions", nameKm: "ប្រូម៉ូសិនពិសេស Flash Sale", path: "/admin/flash-sale", icon: "⚡", category: "Sales" },
+    { nameEn: "Products Catalog", nameKm: "បញ្ជីផលិតផលទំនិញទាំងអស់", path: "/admin/products", icon: "📦", category: "Inventory" },
+    { nameEn: "Inventory Stock Tracking", nameKm: "ការគ្រប់គ្រងស្តុកទំនិញ", path: "/admin/inventory", icon: "🏢", category: "Inventory" },
+    { nameEn: "Purchase Orders", nameKm: "ការទិញទំនិញចូល (PO)", path: "/admin/purchases", icon: "📑", category: "Inventory" },
+    { nameEn: "Suppliers Directory", nameKm: "បញ្ជីអ្នកផ្គត់ផ្គង់ទំនិញ", path: "/admin/suppliers", icon: "🚚", category: "Inventory" },
+    { nameEn: "Product Categories", nameKm: "ប្រភេទផលិតផលទំនិញ", path: "/admin/categories", icon: "🗂️", category: "Organization" },
+    { nameEn: "Brands Management", nameKm: "ម៉ាកយីហោទំនិញ", path: "/admin/brands", icon: "🏷️", category: "Organization" },
+    { nameEn: "Staff Directory & Roles", nameKm: "ព័ត៌មានបុគ្គលិក & តួនាទី", path: "/admin/staff", icon: "👔", category: "Organization" },
+    { nameEn: "Staff Attendance & Time Clock", nameKm: "វត្តមានបុគ្គលិក & ម៉ោងធ្វើការ", path: "/admin/attendance", icon: "⏰", category: "Organization" },
+    { nameEn: "Customer Messages & AI Inquiries", nameKm: "សារពីអតិថិជន & ប្រអប់សំបុត្រ", path: "/admin/messages", icon: "💬", category: "Support" },
+    { nameEn: "Customers List", nameKm: "បញ្ជីអតិថិជនទាំងអស់", path: "/admin/customers", icon: "👥", category: "Organization" },
+    { nameEn: "Sales & Finance Reports", nameKm: "របាយការណ៍លក់ & ចំណូល", path: "/admin/reports", icon: "📈", category: "Reports" },
+    { nameEn: "System Settings & Permissions", nameKm: "ការកំណត់ប្រព័ន្ធ & សុវត្ថិភាព", path: "/admin/settings", icon: "⚙️", category: "System" }
+  ];
+
+  const filteredSearchResults = searchQuery.trim()
+    ? searchablePages.filter((item) => {
+        const q = searchQuery.toLowerCase();
+        return (
+          item.nameEn.toLowerCase().includes(q) ||
+          item.nameKm.includes(q) ||
+          item.category.toLowerCase().includes(q)
+        );
+      })
+    : [];
+
+  // Global Ctrl+K / Cmd+K listener
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        const input = searchRef.current?.querySelector("input");
+        if (input) {
+          input.focus();
+          setSearchOpen(true);
+        }
+      }
+      if (e.key === "Escape") {
+        setSearchOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Close search dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSearchResultClick = (path) => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    navigate(path);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (filteredSearchResults.length > 0) {
+      handleSearchResultClick(filteredSearchResults[0].path);
+    } else if (searchQuery.trim()) {
+      // Default to searching in products
+      navigate(`/admin/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchOpen(false);
+    }
+  };
+
   // Fetch real unread customer message count & recent notifications
   const fetchNotifications = async () => {
     try {
@@ -168,12 +250,79 @@ function Navbar({ setOpen, user, logout }) {
         <FaBars />
       </button>
 
-      <div className="search-box">
-        <FaSearch />
-        <input
-          type="text"
-          placeholder={isKhmer ? "ស្វែងរកផលិតផល ការបញ្ជាទិញ អតិថិជន..." : "Search products, orders, customers..."}
-        />
+      {/* Global Quick Search Component */}
+      <div className="search-box-container" ref={searchRef}>
+        <form className="search-box" onSubmit={handleSearchSubmit}>
+          <FaSearch className="search-icon-left" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setSearchOpen(true);
+            }}
+            onFocus={() => setSearchOpen(true)}
+            placeholder={isKhmer ? "ស្វែងរកទំព័រ, បញ្ជាទិញ, ផលិតផល..." : "Search pages, orders, products..."}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="search-clear-btn"
+              onClick={() => {
+                setSearchQuery("");
+                setSearchOpen(false);
+              }}
+              title="Clear"
+            >
+              ×
+            </button>
+          )}
+          <kbd className="search-kbd-hint" title="Press Ctrl+K to search">⌘K</kbd>
+        </form>
+
+        {/* Live Search Quick Results Dropdown */}
+        {searchOpen && searchQuery.trim().length > 0 && (
+          <div className="search-results-dropdown">
+            <div className="search-results-header">
+              <span>{isKhmer ? "លទ្ធផលស្វែងរករហ័ស" : "Quick Navigation Results"}</span>
+              <small>{filteredSearchResults.length} {isKhmer ? "ទំព័ររកឃើញ" : "pages found"}</small>
+            </div>
+
+            <div className="search-results-list">
+              {filteredSearchResults.length === 0 ? (
+                <div className="search-no-results">
+                  <span>{isKhmer ? `គ្មានទំព័រឈ្មោះ "${searchQuery}" ទេ` : `No admin pages matching "${searchQuery}"`}</span>
+                  <button
+                    type="button"
+                    className="search-fallback-btn"
+                    onClick={() => {
+                      navigate(`/admin/products?search=${encodeURIComponent(searchQuery.trim())}`);
+                      setSearchOpen(false);
+                    }}
+                  >
+                    📦 {isKhmer ? "ស្វែងរកក្នុងផលិតផល" : "Search in Products Catalog"}
+                  </button>
+                </div>
+              ) : (
+                filteredSearchResults.map((page, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className="search-result-item"
+                    onClick={() => handleSearchResultClick(page.path)}
+                  >
+                    <span className="search-item-icon">{page.icon}</span>
+                    <div className="search-item-info">
+                      <strong>{isKhmer ? page.nameKm : page.nameEn}</strong>
+                      <small>{page.category} • {page.path}</small>
+                    </div>
+                    <span className="search-item-arrow">↵</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="navbar-right">

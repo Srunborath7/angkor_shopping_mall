@@ -1821,7 +1821,9 @@ function OrderPrepCard({
       <div className="card-top-row">
         <div className="card-id-wrapper">
           {!isGridCard && <FaGripVertical className="card-drag-handle" title="Drag to change stage" />}
-          <span className="order-number">#{order.id}</span>
+          <span className="order-number" title={`Order ID: #${order.id}`}>
+            #{order.order_number || (order.id && order.id.length > 8 ? order.id.substring(0, 8).toUpperCase() : order.id)}
+          </span>
           <span className={`time-badge urgency-${elapsed.urgency}`}>
             <FaClock size={11} /> {elapsed.text}
           </span>

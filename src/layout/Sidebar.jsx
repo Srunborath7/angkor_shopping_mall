@@ -17,7 +17,9 @@ import {
   FaHeadset,
   FaUserClock,
   FaUserTie,
-  FaTv
+  FaTv,
+  FaExpand,
+  FaCompress
 } from "react-icons/fa";
 import logo from "../assets/logo.jpg";
 import { NavLink, useLocation } from "react-router-dom";
@@ -33,8 +35,63 @@ function Sidebar({ open, setOpen }) {
   const menuRef = useRef(null);
   const location = useLocation();
   const [unreadMessages, setUnreadMessages] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(() => !!document.fullscreenElement);
 
   const { can, permissions, isSuperAdmin } = usePermissions();
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(
+        !!(
+          document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.mozFullScreenElement ||
+          document.msFullscreenElement
+        )
+      );
+    };
+    document.addEventListener("fullscreenchange", handleFsChange);
+    document.addEventListener("webkitfullscreenchange", handleFsChange);
+    document.addEventListener("mozfullscreenchange", handleFsChange);
+    document.addEventListener("MSFullscreenChange", handleFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFsChange);
+      document.removeEventListener("webkitfullscreenchange", handleFsChange);
+      document.removeEventListener("mozfullscreenchange", handleFsChange);
+      document.removeEventListener("MSFullscreenChange", handleFsChange);
+    };
+  }, []);
+
+  const toggleFullscreen = () => {
+    const isFs = !!(
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
+    );
+    if (!isFs) {
+      const docEl = document.documentElement;
+      if (docEl.requestFullscreen) {
+        docEl.requestFullscreen().catch(() => {});
+      } else if (docEl.webkitRequestFullscreen) {
+        docEl.webkitRequestFullscreen();
+      } else if (docEl.msRequestFullscreen) {
+        docEl.msRequestFullscreen();
+      } else if (docEl.mozRequestFullScreen) {
+        docEl.mozRequestFullScreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      } else if (document.mozCancelFullScreen) {
+        document.mozCancelFullScreen();
+      }
+    }
+  };
 
   // Fetch unread customer messages count
   const fetchUnreadCount = async () => {
@@ -256,13 +313,24 @@ function Sidebar({ open, setOpen }) {
               </div>
             </div>
           </div>
-          <button
-            className="close-sidebar"
-            onClick={() => setOpen(false)}
-            aria-label="Close Sidebar"
-          >
-            <X size={20} strokeWidth={2.5} />
-          </button>
+          <div className="sidebar-header-actions">
+            <button
+              type="button"
+              className="sidebar-fullscreen-btn"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? (isKhmer ? "បង្រួមធម្មតា (Exit Fullscreen)" : "Exit Fullscreen") : (isKhmer ? "ពង្រីកពេញអេក្រង់ (Fullscreen)" : "Toggle Fullscreen")}
+              aria-label="Toggle Fullscreen"
+            >
+              {isFullscreen ? <FaCompress size={13} /> : <FaExpand size={13} />}
+            </button>
+            <button
+              className="close-sidebar"
+              onClick={() => setOpen(false)}
+              aria-label="Close Sidebar"
+            >
+              <X size={20} strokeWidth={2.5} />
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Navigation List */}

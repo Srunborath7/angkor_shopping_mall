@@ -374,6 +374,74 @@ function OrderPage() {
                         {/* Accordion details panel */}
                         {expandedOrderId === order.id && (
                           <div className="order-accordion-details">
+                            {/* Live Delivery Status Stepper */}
+                            {(() => {
+                              const s = String(order.status || "").toLowerCase();
+                              const isCompleted = s === "completed" || s === "delivered";
+                              const isShipped = s === "shipped" || s === "delivering" || s === "in_transit" || isCompleted;
+                              const isReady = s === "ready" || isShipped;
+                              const isProcessing = s === "processing" || s === "preparing" || isReady;
+
+                              return (
+                                <div className="delivery-tracking-timeline-card">
+                                  <div className="tracking-header">
+                                    <h6>🚚 Live Delivery & Fulfillment Tracker</h6>
+                                    <span className={`tracking-live-tag ${isCompleted ? "arrived" : isShipped ? "in-transit" : "processing"}`}>
+                                      {isCompleted ? "✅ Delivered & Arrived" : isShipped ? "🛵 Out for Delivery" : isProcessing ? "📦 In Packing" : "🕒 Order Placed"}
+                                    </span>
+                                  </div>
+
+                                  <div className="tracking-stepper">
+                                    <div className={`step-node active`}>
+                                      <div className="step-circle">✓</div>
+                                      <span>Order Placed</span>
+                                    </div>
+                                    <div className={`step-line ${isProcessing ? "active" : ""}`} />
+                                    <div className={`step-node ${isProcessing ? "active" : ""}`}>
+                                      <div className="step-circle">{isProcessing ? "✓" : "2"}</div>
+                                      <span>In Packing</span>
+                                    </div>
+                                    <div className={`step-line ${isShipped ? "active" : ""}`} />
+                                    <div className={`step-node ${isShipped ? "active" : ""}`}>
+                                      <div className="step-circle">{isShipped ? "✓" : "3"}</div>
+                                      <span>Out for Delivery</span>
+                                    </div>
+                                    <div className={`step-line ${isCompleted ? "active" : ""}`} />
+                                    <div className={`step-node ${isCompleted ? "active" : ""}`}>
+                                      <div className="step-circle">{isCompleted ? "✓" : "4"}</div>
+                                      <span>Delivered</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Assigned Driver / Courier Info Banner */}
+                                  {isShipped && (
+                                    <div className="driver-dispatch-info-box">
+                                      <div className="driver-avatar-icon">🛵</div>
+                                      <div className="driver-meta">
+                                        <strong>Assigned Courier: {order.delivery?.carrier || order.delivery_carrier || "Express Mall Delivery"}</strong>
+                                        <span>Driver: <strong>{order.delivery?.driver_name || order.delivery_driver_name || "Assigned Driver"}</strong></span>
+                                        {(order.delivery?.driver_phone || order.delivery_driver_phone) && (
+                                          <a href={`tel:${order.delivery?.driver_phone || order.delivery_driver_phone}`} className="driver-phone-link">
+                                            📞 Call Driver: {order.delivery?.driver_phone || order.delivery_driver_phone}
+                                          </a>
+                                        )}
+                                      </div>
+                                      <div className="driver-eta-box">
+                                        <small>Estimated Arrival</small>
+                                        <strong>{order.delivery?.estimated_time || order.estimated_delivery_time || "15-30 mins"}</strong>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {isCompleted && (
+                                    <div className="delivery-arrived-banner">
+                                      <span>🎉 Package successfully arrived & handed over to you! Thank you for shopping with Angkor Mall.</span>
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            })()}
+
                             {/* Billing & Address */}
                             <div className="order-details-grid-2col">
                               <div className="details-info-card">
