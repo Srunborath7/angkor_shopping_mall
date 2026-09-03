@@ -16,7 +16,8 @@ import {
   FaEnvelope,
   FaHeadset,
   FaUserClock,
-  FaUserTie
+  FaUserTie,
+  FaTv
 } from "react-icons/fa";
 import logo from "../assets/logo.jpg";
 import { NavLink, useLocation } from "react-router-dom";
@@ -130,6 +131,13 @@ function Sidebar({ open, setOpen }) {
           name: isKhmer ? "ការបញ្ជាទិញ" : "Orders",
           icon: <FaShoppingCart />,
           path: "/admin/orders",
+          moduleId: "orders"
+        },
+        {
+          name: isKhmer ? "ផ្ទាំងតាមដានការបញ្ជាទិញ" : "Order Prep Monitor",
+          icon: <FaTv />,
+          path: "/admin/order-monitor",
+          badge: "LIVE",
           moduleId: "orders"
         },
         {

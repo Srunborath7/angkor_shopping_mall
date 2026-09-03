@@ -9,7 +9,7 @@ const apiClient = axios.create({
     headers: {
         Accept: "application/json",
     },
-    timeout: 30000,
+    timeout: 90000,
 });
 
 const pendingRequests = new Map();

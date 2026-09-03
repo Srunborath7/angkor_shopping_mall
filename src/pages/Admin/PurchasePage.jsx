@@ -802,11 +802,11 @@ function PurchasePage() {
                         <div className="po-detail-header-card">
                             <div className="po-detail-info-item">
                                 <label>Supplier</label>
-                                <div>{selectedPO.supplier?.name || "N/A"}</div>
+                                <div className="po-detail-val">{selectedPO.supplier?.name || "N/A"}</div>
                             </div>
                             <div className="po-detail-info-item">
                                 <label>Order Date</label>
-                                <div>{new Date(selectedPO.order_date).toLocaleDateString()}</div>
+                                <div className="po-detail-val">{new Date(selectedPO.order_date).toLocaleDateString()}</div>
                             </div>
                             <div className="po-detail-info-item">
                                 <label>Status</label>
@@ -819,47 +819,49 @@ function PurchasePage() {
                             </div>
                             <div className="po-detail-info-item">
                                 <label>Total Cost</label>
-                                <div style={{ color: "#10b981", fontSize: "16px" }}>
+                                <div className="po-detail-total-val">
                                     ${parseFloat(selectedPO.total_amount || 0).toFixed(2)}
                                 </div>
                             </div>
                         </div>
 
                         {selectedPO.notes && (
-                            <div style={{ background: "#f9fafb", padding: "12px", borderRadius: "8px", fontSize: "13px" }}>
+                            <div className="po-notes-card">
                                 <strong>Notes:</strong> {selectedPO.notes}
                             </div>
                         )}
 
-                        <div>
-                            <h4 style={{ marginBottom: "10px" }}>Ordered Items</h4>
-                            <table className="po-items-detail-table">
-                                <thead>
-                                    <tr>
-                                        <th>Product Name</th>
-                                        <th>Quantity</th>
-                                        <th>Unit Cost</th>
-                                        <th style={{ textAlign: "right" }}>Total</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {selectedPO.items?.map((item, i) => (
-                                        <tr key={i}>
-                                            <td>{item.product?.name || "Product"}</td>
-                                            <td>{item.quantity}</td>
-                                            <td>${parseFloat(item.unit_cost || 0).toFixed(2)}</td>
-                                            <td style={{ textAlign: "right", fontWeight: 600 }}>
-                                                ${parseFloat(item.total_cost || 0).toFixed(2)}
-                                            </td>
+                        <div className="po-items-section">
+                            <h4 className="po-section-title">Ordered Items</h4>
+                            <div className="po-table-wrapper">
+                                <table className="po-items-detail-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Product Name</th>
+                                            <th>Quantity</th>
+                                            <th>Unit Cost</th>
+                                            <th style={{ textAlign: "right" }}>Total</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {selectedPO.items?.map((item, i) => (
+                                            <tr key={i}>
+                                                <td>{item.product?.name || "Product"}</td>
+                                                <td>{item.quantity}</td>
+                                                <td>${parseFloat(item.unit_cost || 0).toFixed(2)}</td>
+                                                <td style={{ textAlign: "right", fontWeight: 600 }}>
+                                                    ${parseFloat(item.total_cost || 0).toFixed(2)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
 
                         {/* Status transition actions */}
                         <div className="status-actions-bar">
-                            <div style={{ fontSize: "13px", fontWeight: 600, color: "#1e40af" }}>
+                            <div className="status-actions-title">
                                 Quick Status Action:
                             </div>
                             <div className="status-action-btns">

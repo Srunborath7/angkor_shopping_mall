@@ -24,6 +24,7 @@ import InventoryPage from "./pages/Admin/InventoryPage";
 import SupplierPage from "./pages/Admin/SupplierPage";
 import PurchasePage from "./pages/Admin/PurchasePage";
 import AdminOrderPage from "./pages/Admin/OrderPage";
+import OrderMonitorPage from "./pages/Admin/OrderMonitorPage";
 import FlashSalePage from "./pages/Admin/FlashSalePage";
 import SettingsPage from "./pages/Admin/SettingsPage";
 import MessagesPage from "./pages/Admin/MessagesPage";
@@ -65,6 +66,8 @@ function App() {
               <Route path="suppliers" element={<SupplierPage />} />
               <Route path="purchases" element={<PurchasePage />} />
               <Route path="orders" element={<AdminOrderPage />} />
+              <Route path="order-monitor" element={<OrderMonitorPage />} />
+              <Route path="orders/monitor" element={<OrderMonitorPage />} />
               <Route path="messages" element={<MessagesPage />} />
               <Route path="reports" element={<ReportPage />} />
               <Route path="settings" element={<SettingsPage />} />

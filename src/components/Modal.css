@@ -8,22 +8,21 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(15, 23, 42, 0.463);
-  /* Dark slate with opacity */
+  background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1050;
-  padding: 1.5rem;
-  animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  padding: 1.25rem;
+  animation: modalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .custom-modal-container {
   background: #ffffff;
-  border: 1px solid rgba(226, 232, 240, 0.8);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 20px 35px -5px rgba(0, 0, 0, 0.15), 0 10px 15px -5px rgba(0, 0, 0, 0.05);
   border-radius: 16px;
   width: 100%;
   max-width: 600px;
@@ -32,32 +31,38 @@
   max-height: 90vh;
   transform: scale(0.95) translateY(10px);
   opacity: 0;
-  animation: modalZoomIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s forwards;
+  animation: modalZoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s forwards;
   overflow: hidden;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 /* Modal Sizes */
 .custom-modal-container.sm {
-  max-width: 400px;
+  max-width: 440px;
+  width: 90%;
 }
 
 .custom-modal-container.md {
-  max-width: 600px;
+  max-width: 640px;
+  width: 92%;
 }
 
 .custom-modal-container.lg {
-  max-width: 800px;
+  max-width: 920px;
+  width: 94%;
 }
 
 .custom-modal-container.xl {
-  max-width: 1000px;
+  max-width: 1160px;
+  width: 96%;
 }
 
-/* Dark mode only when website data-theme is dark */
-[data-theme="dark"] .custom-modal-container {
+/* Dark mode for Modal Container */
+[data-theme="dark"] .custom-modal-container,
+body.dark-theme .custom-modal-container {
   background: #0f172a !important;
   border-color: #1e293b !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05) !important;
   color: #f8fafc;
 }
 
@@ -67,22 +72,26 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fafafa;
+  background: #f8fafc;
+  flex-shrink: 0;
 }
 
-[data-theme="dark"] .custom-modal-header {
+[data-theme="dark"] .custom-modal-header,
+body.dark-theme .custom-modal-header {
   background: #090d16 !important;
   border-bottom-color: #1e293b !important;
 }
 
 .custom-modal-title {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 700;
-  color: #1c7e48;
+  color: #15803d;
+  letter-spacing: -0.2px;
 }
 
-[data-theme="dark"] .custom-modal-title {
+[data-theme="dark"] .custom-modal-title,
+body.dark-theme .custom-modal-title {
   color: #34d399 !important;
 }
 
@@ -99,49 +108,79 @@
   height: 32px;
   border-radius: 50%;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .custom-modal-close-btn:hover {
   color: #0f172a;
   background: #e2e8f0;
+  transform: rotate(90deg);
 }
 
-[data-theme="dark"] .custom-modal-close-btn {
-  background: #1e293b;
-  border-color: #334155;
-  color: #94a3b8;
+[data-theme="dark"] .custom-modal-close-btn,
+body.dark-theme .custom-modal-close-btn {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #94a3b8 !important;
 }
 
-[data-theme="dark"] .custom-modal-close-btn:hover {
-  background: #334155;
-  color: #f8fafc;
+[data-theme="dark"] .custom-modal-close-btn:hover,
+body.dark-theme .custom-modal-close-btn:hover {
+  background: #334155 !important;
+  color: #f8fafc !important;
 }
 
 .custom-modal-content {
   padding: 1.5rem;
   overflow-y: auto;
   flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.custom-modal-content::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-modal-content::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 6px;
 }
 
 /* ==========================================================================
    DARK MODE FOR ALL MODALS (ADMIN & WEBSITE)
    ========================================================================== */
 
-[data-theme="dark"] .custom-modal-content {
+[data-theme="dark"] .custom-modal-content,
+body.dark-theme .custom-modal-content {
   background-color: #0f172a !important;
   color: #f8fafc !important;
+  scrollbar-color: #334155 transparent;
+}
+
+[data-theme="dark"] .custom-modal-content::-webkit-scrollbar-thumb,
+body.dark-theme .custom-modal-content::-webkit-scrollbar-thumb {
+  background-color: #334155;
 }
 
 [data-theme="dark"] .custom-modal-content label,
 [data-theme="dark"] .custom-modal-content .form-group label,
-[data-theme="dark"] .custom-modal-content .input-label {
+[data-theme="dark"] .custom-modal-content .input-label,
+body.dark-theme .custom-modal-content label,
+body.dark-theme .custom-modal-content .form-group label,
+body.dark-theme .custom-modal-content .input-label {
   color: #cbd5e1 !important;
 }
 
-[data-theme="dark"] .custom-modal-content input,
+[data-theme="dark"] .custom-modal-content input:not([type="checkbox"]):not([type="radio"]),
 [data-theme="dark"] .custom-modal-content select,
 [data-theme="dark"] .custom-modal-content textarea,
-[data-theme="dark"] .custom-modal-content .form-control {
+[data-theme="dark"] .custom-modal-content .form-control,
+body.dark-theme .custom-modal-content input:not([type="checkbox"]):not([type="radio"]),
+body.dark-theme .custom-modal-content select,
+body.dark-theme .custom-modal-content textarea,
+body.dark-theme .custom-modal-content .form-control {
   background-color: #090d16 !important;
   border: 1px solid #1e293b !important;
   color: #f8fafc !important;
@@ -150,25 +189,35 @@
 [data-theme="dark"] .custom-modal-content input:focus,
 [data-theme="dark"] .custom-modal-content select:focus,
 [data-theme="dark"] .custom-modal-content textarea:focus,
-[data-theme="dark"] .custom-modal-content .form-control:focus {
+[data-theme="dark"] .custom-modal-content .form-control:focus,
+body.dark-theme .custom-modal-content input:focus,
+body.dark-theme .custom-modal-content select:focus,
+body.dark-theme .custom-modal-content textarea:focus,
+body.dark-theme .custom-modal-content .form-control:focus {
   border-color: #10b981 !important;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
 }
 
 [data-theme="dark"] .custom-modal-content input::placeholder,
-[data-theme="dark"] .custom-modal-content textarea::placeholder {
+[data-theme="dark"] .custom-modal-content textarea::placeholder,
+body.dark-theme .custom-modal-content input::placeholder,
+body.dark-theme .custom-modal-content textarea::placeholder {
   color: #64748b !important;
 }
 
-[data-theme="dark"] .custom-modal-content .modal-footer {
-  background: #1e293b00 !important;
+[data-theme="dark"] .custom-modal-content .modal-footer,
+body.dark-theme .custom-modal-content .modal-footer {
+  background: transparent !important;
   border-top: 1px solid #1e293b !important;
   padding: 1rem 0 0 0;
 }
 
 [data-theme="dark"] .custom-modal-content .cancel-btn,
 [data-theme="dark"] .custom-modal-content .btn-secondary,
-[data-theme="dark"] .custom-modal-content .btn-modal-cancel {
+[data-theme="dark"] .custom-modal-content .btn-modal-cancel,
+body.dark-theme .custom-modal-content .cancel-btn,
+body.dark-theme .custom-modal-content .btn-secondary,
+body.dark-theme .custom-modal-content .btn-modal-cancel {
   background: #1e293b !important;
   border: 1px solid #334155 !important;
   color: #cbd5e1 !important;
@@ -176,14 +225,20 @@
 
 [data-theme="dark"] .custom-modal-content .cancel-btn:hover,
 [data-theme="dark"] .custom-modal-content .btn-secondary:hover,
-[data-theme="dark"] .custom-modal-content .btn-modal-cancel:hover {
+[data-theme="dark"] .custom-modal-content .btn-modal-cancel:hover,
+body.dark-theme .custom-modal-content .cancel-btn:hover,
+body.dark-theme .custom-modal-content .btn-secondary:hover,
+body.dark-theme .custom-modal-content .btn-modal-cancel:hover {
   background: #334155 !important;
   color: #f8fafc !important;
 }
 
 [data-theme="dark"] .custom-modal-content .save-btn,
 [data-theme="dark"] .custom-modal-content .btn-primary,
-[data-theme="dark"] .custom-modal-content .submit-btn {
+[data-theme="dark"] .custom-modal-content .submit-btn,
+body.dark-theme .custom-modal-content .save-btn,
+body.dark-theme .custom-modal-content .btn-primary,
+body.dark-theme .custom-modal-content .submit-btn {
   background: #059669 !important;
   border-color: #059669 !important;
   color: #ffffff !important;
@@ -191,23 +246,31 @@
 
 [data-theme="dark"] .custom-modal-content .save-btn:hover,
 [data-theme="dark"] .custom-modal-content .btn-primary:hover,
-[data-theme="dark"] .custom-modal-content .submit-btn:hover {
+[data-theme="dark"] .custom-modal-content .submit-btn:hover,
+body.dark-theme .custom-modal-content .save-btn:hover,
+body.dark-theme .custom-modal-content .btn-primary:hover,
+body.dark-theme .custom-modal-content .submit-btn:hover {
   background: #10b981 !important;
 }
 
 [data-theme="dark"] .custom-modal-content table,
 [data-theme="dark"] .custom-modal-content th,
-[data-theme="dark"] .custom-modal-content td {
+[data-theme="dark"] .custom-modal-content td,
+body.dark-theme .custom-modal-content table,
+body.dark-theme .custom-modal-content th,
+body.dark-theme .custom-modal-content td {
   border-color: #1e293b !important;
   color: #f8fafc !important;
 }
 
-[data-theme="dark"] .custom-modal-content th {
+[data-theme="dark"] .custom-modal-content th,
+body.dark-theme .custom-modal-content th {
   background-color: #090d16 !important;
   color: #94a3b8 !important;
 }
 
-[data-theme="dark"] .custom-modal-content tr:hover td {
+[data-theme="dark"] .custom-modal-content tr:hover td,
+body.dark-theme .custom-modal-content tr:hover td {
   background-color: #151f38 !important;
 }
 
@@ -216,7 +279,6 @@
   from {
     opacity: 0;
   }
-
   to {
     opacity: 1;
   }
@@ -227,7 +289,6 @@
     opacity: 0;
     transform: scale(0.95) translateY(10px);
   }
-
   to {
     opacity: 1;
     transform: scale(1) translateY(0);

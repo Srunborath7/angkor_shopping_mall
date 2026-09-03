@@ -24,8 +24,10 @@ import {
   FaBoxes,
   FaTimes,
   FaChevronRight,
-  FaArrowUp
+  FaArrowUp,
+  FaTv
 } from "react-icons/fa";
+import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import {
   getAdminOrdersApi,
@@ -398,6 +400,24 @@ function OrderPage() {
           <p>View, process, and track customer orders in real-time</p>
         </div>
         <div className="header-actions">
+          <Link
+            to="/admin/order-monitor"
+            className="refresh-btn"
+            style={{
+              background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+              color: "#ffffff",
+              border: "none",
+              textDecoration: "none",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              fontWeight: "600",
+              boxShadow: "0 4px 12px rgba(16, 185, 129, 0.25)"
+            }}
+            title="Open Live Kitchen & Packing Station Monitor"
+          >
+            <FaTv /> Live Prep Monitor
+          </Link>
           <button className="refresh-btn" onClick={fetchOrders} title="Refresh Orders">
             <FaSync className={loading ? "spin" : ""} /> Refresh
           </button>
@@ -751,9 +771,9 @@ function OrderPage() {
               <div className="customer-modal-avatar">
                 {selectedCustomer.name.charAt(0).toUpperCase()}
               </div>
-              <div>
+              <div className="customer-modal-user-meta">
                 <h3 className="customer-modal-name">{selectedCustomer.name}</h3>
-                <span className={`status-pill ${selectedCustomer.orderStatus}`} style={{ fontSize: "12px" }}>
+                <span className={`status-pill ${selectedCustomer.orderStatus}`}>
                   Order: {selectedCustomer.orderStatus?.toUpperCase()}
                 </span>
               </div>
@@ -786,7 +806,7 @@ function OrderPage() {
                 <FaDollarSign className="cmi-icon" />
                 <div>
                   <label>Order Total</label>
-                  <span style={{ fontWeight: 700, color: "#166534" }}>
+                  <span className="customer-modal-highlight">
                     ${parseFloat(selectedCustomer.totalAmount || 0).toFixed(2)}
                   </span>
                 </div>
@@ -802,14 +822,14 @@ function OrderPage() {
                 <FaTag className="cmi-icon" />
                 <div>
                   <label>Order ID</label>
-                  <span style={{ fontFamily: "monospace", fontSize: "12px", color: "#2563eb" }}>
+                  <span className="customer-modal-ord-id">
                     #ORD-{selectedCustomer.orderId?.slice(-8).toUpperCase()}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="modal-actions-bar" style={{ marginTop: "20px" }}>
+            <div className="modal-actions-bar">
               <button className="btn-primary" onClick={() => setIsCustomerModalOpen(false)}>
                 Close
               </button>
@@ -913,7 +933,7 @@ function OrderPage() {
               </div>
             </div>
 
-            <div className="modal-actions-bar" style={{ marginTop: "20px" }}>
+            <div className="modal-actions-bar">
               <button className="btn-primary" onClick={() => setIsItemsModalOpen(false)}>
                 Close Window
               </button>
@@ -933,14 +953,14 @@ function OrderPage() {
           <div className="printable-invoice">
             <div className="order-detail-header">
               <div>
-                <h3 style={{ margin: 0, fontSize: "20px", color: "#111827" }}>
+                <h3 className="order-detail-header-title">
                   Order #ORD-{selectedOrder.id.slice(-6).toUpperCase()}
                 </h3>
-                <span style={{ fontSize: "13px", color: "#6b7280" }}>
+                <span className="order-detail-header-date">
                   Placed on {formatDate(selectedOrder.created_at)}
                 </span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div className="order-detail-header-status-wrap">
                 {renderStatusPill(selectedOrder.status)}
                 <select
                   className="status-select-inline"
@@ -981,7 +1001,7 @@ function OrderPage() {
             </div>
 
             {/* Order Items Table with Variant Column */}
-            <h4 style={{ fontSize: "14px", textTransform: "uppercase", color: "#6b7280", marginBottom: "10px" }}>
+            <h4 className="modal-section-subtitle">
               Ordered Products
             </h4>
             <table className="modal-items-table">
@@ -1012,11 +1032,11 @@ function OrderPage() {
                               alt={item.product?.name}
                               className="modal-item-img"
                             />
-                            <div>
-                              <strong style={{ color: "#111827", display: "block" }}>
+                            <div className="modal-product-info">
+                              <strong className="modal-product-name">
                                 {item.product?.name || "Product Item"}
                               </strong>
-                              <span style={{ fontSize: "12px", color: "#6b7280" }}>
+                              <span className="modal-product-sku">
                                 SKU: {sku}
                               </span>
                             </div>
@@ -1033,7 +1053,7 @@ function OrderPage() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan="5" style={{ textAlign: "center", color: "#6b7280" }}>
+                    <td colSpan="5" className="modal-table-empty">
                       No items attached to this order.
                     </td>
                   </tr>
@@ -1043,17 +1063,17 @@ function OrderPage() {
 
             {/* Trade-In Exchange Badge if order utilized Trade-In */}
             {selectedOrder.trade_in_product && (
-              <div style={{ background: "#f0fdf4", border: "1px solid #86efac", padding: "12px 14px", borderRadius: "10px", marginBottom: "14px", display: "flex", alignItems: "center", gap: "12px" }}>
+              <div className="order-tradein-banner">
                 <img
                   src={selectedOrder.trade_in_product.image_url || "https://placehold.co/44"}
                   alt={selectedOrder.trade_in_product.title}
-                  style={{ width: 48, height: 48, borderRadius: 8, objectFit: "cover", border: "1px solid #bbf7d0" }}
+                  className="order-tradein-img"
                 />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#166534", display: "flex", alignItems: "center", gap: 6 }}>
+                <div className="order-tradein-info">
+                  <div className="order-tradein-title">
                     <FaTag /> Customer Trade-In: {selectedOrder.trade_in_product.title}
                   </div>
-                  <div style={{ fontSize: "12px", color: "#15803d", marginTop: 2 }}>
+                  <div className="order-tradein-sub">
                     Trade-In Credit: <strong>${parseFloat(selectedOrder.trade_in_discount || selectedOrder.trade_in_product.estimated_value || 0).toFixed(2)}</strong> | Status: <span style={{ textTransform: "capitalize", fontWeight: 600 }}>{selectedOrder.trade_in_product.status}</span>
                   </div>
                 </div>
@@ -1067,7 +1087,7 @@ function OrderPage() {
                 <span>${parseFloat(selectedOrder.subtotal_amount || selectedOrder.total_amount).toFixed(2)}</span>
               </div>
               {parseFloat(selectedOrder.trade_in_discount || 0) > 0 && (
-                <div className="order-summary-row" style={{ color: "#16a34a", fontWeight: "600" }}>
+                <div className="order-summary-row tradein-discount">
                   <span>Trade-In Credit Applied:</span>
                   <span>-${parseFloat(selectedOrder.trade_in_discount).toFixed(2)}</span>
                 </div>
@@ -1102,14 +1122,14 @@ function OrderPage() {
         title="Place New Customer Order"
         size="md"
       >
-        <form onSubmit={handleCreateOrderSubmit}>
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-            <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
+        <form onSubmit={handleCreateOrderSubmit} className="create-order-form">
+          <div className="create-order-fields">
+            <div className="order-form-group">
+              <label className="order-form-label">
                 Select Customer *
               </label>
               <select
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db" }}
+                className="order-form-control"
                 value={createUserId}
                 onChange={(e) => setCreateUserId(e.target.value)}
                 required
@@ -1122,37 +1142,40 @@ function OrderPage() {
                 ))}
               </select>
             </div>
-            <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
+
+            <div className="order-form-group">
+              <label className="order-form-label">
                 Shipping Address *
               </label>
               <textarea
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db", minHeight: "60px" }}
+                className="order-form-control order-form-textarea"
                 placeholder="Enter full delivery address..."
                 value={createAddress}
                 onChange={(e) => setCreateAddress(e.target.value)}
                 required
               />
             </div>
-            <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
+
+            <div className="order-form-group">
+              <label className="order-form-label">
                 Contact Phone *
               </label>
               <input
                 type="text"
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db" }}
+                className="order-form-control"
                 placeholder="e.g. +855 12 345 678"
                 value={createPhone}
                 onChange={(e) => setCreatePhone(e.target.value)}
                 required
               />
             </div>
-            <div>
-              <label style={{ display: "block", fontSize: "13px", fontWeight: "600", marginBottom: "6px" }}>
+
+            <div className="order-form-group">
+              <label className="order-form-label">
                 Order Status
               </label>
               <select
-                style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #d1d5db" }}
+                className="order-form-control"
                 value={createStatus}
                 onChange={(e) => setCreateStatus(e.target.value)}
               >
@@ -1164,25 +1187,24 @@ function OrderPage() {
             </div>
 
             {/* Dynamic Items Builder */}
-            <div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-                <label style={{ fontSize: "13px", fontWeight: "600" }}>Order Items</label>
+            <div className="order-items-builder">
+              <div className="order-items-builder-header">
+                <label className="order-form-label">Order Items</label>
                 <button
                   type="button"
                   onClick={handleAddItemRow}
-                  style={{ background: "none", border: "none", color: "#2563eb", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}
+                  className="add-item-link"
                 >
                   + Add Product Item
                 </button>
               </div>
               {createItems.map((item, idx) => (
                 <div
-                  className="form_order_items"
+                  className="form_order_items order-item-input-row"
                   key={idx}
-                  style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "10px", background: "#f9fafb", padding: "8px", borderRadius: "8px" }}
                 >
                   <select
-                    style={{ flex: 2, padding: "8px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "13px" }}
+                    className="order-item-select"
                     value={item.product_id}
                     onChange={(e) => handleItemChange(idx, "product_id", e.target.value)}
                     required
@@ -1197,19 +1219,20 @@ function OrderPage() {
                   <input
                     type="number"
                     min="1"
-                    style={{ width: "70px", padding: "8px", borderRadius: "6px", border: "1px solid #d1d5db", fontSize: "13px" }}
+                    className="order-item-qty"
                     value={item.quantity}
                     onChange={(e) => handleItemChange(idx, "quantity", e.target.value)}
                     required
                   />
-                  <span style={{ fontSize: "13px", fontWeight: "600", minWidth: "60px" }}>
+                  <span className="order-item-subtotal">
                     ${(parseFloat(item.price || 0) * (parseInt(item.quantity) || 1)).toFixed(2)}
                   </span>
                   {createItems.length > 1 && (
                     <button
                       type="button"
                       onClick={() => handleRemoveItemRow(idx)}
-                      style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: "4px" }}
+                      className="order-item-delete-btn"
+                      title="Remove item"
                     >
                       <FaTrash />
                     </button>
