@@ -70,15 +70,22 @@ function OrderPage() {
               : (Array.isArray(payload.data) ? payload.data : []));
 
         if (Array.isArray(apiOrders) && apiOrders.length >= 0) {
-          const formattedOrders = apiOrders.map((order) => {
+          const formattedOrders = apiOrders.map((order, idx) => {
             const rawItems = Array.isArray(order.items)
               ? order.items
               : (Array.isArray(order.order_items)
                   ? order.order_items
                   : (Array.isArray(order.products) ? order.products : []));
 
+            // Use readable order sequence or order_number instead of raw UUID
+            const displayId = order.order_number
+              ? (String(order.order_number).startsWith("#") ? order.order_number : `#${order.order_number}`)
+              : (typeof order.id === "number" || (order.id && !String(order.id).includes("-") && String(order.id).length <= 6))
+              ? `#ORD-${String(order.id).padStart(4, "0")}`
+              : `#ORD-${String(idx + 1).padStart(4, "0")}`;
+
             return {
-              id: order.id ? `#ORD-${order.id}` : `#ORD-${Math.floor(Math.random() * 9000 + 1000)}`,
+              id: displayId,
               rawId: order.id,
               date: safeDate(order.created_at || order.createdAt),
               items: rawItems.reduce((acc, item) => acc + (Number(item?.quantity) || 1), 0),

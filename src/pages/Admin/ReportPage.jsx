@@ -26,7 +26,15 @@ import {
   FileSpreadsheet,
   Check,
   ChevronRight,
-  Eye
+  Eye,
+  Building2,
+  Users,
+  UserCheck,
+  FileDown,
+  Phone,
+  Mail,
+  MapPin,
+  ShieldCheck
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -51,6 +59,8 @@ import { getAdminOrdersApi } from "../../services/orderService";
 import { productsApi } from "../../services/productsService";
 import { purchaseOrdersApi } from "../../services/purchaseService";
 import { CustomersApi } from "../../services/customerService";
+import { suppliersApi } from "../../services/supplierService";
+import { getAttendanceRecordsApi, getStaffListApi } from "../../services/attendanceService";
 import { KpiCardSkeleton, TableSkeleton } from "../../components/loading/LoadingSkeleton";
 import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import "./style/ReportPage.css";
@@ -138,29 +148,6 @@ function paymentLabel(order) {
   if (raw) return String(raw);
   if (order?.payment_intent_id) return "ABA KHQR";
   return "COD / Cash";
-}
-
-function itemName(item) {
-  return item?.product?.name || item?.name || item?.product_name || "Product Item";
-}
-
-function itemQty(item) {
-  return Math.max(1, parseInt(item?.quantity, 10) || 1);
-}
-
-function itemPrice(item) {
-  return money(item?.price ?? item?.unit_price ?? item?.product?.price);
-}
-
-function itemSku(item) {
-  return item?.product?.sku || item?.sku || item?.variant?.sku || "—";
-}
-
-function itemCategory(item, productsById) {
-  const fromItem = item?.product?.category?.name || item?.category?.name || item?.category;
-  if (fromItem) return fromItem;
-  const product = productsById.get(item?.product_id || item?.product?.id);
-  return product?.category?.name || product?.category || "General";
 }
 
 function pad(n) {
@@ -263,7 +250,7 @@ function downloadExcel(filename, sheetName, headers, rows) {
  <Styles>
   <Style ss:ID="Header">
    <Font ss:Bold="1" ss:Color="#FFFFFF"/>
-   <Interior ss:Color="#10B981" ss:Pattern="Solid"/>
+   <Interior ss:Color="#059669" ss:Pattern="Solid"/>
    <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
   </Style>
   <Style ss:ID="Data">
@@ -281,7 +268,7 @@ function downloadExcel(filename, sheetName, headers, rows) {
     `   <Row ss:StyleID="Data">` +
     row.map(cell => {
       const isNum = typeof cell === "number" || (!isNaN(Number(cell)) && cell !== "" && !String(cell).startsWith("0") && !String(cell).includes("-") && !String(cell).includes(":"));
-      return `    <Cell><Data ss:Type="${isNum ? "Number" : "String"}">${String(cell).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</Data></Cell>`;
+      return `    <Cell><Data ss:Type="${isNum ? "Number" : "String"}">${String(cell ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</Data></Cell>`;
     }).join("") +
     `   </Row>`
   ).join("\n");
@@ -316,6 +303,280 @@ function downloadCsv(filename, headers, rows) {
   URL.revokeObjectURL(url);
 }
 
+// Professional Official PDF Report Generator
+function generateAndPrintPdf({
+  title,
+  subtitle,
+  dateRangeText,
+  kpiStats = [],
+  headers = [],
+  rows = []
+}) {
+  const printWindow = window.open("", "_blank", "width=1050,height=900");
+  if (!printWindow) {
+    Swal.fire("Pop-up Blocked", "Please allow browser pop-ups to print or export PDF reports.", "warning");
+    return;
+  }
+
+  const dateNow = new Date().toLocaleString();
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>${title} - Angkor Shopping Mall Report</title>
+        <meta charset="utf-8" />
+        <style>
+          @page {
+            size: A4 landscape;
+            margin: 12mm 10mm 12mm 10mm;
+          }
+          * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+          }
+          body {
+            color: #0f172a;
+            background: #ffffff;
+            margin: 0;
+            padding: 20px;
+            font-size: 11.5px;
+            line-height: 1.4;
+          }
+          .header-table {
+            width: 100%;
+            border-bottom: 2.5px solid #059669;
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+          }
+          .brand-logo {
+            font-size: 20px;
+            font-weight: 800;
+            color: #059669;
+            letter-spacing: -0.5px;
+          }
+          .brand-subtitle {
+            font-size: 10.5px;
+            color: #64748b;
+            margin-top: 2px;
+          }
+          .report-meta-box {
+            text-align: right;
+            font-size: 10.5px;
+            color: #475569;
+          }
+          .report-meta-box strong {
+            color: #0f172a;
+          }
+          .report-title-section {
+            margin: 10px 0 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+          }
+          .report-main-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #1e293b;
+            margin: 0;
+          }
+          .report-main-desc {
+            font-size: 11px;
+            color: #64748b;
+            margin: 3px 0 0;
+          }
+          .kpi-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
+          }
+          .kpi-box {
+            flex: 1;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px 12px;
+          }
+          .kpi-label {
+            font-size: 9.5px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 2px;
+          }
+          .kpi-val {
+            font-size: 14px;
+            font-weight: 800;
+            color: #059669;
+          }
+          table.data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+            font-size: 10.5px;
+          }
+          table.data-table th {
+            background-color: #059669;
+            color: #ffffff;
+            font-weight: 600;
+            text-align: left;
+            padding: 7px 9px;
+            border: 1px solid #059669;
+          }
+          table.data-table td {
+            padding: 6px 9px;
+            border: 1px solid #e2e8f0;
+            vertical-align: middle;
+          }
+          table.data-table tbody tr:nth-child(even) {
+            background-color: #f8fafc;
+          }
+          .status-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: #e2e8f0;
+            color: #334155;
+          }
+          .status-completed, .status-paid, .status-present, .status-active {
+            background: #dcfce7;
+            color: #15803d;
+          }
+          .status-pending, .status-late {
+            background: #fef3c7;
+            color: #b45309;
+          }
+          .status-cancelled, .status-failed, .status-absent, .status-inactive {
+            background: #fee2e2;
+            color: #b91c1c;
+          }
+          .footer-signatures {
+            margin-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            page-break-inside: avoid;
+          }
+          .sig-box {
+            width: 200px;
+            text-align: center;
+            border-top: 1px solid #94a3b8;
+            padding-top: 6px;
+            font-size: 10.5px;
+            color: #475569;
+          }
+          .report-footer-note {
+            margin-top: 18px;
+            text-align: center;
+            font-size: 9.5px;
+            color: #94a3b8;
+            border-top: 1px dashed #e2e8f0;
+            padding-top: 6px;
+          }
+          @media print {
+            body { padding: 0; }
+            .no-print { display: none; }
+          }
+        </style>
+      </head>
+      <body>
+        <table class="header-table">
+          <tr>
+            <td>
+              <div class="brand-logo">ANGKOR SHOPPING MALL</div>
+              <div class="brand-subtitle">Commercial Retail & Inventory Enterprise Management System</div>
+            </td>
+            <td class="report-meta-box">
+              <div><strong>Period:</strong> ${dateRangeText || "All Time"}</div>
+              <div><strong>Generated:</strong> ${dateNow}</div>
+              <div><strong>System User:</strong> SuperAdmin</div>
+            </td>
+          </tr>
+        </table>
+
+        <div class="report-title-section">
+          <div>
+            <h2 class="report-main-title">${title}</h2>
+            <p class="report-main-desc">${subtitle || "Official Angkor Shopping Mall Generated Report"}</p>
+          </div>
+        </div>
+
+        ${
+          kpiStats && kpiStats.length > 0
+            ? `<div class="kpi-row">
+                ${kpiStats
+                  .map(
+                    (k) => `
+                  <div class="kpi-box">
+                    <div class="kpi-label">${k.label}</div>
+                    <div class="kpi-val">${k.value}</div>
+                  </div>
+                `
+                  )
+                  .join("")}
+              </div>`
+            : ""
+        }
+
+        <table class="data-table">
+          <thead>
+            <tr>
+              ${headers.map((h) => `<th>${h}</th>`).join("")}
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              rows.length === 0
+                ? `<tr><td colspan="${headers.length}" style="text-align:center; padding: 20px; color:#94a3b8;">No records found matching query.</td></tr>`
+                : rows
+                    .map(
+                      (row) => `
+                  <tr>
+                    ${row
+                      .map((cell) => {
+                        const cellStr = String(cell ?? "—");
+                        let rendered = cellStr;
+                        if (["paid", "completed", "active", "present", "pending", "late", "cancelled", "absent", "inactive"].includes(cellStr.toLowerCase())) {
+                          rendered = `<span class="status-badge status-${cellStr.toLowerCase()}">${cellStr}</span>`;
+                        }
+                        return `<td>${rendered}</td>`;
+                      })
+                      .join("")}
+                  </tr>
+                `
+                    )
+                    .join("")
+            }
+          </tbody>
+        </table>
+
+        <div class="footer-signatures">
+          <div class="sig-box">Prepared By (Finance / Ops)</div>
+          <div class="sig-box">Verified By (Auditor)</div>
+          <div class="sig-box">Approved By (General Manager)</div>
+        </div>
+
+        <div class="report-footer-note">
+          Confidential document generated for Angkor Shopping Mall Management • ${title} • Auto-generated
+        </div>
+
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 350);
+          };
+        <\/script>
+      </body>
+    </html>
+  `;
+
+  printWindow.document.open();
+  printWindow.document.write(htmlContent);
+  printWindow.document.close();
+}
+
 function ReportPage() {
   const { isKhmer } = useTranslation();
   const { isDark } = useTheme();
@@ -330,30 +591,38 @@ function ReportPage() {
 
   // Dynamic Sorting & Search States
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState("date"); // "date" | "revenue" | "orders" | "profit" | "name" | "stock"
-  const [sortOrder, setSortOrder] = useState("desc"); // "asc" | "desc"
+  const [sortBy, setSortBy] = useState("date");
+  const [sortOrder, setSortOrder] = useState("desc");
   const [statusFilter, setStatusFilter] = useState("all");
 
   // Interactive KPI Modal & Highlight
   const [activeKpi, setActiveKpi] = useState(null);
   const [kpiModal, setKpiModal] = useState(null);
 
+  // Excel / PDF Export Center Modal State
+  const [isExportHubOpen, setIsExportHubOpen] = useState(false);
+  const [selectedExportDomain, setSelectedExportDomain] = useState("orders");
+  const [exportFormat, setExportFormat] = useState("excel"); // "excel" | "pdf"
+
   // Excel / CSV Import Modal State
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [importPreviewRows, setImportPreviewRows] = useState([]);
   const [importHeaders, setImportHeaders] = useState([]);
-  const [importTarget, setImportTarget] = useState("orders"); // "orders" | "products"
+  const [importTarget, setImportTarget] = useState("orders");
 
   // Primary Datasets
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [purchases, setPurchases] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [suppliers, setSuppliers] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const [staffList, setStaffList] = useState([]);
 
   const fileInputRef = useRef(null);
 
-  // Fetch Live Data
+  // Fetch Live Data for all 5 domains
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
@@ -364,7 +633,7 @@ function ReportPage() {
         console.warn("Orders fetch warning:", err?.message || err);
       }
 
-      await new Promise((r) => setTimeout(r, 60));
+      await new Promise((r) => setTimeout(r, 40));
 
       try {
         const productsRes = await productsApi();
@@ -373,7 +642,7 @@ function ReportPage() {
         console.warn("Products fetch warning:", err?.message || err);
       }
 
-      await new Promise((r) => setTimeout(r, 60));
+      await new Promise((r) => setTimeout(r, 40));
 
       try {
         const purchasesRes = await purchaseOrdersApi();
@@ -382,13 +651,39 @@ function ReportPage() {
         console.warn("Purchases fetch warning:", err?.message || err);
       }
 
-      await new Promise((r) => setTimeout(r, 60));
+      await new Promise((r) => setTimeout(r, 40));
 
       try {
         const customersRes = await CustomersApi();
         setCustomers(toList(customersRes, "customers", "users"));
       } catch (err) {
         console.warn("Customers fetch warning:", err?.message || err);
+      }
+
+      await new Promise((r) => setTimeout(r, 40));
+
+      try {
+        const supRes = await suppliersApi();
+        setSuppliers(toList(supRes, "suppliers", "data"));
+      } catch (err) {
+        console.warn("Suppliers fetch warning:", err?.message || err);
+      }
+
+      await new Promise((r) => setTimeout(r, 40));
+
+      try {
+        const [attRes, stfRes] = await Promise.allSettled([
+          getAttendanceRecordsApi(),
+          getStaffListApi()
+        ]);
+        if (attRes.status === "fulfilled") {
+          setAttendance(toList(attRes.value, "attendance", "records", "data"));
+        }
+        if (stfRes.status === "fulfilled") {
+          setStaffList(toList(stfRes.value, "staff", "data"));
+        }
+      } catch (err) {
+        console.warn("Attendance fetch warning:", err?.message || err);
       }
     } catch (error) {
       console.warn("Report data loading error:", error);
@@ -462,8 +757,19 @@ function ReportPage() {
 
   // Filtered Orders within Date Range
   const filteredOrders = useMemo(() => {
-    return orders.filter((order) => inRange(orderDate(order), bounds.start, bounds.end));
-  }, [orders, bounds]);
+    return orders.filter((order) => {
+      const date = orderDate(order);
+      if (!inRange(date, bounds.start, bounds.end)) return false;
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      const idMatch = String(order.id || "").toLowerCase().includes(q);
+      const nameMatch = (order.user?.name || "").toLowerCase().includes(q);
+      const emailMatch = (order.user?.email || "").toLowerCase().includes(q);
+      const phoneMatch = (order.contact_phone || order.user?.phone || "").includes(q);
+      const statusMatch = orderStatus(order).includes(q);
+      return idMatch || nameMatch || emailMatch || phoneMatch || statusMatch;
+    });
+  }, [orders, bounds, searchQuery]);
 
   const previousOrders = useMemo(() => {
     if (!bounds.prevStart) return [];
@@ -473,9 +779,46 @@ function ReportPage() {
   const filteredPurchases = useMemo(() => {
     return purchases.filter((po) => {
       const date = parseDate(po.order_date || po.created_at || po.createdAt);
-      return inRange(date, bounds.start, bounds.end);
+      if (!inRange(date, bounds.start, bounds.end)) return false;
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        (po.po_number || `PO-${po.id}`).toLowerCase().includes(q) ||
+        (po.supplier?.name || po.supplier_name || "").toLowerCase().includes(q) ||
+        (po.status || "").toLowerCase().includes(q)
+      );
     });
-  }, [purchases, bounds]);
+  }, [purchases, bounds, searchQuery]);
+
+  const filteredSuppliers = useMemo(() => {
+    return suppliers.filter((s) => {
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        (s.name || s.company_name || "").toLowerCase().includes(q) ||
+        (s.contact_person || s.contactPerson || "").toLowerCase().includes(q) ||
+        (s.phone || "").includes(q) ||
+        (s.email || "").toLowerCase().includes(q) ||
+        (s.address || "").toLowerCase().includes(q)
+      );
+    });
+  }, [suppliers, searchQuery]);
+
+  const filteredAttendance = useMemo(() => {
+    return attendance.filter((r) => {
+      const date = parseDate(r.date || r.created_at || r.createdAt);
+      if (!inRange(date, bounds.start, bounds.end)) return false;
+      const q = searchQuery.trim().toLowerCase();
+      if (!q) return true;
+      return (
+        (r.employeeName || r.employee_name || "").toLowerCase().includes(q) ||
+        (r.employeeId || r.employee_id || "").toLowerCase().includes(q) ||
+        (r.department || "").toLowerCase().includes(q) ||
+        (r.role || "").toLowerCase().includes(q) ||
+        (r.status || "").toLowerCase().includes(q)
+      );
+    });
+  }, [attendance, bounds, searchQuery]);
 
   // KPI Aggregation
   const stats = useMemo(() => {
@@ -504,10 +847,8 @@ function ReportPage() {
 
     return {
       revenue,
-      prevRevenue,
       revenueChange: percentChange(revenue, prevRevenue),
       orderCount,
-      prevOrderCount,
       orderChange: percentChange(orderCount, prevOrderCount),
       aov,
       profit,
@@ -518,272 +859,196 @@ function ReportPage() {
       inventoryValue,
       lowStock,
       outOfStock,
-      customerCount: customers.length
+      customerCount: customers.length,
+      supplierCount: suppliers.length,
+      attendanceCount: attendance.length
     };
-  }, [filteredOrders, previousOrders, filteredPurchases, products, customers]);
+  }, [filteredOrders, previousOrders, filteredPurchases, products, customers, suppliers, attendance]);
 
-  const trendData = useMemo(() => buildTrend(filteredOrders, timeRange), [filteredOrders, timeRange]);
+  const trendData = useMemo(() => {
+    return buildTrend(filteredOrders, timeRange);
+  }, [filteredOrders, timeRange]);
 
-  // Top Selling Products with Dynamic Sort
+  // Top Performing Products calculation
   const topProducts = useMemo(() => {
-    const map = new Map();
-    filteredOrders.filter(isRevenueOrder).forEach((order) => {
-      (order.items || []).forEach((item) => {
-        const id = item.product_id || item.product?.id || itemName(item);
-        const existing = map.get(id) || {
-          id,
-          name: itemName(item),
-          sku: itemSku(item),
-          category: itemCategory(item, productsById),
-          unitsSold: 0,
-          revenue: 0,
-          stock: money(productsById.get(item.product_id || item.product?.id)?.stock_quantity)
-        };
-        existing.unitsSold += itemQty(item);
-        existing.revenue += itemPrice(item) * itemQty(item);
-        map.set(id, existing);
+    const salesMap = new Map();
+
+    filteredOrders.forEach((order) => {
+      if (!isRevenueOrder(order)) return;
+      const items = order.items || order.order_items || [];
+      items.forEach((item) => {
+        const pId = item.product_id || item.product?.id || item.id;
+        const name = item.product?.name || item.name || "Product";
+        const sku = item.product?.sku || item.sku || "—";
+        const category = item.product?.category?.name || item.category || "General";
+        const qty = parseInt(item.quantity, 10) || 1;
+        const price = money(item.price || item.unit_price || 0);
+        const itemRev = price * qty;
+
+        if (!salesMap.has(pId)) {
+          salesMap.set(pId, {
+            id: pId,
+            name,
+            sku,
+            category,
+            unitsSold: 0,
+            revenue: 0,
+            profit: 0,
+            stock: productsById.get(pId)?.stock_quantity ?? 10
+          });
+        }
+        const record = salesMap.get(pId);
+        record.unitsSold += qty;
+        record.revenue += itemRev;
+        record.profit += itemRev * PROFIT_MARGIN;
       });
     });
 
-    let list = Array.from(map.values()).map((item) => ({
-      ...item,
-      profit: item.revenue * PROFIT_MARGIN,
-      margin: `${(PROFIT_MARGIN * 100).toFixed(0)}%`
-    }));
-
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
-    }
-
-    list.sort((a, b) => {
-      let comparison = 0;
-      if (sortBy === "revenue") comparison = b.revenue - a.revenue;
-      else if (sortBy === "orders" || sortBy === "units") comparison = b.unitsSold - a.unitsSold;
-      else if (sortBy === "profit") comparison = b.profit - a.profit;
-      else if (sortBy === "stock") comparison = b.stock - a.stock;
-      else if (sortBy === "name") comparison = a.name.localeCompare(b.name);
-      else comparison = b.revenue - a.revenue;
-      return sortOrder === "asc" ? -comparison : comparison;
-    });
-
+    const list = Array.from(salesMap.values());
+    list.sort((a, b) => b.revenue - a.revenue);
     return list;
-  }, [filteredOrders, productsById, searchQuery, sortBy, sortOrder]);
+  }, [filteredOrders, productsById]);
 
-  // Inventory Table with Dynamic Sort
+  // Inventory Health calculation
   const inventoryRows = useMemo(() => {
-    let list = products.map((product) => {
-      const stock = money(product.stock_quantity);
-      let urgency = "healthy";
-      let recommendation = isKhmer ? "ស្តុកគ្រប់គ្រាន់" : "Healthy stock";
+    return products.map((p) => {
+      const stock = money(p.stock_quantity);
+      const price = money(p.price);
+      const value = stock * price;
+      let urgency = "normal";
+      let recommendation = "Stock level optimal.";
+
       if (stock === 0) {
         urgency = "critical";
-        recommendation = isKhmer ? "បញ្ជាទិញចូលឡើងវិញ" : "Reorder immediately";
+        recommendation = "URGENT: Re-order immediately.";
       } else if (stock <= LOW_STOCK_THRESHOLD) {
-        urgency = "warning";
-        recommendation = isKhmer ? `បញ្ជាទិញចូល +${LOW_STOCK_THRESHOLD * 4}` : `Reorder +${LOW_STOCK_THRESHOLD * 4}`;
-      } else if (stock >= 50) {
-        urgency = "overstock";
-        recommendation = isKhmer ? "ពិចារណាប្រូម៉ូសិន" : "Consider a promo";
+        urgency = "low";
+        recommendation = "Low stock warning. Replenish soon.";
       }
+
       return {
-        id: product.id,
-        name: product.name,
-        sku: product.sku || "—",
-        category: product.category?.name || product.category || "General",
-        price: money(product.price),
+        id: p.id,
+        name: p.name,
+        sku: p.sku || "—",
+        category: p.category?.name || p.category || "General",
         stock,
-        value: money(product.price) * stock,
+        price,
+        value,
         urgency,
         recommendation
       };
     });
+  }, [products]);
 
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter((p) => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
-    }
-
-    if (statusFilter !== "all") {
-      list = list.filter((p) => p.urgency === statusFilter);
-    }
-
-    list.sort((a, b) => {
-      let comparison = 0;
-      if (sortBy === "stock") comparison = a.stock - b.stock;
-      else if (sortBy === "value" || sortBy === "revenue") comparison = b.value - a.value;
-      else if (sortBy === "name") comparison = a.name.localeCompare(b.name);
-      else comparison = a.stock - b.stock;
-      return sortOrder === "asc" ? -comparison : comparison;
-    });
-
-    return list;
-  }, [products, isKhmer, searchQuery, statusFilter, sortBy, sortOrder]);
-
-  // Purchases Table with Dynamic Sort
-  const purchaseRows = useMemo(() => {
-    let list = [...filteredPurchases];
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter((po) => (po.po_number || "").toLowerCase().includes(q) || (po.supplier?.name || "").toLowerCase().includes(q));
-    }
-    if (statusFilter !== "all") {
-      list = list.filter((po) => po.status === statusFilter);
-    }
-    list.sort((a, b) => {
-      let comparison = 0;
-      if (sortBy === "revenue" || sortBy === "amount") comparison = money(b.total_amount) - money(a.total_amount);
-      else if (sortBy === "date") comparison = (parseDate(b.order_date || b.created_at)?.getTime() || 0) - (parseDate(a.order_date || a.created_at)?.getTime() || 0);
-      else comparison = money(b.total_amount) - money(a.total_amount);
-      return sortOrder === "asc" ? -comparison : comparison;
-    });
-    return list;
-  }, [filteredPurchases, searchQuery, statusFilter, sortBy, sortOrder]);
-
-  // Filtered Detailed Orders Feed
-  const detailedOrders = useMemo(() => {
-    let list = [...filteredOrders];
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter((o) => (o.id || "").toLowerCase().includes(q) || (o.user?.name || "").toLowerCase().includes(q) || (o.user?.email || "").toLowerCase().includes(q));
-    }
-    if (statusFilter !== "all") {
-      list = list.filter((o) => orderStatus(o) === statusFilter);
-    }
-    list.sort((a, b) => {
-      let comparison = 0;
-      if (sortBy === "revenue" || sortBy === "amount") comparison = money(b.total_amount) - money(a.total_amount);
-      else if (sortBy === "date") comparison = (orderDate(b)?.getTime() || 0) - (orderDate(a)?.getTime() || 0);
-      else if (sortBy === "name") comparison = (a.user?.name || "").localeCompare(b.user?.name || "");
-      else comparison = (orderDate(b)?.getTime() || 0) - (orderDate(a)?.getTime() || 0);
-      return sortOrder === "asc" ? -comparison : comparison;
-    });
-    return list;
-  }, [filteredOrders, searchQuery, statusFilter, sortBy, sortOrder]);
-
-  // Handle Dynamic Column Sort Header Click
-  const handleColumnSort = (field) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(field);
-      setSortOrder("desc");
-    }
-  };
-
-  // KPI Card Click Drill-Down Handler
-  const handleKpiCardClick = (kpiKey) => {
-    setActiveKpi(kpiKey);
-    if (navigator.vibrate) navigator.vibrate(20);
-
-    if (kpiKey === "revenue") {
-      setKpiModal({
-        title: isKhmer ? "ស្ថិតិចំណូល & ប្រាក់ចំណេញ" : "Revenue & Profit Analytics",
-        icon: <DollarSign size={20} />,
-        color: "emerald",
-        badge: `${stats.revenueChange >= 0 ? "+" : ""}${stats.revenueChange.toFixed(1)}% vs Prior`,
-        summary: formatUSD(stats.revenue),
-        details: [
-          { label: isKhmer ? "ប្រាក់ចំណេញសុទ្ធ" : "Net Profit (30%)", value: formatUSD(stats.profit) },
-          { label: isKhmer ? "តម្លៃបញ្ជាទិញជាមធ្យម" : "Average Order Value (AOV)", value: formatUSD(stats.aov) },
-          { label: isKhmer ? "ចំណូលជារៀល" : "KHR Total Conversion", value: formatKHR(stats.revenue) },
-          { label: isKhmer ? "ការចំណាយទិញចូល" : "Total Procurement Spend", value: formatUSD(stats.purchaseSpend) }
-        ],
-        actionText: isKhmer ? "នាំចេញ Excel ស៊ីជម្រៅ" : "Export Excel Financials",
-        onAction: () => handleExportExcel()
-      });
-    } else if (kpiKey === "orders") {
-      setKpiModal({
-        title: isKhmer ? "ស្ថិតិការបញ្ជាទិញ" : "Order Fulfillment Metrics",
-        icon: <ShoppingCart size={20} />,
-        color: "blue",
-        badge: `${stats.completed} Completed`,
-        summary: `${stats.orderCount.toLocaleString()} Total Orders`,
-        details: [
-          { label: isKhmer ? "បានបញ្ចប់ / បង់ប្រាក់" : "Paid & Completed", value: `${stats.completed}` },
-          { label: isKhmer ? "កំពុងរង់ចាំ" : "Pending Processing", value: `${stats.pending}` },
-          { label: isKhmer ? "បានបោះបង់ / បរាជ័យ" : "Cancelled / Failed", value: `${stats.cancelled}` },
-          { label: isKhmer ? "អតិថិជនសរុប" : "Total Registered Clients", value: `${stats.customerCount}` }
-        ],
-        actionText: isKhmer ? "មើលការបញ្ជាទិញលម្អិត" : "Filter Orders List",
-        onAction: () => {
-          setActiveTab("orders");
-          setKpiModal(null);
-        }
-      });
-    } else if (kpiKey === "inventory") {
-      setKpiModal({
-        title: isKhmer ? "សុខភាពស្តុកទំនិញ" : "Inventory & Asset Valuation",
-        icon: <Boxes size={20} />,
-        color: "purple",
-        badge: `${stats.lowStock} Low Stock Alert`,
-        summary: formatUSD(stats.inventoryValue),
-        details: [
-          { label: isKhmer ? "ទំនិញសរុបក្នុងកាតាឡុក" : "Total Active Catalog", value: `${products.length} Products` },
-          { label: isKhmer ? "ទំនិញជិតអស់ស្តុក (≤5)" : "Low Stock Warnings", value: `${stats.lowStock}` },
-          { label: isKhmer ? "ទំនិញដាច់ស្តុក (0)" : "Out of Stock Items", value: `${stats.outOfStock}` },
-          { label: isKhmer ? "តម្លៃស្តុកសរុប (KHR)" : "Total Valuation (KHR)", value: formatKHR(stats.inventoryValue) }
-        ],
-        actionText: isKhmer ? "ពិនិត្យតារាងស្តុក" : "View Inventory Sheet",
-        onAction: () => {
-          setActiveTab("inventory");
-          setKpiModal(null);
-        }
-      });
-    }
-  };
-
-  // EXPORT TO EXCEL (.xls/.xlsx Spreadsheet XML)
-  const handleExportExcel = () => {
+  // EXPORT DOMAIN EXCEL (.xls/.xlsx)
+  const exportDomainExcel = (domain) => {
     try {
       const nowStr = new Date().toISOString().slice(0, 10);
-      if (activeTab === "products") {
-        downloadExcel(
-          `AngkorMall_Top_Products_${nowStr}.xls`,
-          "Top Products",
-          ["Rank", "Product Name", "SKU", "Category", "Units Sold", "Gross Revenue ($)", "Net Profit ($)", "Profit Margin", "Stock Available"],
-          topProducts.map((p, i) => [i + 1, p.name, p.sku, p.category, p.unitsSold, p.revenue.toFixed(2), p.profit.toFixed(2), p.margin, p.stock])
-        );
-      } else if (activeTab === "inventory") {
-        downloadExcel(
-          `AngkorMall_Inventory_Report_${nowStr}.xls`,
-          "Inventory Health",
-          ["Product ID", "Product Name", "SKU", "Category", "Stock Count", "Unit Price ($)", "Total Value ($)", "Status Alert", "Action Recommendation"],
-          inventoryRows.map((p) => [p.id, p.name, p.sku, p.category, p.stock, p.price.toFixed(2), p.value.toFixed(2), p.urgency.toUpperCase(), p.recommendation])
-        );
-      } else if (activeTab === "purchases") {
-        downloadExcel(
-          `AngkorMall_Purchases_Report_${nowStr}.xls`,
-          "Purchase Orders",
-          ["PO Number", "Supplier Name", "Order Date", "Fulfillment Status", "Total Spend ($)"],
-          purchaseRows.map((po) => [
-            po.po_number || `PO-${po.id}`,
-            po.supplier?.name || po.supplier_name || "Official Partner",
-            po.order_date || po.created_at || "",
-            po.status || "completed",
-            money(po.total_amount).toFixed(2)
-          ])
-        );
-      } else if (activeTab === "orders") {
+      if (domain === "orders") {
         downloadExcel(
           `AngkorMall_Detailed_Orders_${nowStr}.xls`,
-          "Orders List",
-          ["Order ID", "Customer Name", "Email", "Phone", "Payment Gateway", "Order Date", "Total Amount ($)", "Status"],
-          detailedOrders.map((o) => [
-            o.id,
+          "Detailed Orders",
+          ["Order ID", "Customer Name", "Email", "Phone", "Payment Gateway", "Order Date", "Total ($)", "Total (KHR)", "Status"],
+          filteredOrders.map((o) => [
+            `#${o.id}`,
             o.user?.name || "Client",
             o.user?.email || "—",
             o.contact_phone || o.user?.phone || "—",
             paymentLabel(o),
             orderDate(o)?.toISOString().slice(0, 10) || "",
             money(o.total_amount).toFixed(2),
+            formatKHR(o.total_amount),
             orderStatus(o).toUpperCase()
+          ])
+        );
+      } else if (domain === "products") {
+        downloadExcel(
+          `AngkorMall_Products_Catalog_${nowStr}.xls`,
+          "Products Catalog",
+          ["Product ID", "Product Name", "SKU", "Category", "Brand", "Unit Price ($)", "Stock Quantity", "Total Asset Value ($)", "Status"],
+          products.map((p) => [
+            `#${p.id}`,
+            p.name,
+            p.sku || "—",
+            p.category?.name || p.category || "General",
+            p.brand?.name || p.brand || "Standard",
+            money(p.price).toFixed(2),
+            money(p.stock_quantity),
+            (money(p.price) * money(p.stock_quantity)).toFixed(2),
+            p.is_active ? "ACTIVE" : "INACTIVE"
+          ])
+        );
+      } else if (domain === "suppliers") {
+        downloadExcel(
+          `AngkorMall_Suppliers_Directory_${nowStr}.xls`,
+          "Suppliers",
+          ["Supplier ID", "Company Name", "Contact Person", "Phone", "Email", "Address", "Status"],
+          suppliers.map((s) => [
+            `#${s.id}`,
+            s.name || s.company_name || "Supplier Partner",
+            s.contact_person || s.contactPerson || "—",
+            s.phone || "—",
+            s.email || "—",
+            s.address || "—",
+            s.status || "Active"
+          ])
+        );
+      } else if (domain === "purchases") {
+        downloadExcel(
+          `AngkorMall_Purchase_Orders_${nowStr}.xls`,
+          "Purchase Orders",
+          ["PO Number", "Supplier Name", "Order Date", "Expected Delivery", "Status", "Total Spend ($)"],
+          purchases.map((po) => [
+            po.po_number || `PO-${po.id}`,
+            po.supplier?.name || po.supplier_name || "Official Partner",
+            po.order_date || po.created_at || "",
+            po.delivery_date || po.expected_delivery || "—",
+            po.status || "Completed",
+            money(po.total_amount).toFixed(2)
+          ])
+        );
+      } else if (domain === "attendance") {
+        downloadExcel(
+          `AngkorMall_Staff_Attendance_${nowStr}.xls`,
+          "Staff Attendance",
+          ["Record ID", "Staff Name", "Employee ID", "Department", "Role", "Date", "Shift", "Check In", "Check Out", "Work Hours", "Late (Mins)", "Location Status", "Status"],
+          attendance.map((r) => [
+            r.id,
+            r.employeeName || r.employee_name || "Staff",
+            r.employeeId || r.employee_id || "—",
+            r.department || "Operations",
+            r.role || "Staff Member",
+            r.date || "",
+            r.shiftName || r.shift_name || "Standard",
+            r.checkInTime || r.check_in || "—",
+            r.checkOutTime || r.check_out || "—",
+            r.totalWorkHours || 0,
+            r.lateMinutes || 0,
+            r.checkInLocation?.isWithinGeofence ? "Inside Mall" : "Remote / Outside",
+            r.status || "Present"
+          ])
+        );
+      } else if (domain === "inventory") {
+        downloadExcel(
+          `AngkorMall_Inventory_Health_${nowStr}.xls`,
+          "Inventory Health",
+          ["Product ID", "Product Name", "SKU", "Category", "Stock Count", "Unit Price ($)", "Total Value ($)", "Status Alert", "Action Recommendation"],
+          inventoryRows.map((p) => [
+            `#${p.id}`,
+            p.name,
+            p.sku,
+            p.category,
+            p.stock,
+            p.price.toFixed(2),
+            p.value.toFixed(2),
+            p.urgency.toUpperCase(),
+            p.recommendation
           ])
         );
       } else {
         downloadExcel(
           `AngkorMall_Financial_Summary_${nowStr}.xls`,
-          "Executive Summary",
+          "Financial Summary",
           ["Timeline Period", "Orders Count", "Gross Sales Revenue ($)", "Net Estimated Profit ($)", "Profit Margin"],
           trendData.map((row) => [row.label, row.orders, row.revenue.toFixed(2), row.profit.toFixed(2), "30%"])
         );
@@ -802,51 +1067,181 @@ function ReportPage() {
     }
   };
 
-  // EXPORT TO CSV
-  const handleExportCsv = () => {
+  // EXPORT DOMAIN PDF
+  const exportDomainPdf = (domain) => {
     try {
-      const nowStr = new Date().toISOString().slice(0, 10);
-      if (activeTab === "products") {
-        downloadCsv(
-          `AngkorMall_Top_Products_${nowStr}.csv`,
-          ["Product", "SKU", "Category", "Units Sold", "Revenue", "Profit"],
-          topProducts.map((p) => [p.name, p.sku, p.category, p.unitsSold, p.revenue.toFixed(2), p.profit.toFixed(2)])
-        );
-      } else if (activeTab === "inventory") {
-        downloadCsv(
-          `AngkorMall_Inventory_Report_${nowStr}.csv`,
-          ["Product", "SKU", "Category", "Stock", "Inventory Value", "Status", "Recommendation"],
-          inventoryRows.map((p) => [p.name, p.sku, p.category, p.stock, p.value.toFixed(2), p.urgency, p.recommendation])
-        );
-      } else if (activeTab === "purchases") {
-        downloadCsv(
-          `AngkorMall_Purchases_Report_${nowStr}.csv`,
-          ["PO Number", "Supplier", "Date", "Status", "Total"],
-          purchaseRows.map((po) => [
-            po.po_number || po.id,
-            po.supplier?.name || po.supplier_name || "—",
-            po.order_date || po.created_at || "",
-            po.status || "",
-            money(po.total_amount).toFixed(2)
-          ])
-        );
-      } else {
-        downloadCsv(
-          `AngkorMall_Sales_Report_${nowStr}.csv`,
-          ["Period", "Orders", "Revenue", "Profit"],
-          trendData.map((row) => [row.label, row.orders, row.revenue.toFixed(2), row.profit.toFixed(2)])
-        );
-      }
+      const dateRangeText =
+        timeRange === "today"
+          ? "Today"
+          : timeRange === "week"
+          ? "Last 7 Days"
+          : timeRange === "month"
+          ? "This Month"
+          : timeRange === "quarter"
+          ? "This Quarter"
+          : timeRange === "year"
+          ? "This Year (2026)"
+          : timeRange === "custom"
+          ? `${customStartDate} to ${customEndDate || "Now"}`
+          : "All Time";
 
-      Swal.fire({
-        icon: "success",
-        title: isKhmer ? "បានទាញយក CSV" : "CSV Exported",
-        text: isKhmer ? "ឯកសារ CSV ត្រូវបានទាញយកដោយជោគជ័យ។" : "CSV spreadsheet downloaded.",
-        timer: 1500,
-        showConfirmButton: false
-      });
-    } catch {
-      Swal.fire("Error", "Failed to export CSV", "error");
+      if (domain === "orders") {
+        generateAndPrintPdf({
+          title: "Detailed Orders Audit & Sales Report",
+          subtitle: "Official sales transactions, customer fulfillment and payment records",
+          dateRangeText,
+          kpiStats: [
+            { label: "Total Orders", value: `${filteredOrders.length}` },
+            { label: "Gross Revenue", value: formatUSD(stats.revenue) },
+            { label: "Completed", value: `${stats.completed}` },
+            { label: "Pending", value: `${stats.pending}` }
+          ],
+          headers: ["Order ID", "Customer", "Phone", "Payment", "Date", "Total ($)", "Status"],
+          rows: filteredOrders.map((o) => [
+            `#${o.id}`,
+            o.user?.name || "Client",
+            o.contact_phone || o.user?.phone || "—",
+            paymentLabel(o),
+            orderDate(o)?.toISOString().slice(0, 10) || "—",
+            formatUSD(o.total_amount),
+            orderStatus(o).toUpperCase()
+          ])
+        });
+      } else if (domain === "products") {
+        generateAndPrintPdf({
+          title: "Product Catalog & Valuation Report",
+          subtitle: "Master inventory stock levels, pricing and category distribution",
+          dateRangeText,
+          kpiStats: [
+            { label: "Total Products", value: `${products.length}` },
+            { label: "Inventory Valuation", value: formatUSD(stats.inventoryValue) },
+            { label: "Low Stock Items", value: `${stats.lowStock}` },
+            { label: "Out of Stock", value: `${stats.outOfStock}` }
+          ],
+          headers: ["ID", "Product Name", "SKU", "Category", "Price", "Stock", "Asset Value", "Status"],
+          rows: products.map((p) => [
+            `#${p.id}`,
+            p.name,
+            p.sku || "—",
+            p.category?.name || p.category || "General",
+            formatUSD(p.price),
+            `${money(p.stock_quantity)} units`,
+            formatUSD(money(p.price) * money(p.stock_quantity)),
+            p.is_active ? "Active" : "Inactive"
+          ])
+        });
+      } else if (domain === "suppliers") {
+        generateAndPrintPdf({
+          title: "Suppliers & Vendor Directory Report",
+          subtitle: "Authorized commercial suppliers, partner contacts and logistics info",
+          dateRangeText,
+          kpiStats: [
+            { label: "Total Suppliers", value: `${suppliers.length}` },
+            { label: "Active Suppliers", value: `${suppliers.filter((s) => s.status !== "Inactive").length}` },
+            { label: "Procurement POs", value: `${purchases.length}` }
+          ],
+          headers: ["ID", "Company Name", "Contact Person", "Phone", "Email", "Address", "Status"],
+          rows: suppliers.map((s) => [
+            `#${s.id}`,
+            s.name || s.company_name || "Supplier Partner",
+            s.contact_person || s.contactPerson || "—",
+            s.phone || "—",
+            s.email || "—",
+            s.address || "—",
+            s.status || "Active"
+          ])
+        });
+      } else if (domain === "purchases") {
+        generateAndPrintPdf({
+          title: "Procurement & Purchase Orders (PO) Report",
+          subtitle: "Commercial purchase orders, supplier expenditures and fulfillment audit",
+          dateRangeText,
+          kpiStats: [
+            { label: "Total POs", value: `${purchases.length}` },
+            { label: "Total Spend", value: formatUSD(stats.purchaseSpend) },
+            { label: "Active Suppliers", value: `${suppliers.length}` }
+          ],
+          headers: ["PO Number", "Supplier", "Order Date", "Expected Delivery", "Status", "Total Spend ($)"],
+          rows: purchases.map((po) => [
+            po.po_number || `PO-${po.id}`,
+            po.supplier?.name || po.supplier_name || "Official Partner",
+            po.order_date || po.created_at || "—",
+            po.delivery_date || po.expected_delivery || "—",
+            po.status || "Completed",
+            formatUSD(po.total_amount)
+          ])
+        });
+      } else if (domain === "attendance") {
+        generateAndPrintPdf({
+          title: "Staff Attendance & Time Clock Report",
+          subtitle: "Employee attendance logs, shift hours, late minutes and GPS geofence verification",
+          dateRangeText,
+          kpiStats: [
+            { label: "Total Records", value: `${attendance.length}` },
+            { label: "Registered Staff", value: `${staffList.length}` },
+            { label: "Late Records", value: `${attendance.filter((r) => (r.lateMinutes || 0) > 0).length}` }
+          ],
+          headers: ["Staff Name", "Employee ID", "Department", "Role", "Date", "Check-In", "Check-Out", "Hours", "Late (Mins)", "Location Status", "Status"],
+          rows: attendance.map((r) => [
+            r.employeeName || r.employee_name || "Staff Member",
+            r.employeeId || r.employee_id || "—",
+            r.department || "Operations",
+            r.role || "Staff",
+            r.date || "—",
+            r.checkInTime || r.check_in || "—",
+            r.checkOutTime || r.check_out || "—",
+            `${r.totalWorkHours || 0}h`,
+            `${r.lateMinutes || 0}m`,
+            r.checkInLocation?.isWithinGeofence ? "Inside Mall" : "Remote",
+            r.status || "Present"
+          ])
+        });
+      } else if (domain === "inventory") {
+        generateAndPrintPdf({
+          title: "Inventory Health & Stock Valuation Report",
+          subtitle: "Stock replenishment triggers, low stock warnings and asset valuation",
+          dateRangeText,
+          kpiStats: [
+            { label: "Inventory Valuation", value: formatUSD(stats.inventoryValue) },
+            { label: "Total Products", value: `${products.length}` },
+            { label: "Low Stock Items", value: `${stats.lowStock}` }
+          ],
+          headers: ["Product Name", "SKU", "Category", "Stock", "Unit Price", "Valuation", "Status", "Recommendation"],
+          rows: inventoryRows.map((p) => [
+            p.name,
+            p.sku,
+            p.category,
+            `${p.stock} units`,
+            formatUSD(p.price),
+            formatUSD(p.value),
+            p.urgency.toUpperCase(),
+            p.recommendation
+          ])
+        });
+      } else {
+        generateAndPrintPdf({
+          title: "Executive Financial & Analytics Report",
+          subtitle: "Gross revenue, profit margin trajectory and order volume summary",
+          dateRangeText,
+          kpiStats: [
+            { label: "Gross Revenue", value: formatUSD(stats.revenue) },
+            { label: "Total Orders", value: `${stats.orderCount}` },
+            { label: "Estimated Profit", value: formatUSD(stats.profit) },
+            { label: "Inventory Valuation", value: formatUSD(stats.inventoryValue) }
+          ],
+          headers: ["Timeline Period", "Orders Count", "Gross Sales Revenue ($)", "Net Profit Margin ($)", "Profit Contribution"],
+          rows: trendData.map((row) => [
+            row.label,
+            `${row.orders} orders`,
+            formatUSD(row.revenue),
+            formatUSD(row.profit),
+            "30%"
+          ])
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "Failed to generate PDF report", "error");
     }
   };
 
@@ -861,7 +1256,6 @@ function ReportPage() {
     reader.onload = (evt) => {
       try {
         const text = evt.target.result;
-        // Parse CSV or TSV lines
         const lines = text.split(/\r\n|\n/).filter((l) => l.trim().length > 0);
         if (lines.length === 0) {
           Swal.fire("Warning", "The uploaded file is empty.", "warning");
@@ -927,16 +1321,17 @@ function ReportPage() {
   }
 
   const tabs = [
-    { id: "overview", icon: BarChart2, label: isKhmer ? "ទិដ្ឋភាពទូទៅ" : "Overview & Charts" },
-    { id: "orders", icon: ShoppingCart, label: isKhmer ? "ការបញ្ជាទិញ" : "Detailed Orders" },
-    { id: "products", icon: Package, label: isKhmer ? "ផលិតផលលក់ដាច់" : "Top Products" },
-    { id: "inventory", icon: AlertTriangle, label: isKhmer ? "សុខភាពស្តុក" : "Inventory Health" },
-    { id: "purchases", icon: Truck, label: isKhmer ? "ការទិញចូល (PO)" : "Procurement" }
+    { id: "overview", icon: BarChart2, label: isKhmer ? "ទិដ្ឋភាពទូទៅ" : "Overview" },
+    { id: "orders", icon: ShoppingCart, label: isKhmer ? "ការបញ្ជាទិញលម្អិត" : "Detail Orders" },
+    { id: "products", icon: Package, label: isKhmer ? "កាតាឡុកផលិតផល" : "Products Catalog" },
+    { id: "suppliers", icon: Building2, label: isKhmer ? "អ្នកផ្គត់ផ្គង់" : "Suppliers" },
+    { id: "purchases", icon: Truck, label: isKhmer ? "ការទិញចូល (PO)" : "Purchases" },
+    { id: "attendance", icon: UserCheck, label: isKhmer ? "វត្តមានបុគ្គលិក" : "Staff Attendance" },
+    { id: "inventory", icon: AlertTriangle, label: isKhmer ? "សុខភាពស្តុក" : "Inventory Health" }
   ];
 
   return (
     <div className="report-page">
-
       {/* ========================================================
           1. EXECUTIVE HEADER & ACTIONS TOOLBAR
          ======================================================== */}
@@ -955,8 +1350,8 @@ function ReportPage() {
             </div>
             <p>
               {isKhmer
-                ? "វិភាគចំណូល ការលក់ ប្រាក់ចំណេញ ស្តុកទំនិញ និងការទិញចូលពីទិន្នន័យពិត"
-                : "Executive revenue, fulfillment metrics, inventory valuation, and spreadsheet management."}
+                ? "នាំចេញឯកសារ Excel & PDF សម្រាប់: Detail Order, Product, Supplier, Purchase, និង Attendate Staff"
+                : "Enterprise reports with direct Excel (.xlsx) & PDF exports for Orders, Products, Suppliers, Purchases, and Staff Attendance."}
             </p>
           </div>
         </div>
@@ -991,6 +1386,42 @@ function ReportPage() {
             <RefreshCw size={15} className={loading ? "rp-spin" : ""} />
           </button>
 
+          {/* Master Export Center Hub Button */}
+          <button
+            type="button"
+            className="rp-btn export-hub-btn"
+            onClick={() => {
+              setSelectedExportDomain(activeTab === "overview" ? "orders" : activeTab);
+              setIsExportHubOpen(true);
+            }}
+            title="Export Excel or PDF for any category"
+          >
+            <FileDown size={15} />
+            <span>{isKhmer ? "មជ្ឈមណ្ឌលនាំចេញ (Excel & PDF)" : "Export Hub"}</span>
+          </button>
+
+          {/* Quick Export Active Tab to Excel */}
+          <button
+            type="button"
+            className="rp-btn excel-btn"
+            onClick={() => exportDomainExcel(activeTab)}
+            title="Quick Export Current View to Excel"
+          >
+            <FileSpreadsheet size={15} />
+            <span>{isKhmer ? "Excel (.xlsx)" : "Export Excel"}</span>
+          </button>
+
+          {/* Quick Export Active Tab to PDF */}
+          <button
+            type="button"
+            className="rp-btn pdf-btn"
+            onClick={() => exportDomainPdf(activeTab)}
+            title="Quick Export Current View to PDF"
+          >
+            <FileText size={15} />
+            <span>{isKhmer ? "PDF Report" : "Export PDF"}</span>
+          </button>
+
           {/* Import Excel / CSV Button */}
           <button
             type="button"
@@ -999,39 +1430,7 @@ function ReportPage() {
             title="Import Excel or CSV dataset"
           >
             <Upload size={15} />
-            <span>{isKhmer ? "នាំចូល Excel" : "Import Excel"}</span>
-          </button>
-
-          {/* Export Excel (.xlsx) Button */}
-          <button
-            type="button"
-            className="rp-btn excel-btn"
-            onClick={handleExportExcel}
-            title="Export full Excel spreadsheet"
-          >
-            <FileSpreadsheet size={15} />
-            <span>{isKhmer ? "នាំចេញ Excel (.xlsx)" : "Export Excel"}</span>
-          </button>
-
-          {/* Export CSV Button */}
-          <button
-            type="button"
-            className="rp-btn ghost"
-            onClick={handleExportCsv}
-            title="Export CSV"
-          >
-            <Download size={15} />
-            <span>CSV</span>
-          </button>
-
-          {/* Print Report */}
-          <button
-            type="button"
-            className="rp-btn ghost"
-            onClick={() => window.print()}
-            title="Print Report"
-          >
-            <Printer size={15} />
+            <span>{isKhmer ? "នាំចូល" : "Import"}</span>
           </button>
         </div>
       </div>
@@ -1090,7 +1489,7 @@ function ReportPage() {
           {/* Revenue KPI Card */}
           <div
             className={`stat-card report-stat-card revenue ${activeKpi === "revenue" ? "active-kpi" : ""}`}
-            onClick={() => handleKpiCardClick("revenue")}
+            onClick={() => setActiveTab("orders")}
             role="button"
             tabIndex={0}
           >
@@ -1111,7 +1510,7 @@ function ReportPage() {
           {/* Orders KPI Card */}
           <div
             className={`stat-card report-stat-card orders ${activeKpi === "orders" ? "active-kpi" : ""}`}
-            onClick={() => handleKpiCardClick("orders")}
+            onClick={() => setActiveTab("orders")}
             role="button"
             tabIndex={0}
           >
@@ -1131,41 +1530,39 @@ function ReportPage() {
             </div>
           </div>
 
-          {/* Net Profit KPI Card */}
+          {/* Products & Valuation Card */}
           <div
             className={`stat-card report-stat-card profit ${activeKpi === "profit" ? "active-kpi" : ""}`}
-            onClick={() => handleKpiCardClick("revenue")}
+            onClick={() => setActiveTab("products")}
             role="button"
             tabIndex={0}
           >
             <div className="stat-info">
-              <p>{isKhmer ? "ប្រាក់ចំណេញសុទ្ធ (Est. 30%)" : "Net Profit Margin"}</p>
-              <h1>{formatUSD(stats.profit)}</h1>
-              <span className="rp-delta up">Est. 30%</span>
-              <small>{formatKHR(stats.profit)}</small>
+              <p>{isKhmer ? "កាតាឡុកទំនិញ & តម្លៃស្តុក" : "Catalog & Inventory Assets"}</p>
+              <h1>{formatUSD(stats.inventoryValue)}</h1>
+              <span className="rp-delta up">{products.length} Products</span>
+              <small>{stats.lowStock} low stock items</small>
             </div>
             <div className="stat-icon-wrapper purple-bg icon-box">
-              <TrendingUp size={20} />
+              <Package size={20} />
             </div>
           </div>
 
-          {/* Inventory Assets KPI Card */}
+          {/* Suppliers & Attendance Card */}
           <div
             className={`stat-card report-stat-card inventory ${activeKpi === "inventory" ? "active-kpi" : ""}`}
-            onClick={() => handleKpiCardClick("inventory")}
+            onClick={() => setActiveTab("attendance")}
             role="button"
             tabIndex={0}
           >
             <div className="stat-info">
-              <p>{isKhmer ? "តម្លៃស្តុកសរុប" : "Total Inventory Assets"}</p>
-              <h1>{formatUSD(stats.inventoryValue)}</h1>
-              <span className={`rp-delta ${stats.lowStock > 0 ? "down" : "up"}`}>
-                {stats.lowStock} {isKhmer ? "ជិតអស់" : "low stock"}
-              </span>
-              <small>{products.length} {isKhmer ? "មុខទំនិញ" : "products active"}</small>
+              <p>{isKhmer ? "អ្នកផ្គត់ផ្គង់ & វត្តមានបុគ្គលិក" : "Suppliers & Staff Attendance"}</p>
+              <h1>{stats.supplierCount} Suppliers</h1>
+              <span className="rp-delta up">{attendance.length} Clock Records</span>
+              <small>{staffList.length} staff registered</small>
             </div>
             <div className="stat-icon-wrapper orange-bg icon-box">
-              <Boxes size={20} />
+              <UserCheck size={20} />
             </div>
           </div>
         </div>
@@ -1193,18 +1590,18 @@ function ReportPage() {
           })}
         </div>
 
-        {/* Dynamic Sorter Controls */}
+        {/* Dynamic Sorter & Search Controls */}
         <div className="dynamic-sort-controls">
           <div className="report-search-wrap">
-            <Search size={14} className="search-icon" />
+            <Search size={15} className="rp-search-icon" />
             <input
               type="text"
-              placeholder={isKhmer ? "ស្វែងរកទិន្នន័យ..." : "Search in reports..."}
+              placeholder={isKhmer ? "ស្វែងរកក្នុងតារាង..." : "Search in reports..."}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
-              <button type="button" className="clear-btn" onClick={() => setSearchQuery("")}>
+              <button type="button" className="rp-search-clear" onClick={() => setSearchQuery("")}>
                 <X size={12} />
               </button>
             )}
@@ -1214,11 +1611,8 @@ function ReportPage() {
             <ArrowUpDown size={14} />
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
               <option value="date">{isKhmer ? "តម្រៀបតាម: កាលបរិច្ឆេទ" : "Sort: Date"}</option>
-              <option value="revenue">{isKhmer ? "តម្រៀបតាម: ចំណូល ($)" : "Sort: Revenue"}</option>
-              <option value="orders">{isKhmer ? "តម្រៀបតាម: បរិមាណបញ្ជាទិញ" : "Sort: Orders/Units"}</option>
-              <option value="profit">{isKhmer ? "តម្រៀបតាម: ប្រាក់ចំណេញ" : "Sort: Profit"}</option>
-              <option value="stock">{isKhmer ? "តម្រៀបតាម: ចំនួនស្តុក" : "Sort: Stock Count"}</option>
-              <option value="name">{isKhmer ? "តម្រៀបតាម: ឈ្មោះ (A-Z)" : "Sort: Name"}</option>
+              <option value="revenue">{isKhmer ? "តម្រៀបតាម: ចំនួនទឹកប្រាក់ ($)" : "Sort: Amount ($)"}</option>
+              <option value="name">{isKhmer ? "តម្រៀបតាម: ឈ្មោះ (A-Z)" : "Sort: Name (A-Z)"}</option>
             </select>
           </div>
 
@@ -1235,7 +1629,7 @@ function ReportPage() {
       </div>
 
       {/* ========================================================
-          5. TAB PANELS CONTENT
+          5. TAB PANELS CONTENT (ALL 5 DOMAINS + OVERVIEW)
          ======================================================== */}
 
       {/* TAB 1: OVERVIEW & RECHARTS */}
@@ -1284,13 +1678,21 @@ function ReportPage() {
         </div>
       )}
 
-      {/* TAB 2: DETAILED ORDERS FEED */}
+      {/* TAB 2: DETAIL ORDERS REPORT */}
       {activeTab === "orders" && (
         <div className="panel report-table-panel">
           <div className="panel-header-row">
             <div>
-              <h3>{isKhmer ? "តារាងបញ្ជាទិញលម្អិត" : "Detailed Orders Master Record"}</h3>
-              <p>{isKhmer ? `សរុប ${detailedOrders.length} ការបញ្ជាទិញ` : `Showing ${detailedOrders.length} orders within selected timeframe`}</p>
+              <h3>{isKhmer ? "តារាងបញ្ជាទិញលម្អិត (Detail Orders)" : "Detail Orders Report"}</h3>
+              <p>{isKhmer ? `សរុប ${filteredOrders.length} ការបញ្ជាទិញ` : `Showing ${filteredOrders.length} orders matching search/filters`}</p>
+            </div>
+            <div className="tab-quick-exports">
+              <button type="button" className="tab-export-btn excel" onClick={() => exportDomainExcel("orders")}>
+                <FileSpreadsheet size={14} /> Export Excel
+              </button>
+              <button type="button" className="tab-export-btn pdf" onClick={() => exportDomainPdf("orders")}>
+                <FileText size={14} /> Export PDF
+              </button>
             </div>
           </div>
 
@@ -1298,30 +1700,36 @@ function ReportPage() {
             <table className="report-data-table desktop-table">
               <thead>
                 <tr>
-                  <th onClick={() => handleColumnSort("id")}>Order ID</th>
-                  <th onClick={() => handleColumnSort("name")}>Customer</th>
+                  <th>Order ID</th>
+                  <th>Customer Name</th>
+                  <th>Email & Phone</th>
                   <th>Payment Method</th>
-                  <th onClick={() => handleColumnSort("date")}>Date {sortBy === "date" && (sortOrder === "asc" ? "▲" : "▼")}</th>
-                  <th onClick={() => handleColumnSort("amount")}>Total Amount {sortBy === "amount" && (sortOrder === "asc" ? "▲" : "▼")}</th>
+                  <th>Order Date</th>
+                  <th>Total ($)</th>
+                  <th>Total (KHR)</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {detailedOrders.length === 0 ? (
-                  <tr><td colSpan={6} className="empty-cell">No order records matching query.</td></tr>
+                {filteredOrders.length === 0 ? (
+                  <tr><td colSpan={8} className="empty-cell">No order records found matching query.</td></tr>
                 ) : (
-                  detailedOrders.map((ord) => (
+                  filteredOrders.map((ord) => (
                     <tr key={ord.id}>
-                      <td><strong className="id-tag">{ord.id}</strong></td>
+                      <td><strong className="id-tag">#{ord.id}</strong></td>
                       <td>
-                        <div className="user-cell">
-                          <strong>{ord.user?.name || "Customer"}</strong>
-                          <small>{ord.user?.email || "—"}</small>
+                        <strong className="user-name">{ord.user?.name || "Client"}</strong>
+                      </td>
+                      <td>
+                        <div className="contact-cell">
+                          <small><Mail size={11} /> {ord.user?.email || "—"}</small>
+                          <small><Phone size={11} /> {ord.contact_phone || ord.user?.phone || "—"}</small>
                         </div>
                       </td>
                       <td><span className="pay-tag"><CreditCard size={13} /> {paymentLabel(ord)}</span></td>
                       <td><span className="date-tag">{orderDate(ord)?.toISOString().slice(0, 10) || "—"}</span></td>
                       <td><strong className="amount-val">{formatUSD(ord.total_amount)}</strong></td>
+                      <td><span className="khr-val">{formatKHR(ord.total_amount)}</span></td>
                       <td>
                         <span className={`status-pill status-${orderStatus(ord)}`}>
                           {orderStatus(ord)}
@@ -1333,12 +1741,12 @@ function ReportPage() {
               </tbody>
             </table>
 
-            {/* Mobile Cards View */}
+            {/* Mobile Cards */}
             <div className="mobile-cards-container">
-              {detailedOrders.map((ord) => (
+              {filteredOrders.map((ord) => (
                 <div className="kanban-card" key={ord.id}>
                   <div className="kanban-card-header">
-                    <span className="id-tag">{ord.id}</span>
+                    <span className="id-tag">#{ord.id}</span>
                     <span className={`status-pill status-${orderStatus(ord)}`}>{orderStatus(ord)}</span>
                   </div>
                   <div className="card-info-row">
@@ -1346,8 +1754,8 @@ function ReportPage() {
                     <strong>{ord.user?.name || "Client"}</strong>
                   </div>
                   <div className="card-info-row price-row">
-                    <span className="info-label">Amount:</span>
-                    <strong className="price-value">{formatUSD(ord.total_amount)}</strong>
+                    <span className="info-label">Total:</span>
+                    <strong className="price-value">{formatUSD(ord.total_amount)} ({formatKHR(ord.total_amount)})</strong>
                   </div>
                   <div className="card-info-row date-row">
                     <span className="info-label">Date:</span>
@@ -1360,13 +1768,21 @@ function ReportPage() {
         </div>
       )}
 
-      {/* TAB 3: TOP PRODUCTS */}
+      {/* TAB 3: PRODUCTS CATALOG REPORT */}
       {activeTab === "products" && (
         <div className="panel report-table-panel">
           <div className="panel-header-row">
             <div>
-              <h3>{isKhmer ? "ផលិតផលលក់ដាច់បំផុត" : "Top Performing Products"}</h3>
-              <p>{isKhmer ? "តម្រៀបតាមចំណូល បរិមាណលក់ និងប្រាក់ចំណេញ" : "Ranked by gross sales volume and margin contribution"}</p>
+              <h3>{isKhmer ? "កាតាឡុកផលិតផល & ស្តុក (Product Catalog)" : "Product Catalog Report"}</h3>
+              <p>{isKhmer ? `សរុប ${products.length} ផលិតផលក្នុងប្រព័ន្ធ` : `Showing ${products.length} active products in catalog`}</p>
+            </div>
+            <div className="tab-quick-exports">
+              <button type="button" className="tab-export-btn excel" onClick={() => exportDomainExcel("products")}>
+                <FileSpreadsheet size={14} /> Export Excel
+              </button>
+              <button type="button" className="tab-export-btn pdf" onClick={() => exportDomainPdf("products")}>
+                <FileText size={14} /> Export PDF
+              </button>
             </div>
           </div>
 
@@ -1374,32 +1790,124 @@ function ReportPage() {
             <table className="report-data-table desktop-table">
               <thead>
                 <tr>
-                  <th>#</th>
-                  <th onClick={() => handleColumnSort("name")}>Product Name</th>
+                  <th>Product ID</th>
+                  <th>Product Name</th>
                   <th>SKU</th>
                   <th>Category</th>
-                  <th onClick={() => handleColumnSort("units")}>Units Sold {sortBy === "units" && (sortOrder === "asc" ? "▲" : "▼")}</th>
-                  <th onClick={() => handleColumnSort("revenue")}>Revenue {sortBy === "revenue" && (sortOrder === "asc" ? "▲" : "▼")}</th>
-                  <th onClick={() => handleColumnSort("profit")}>Net Profit {sortBy === "profit" && (sortOrder === "asc" ? "▲" : "▼")}</th>
-                  <th>Stock Status</th>
+                  <th>Brand</th>
+                  <th>Unit Price ($)</th>
+                  <th>Stock Count</th>
+                  <th>Asset Value ($)</th>
+                  <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                {topProducts.length === 0 ? (
-                  <tr><td colSpan={8} className="empty-cell">No product sales recorded in this period.</td></tr>
+                {products.length === 0 ? (
+                  <tr><td colSpan={9} className="empty-cell">No products available in catalog.</td></tr>
                 ) : (
-                  topProducts.map((p, idx) => (
-                    <tr key={p.id || idx}>
-                      <td><span className="rank-badge">#{idx + 1}</span></td>
-                      <td><strong className="prod-name">{p.name}</strong></td>
-                      <td><span className="sku-tag">{p.sku}</span></td>
-                      <td><span className="cat-pill">{p.category}</span></td>
-                      <td><strong>{p.unitsSold.toLocaleString()}</strong></td>
-                      <td><strong className="amount-val">{formatUSD(p.revenue)}</strong></td>
-                      <td><strong className="profit-val">{formatUSD(p.profit)}</strong></td>
+                  products.map((p) => {
+                    const priceNum = money(p.price);
+                    const stockNum = money(p.stock_quantity);
+                    const assetVal = priceNum * stockNum;
+                    return (
+                      <tr key={p.id}>
+                        <td><strong className="id-tag">#{p.id}</strong></td>
+                        <td><strong className="prod-name">{p.name}</strong></td>
+                        <td><span className="sku-tag">{p.sku || "—"}</span></td>
+                        <td><span className="cat-pill">{p.category?.name || p.category || "General"}</span></td>
+                        <td><span>{p.brand?.name || p.brand || "Standard"}</span></td>
+                        <td><strong className="amount-val">{formatUSD(priceNum)}</strong></td>
+                        <td>
+                          <span className={`stock-status-pill ${stockNum <= 5 ? "low" : "ok"}`}>
+                            {stockNum} in stock
+                          </span>
+                        </td>
+                        <td><strong className="profit-val">{formatUSD(assetVal)}</strong></td>
+                        <td>
+                          <span className={`status-pill status-${p.is_active ? "active" : "inactive"}`}>
+                            {p.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+
+            {/* Mobile Cards */}
+            <div className="mobile-cards-container">
+              {products.map((p) => (
+                <div className="kanban-card" key={p.id}>
+                  <div className="kanban-card-header">
+                    <strong>#{p.id} {p.name}</strong>
+                    <span className={`status-pill status-${p.is_active ? "active" : "inactive"}`}>
+                      {p.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                  <div className="card-info-row price-row">
+                    <span className="info-label">Price / Stock:</span>
+                    <strong className="price-value">{formatUSD(p.price)} ({p.stock_quantity} units)</strong>
+                  </div>
+                  <div className="card-info-row">
+                    <span className="info-label">Total Value:</span>
+                    <strong className="profit-val">{formatUSD(money(p.price) * money(p.stock_quantity))}</strong>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: SUPPLIERS REPORT */}
+      {activeTab === "suppliers" && (
+        <div className="panel report-table-panel">
+          <div className="panel-header-row">
+            <div>
+              <h3>{isKhmer ? "បញ្ជីអ្នកផ្គត់ផ្គង់ (Suppliers Directory)" : "Supplier Directory Report"}</h3>
+              <p>{isKhmer ? `សរុប ${filteredSuppliers.length} ក្រុមហ៊ុនផ្គត់ផ្គង់` : `Showing ${filteredSuppliers.length} partner suppliers`}</p>
+            </div>
+            <div className="tab-quick-exports">
+              <button type="button" className="tab-export-btn excel" onClick={() => exportDomainExcel("suppliers")}>
+                <FileSpreadsheet size={14} /> Export Excel
+              </button>
+              <button type="button" className="tab-export-btn pdf" onClick={() => exportDomainPdf("suppliers")}>
+                <FileText size={14} /> Export PDF
+              </button>
+            </div>
+          </div>
+
+          <div className="table-responsive-container">
+            <table className="report-data-table desktop-table">
+              <thead>
+                <tr>
+                  <th>Supplier ID</th>
+                  <th>Company / Vendor Name</th>
+                  <th>Contact Person</th>
+                  <th>Phone Number</th>
+                  <th>Email</th>
+                  <th>Office Address</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredSuppliers.length === 0 ? (
+                  <tr><td colSpan={7} className="empty-cell">No supplier records found matching query.</td></tr>
+                ) : (
+                  filteredSuppliers.map((s) => (
+                    <tr key={s.id}>
+                      <td><strong className="id-tag">#{s.id}</strong></td>
                       <td>
-                        <span className={`stock-status-pill ${p.stock <= 5 ? "low" : "ok"}`}>
-                          {p.stock} in stock
+                        <strong className="vendor-title">{s.name || s.company_name || "Supplier Partner"}</strong>
+                      </td>
+                      <td><span>{s.contact_person || s.contactPerson || "—"}</span></td>
+                      <td><span className="contact-tag"><Phone size={12} /> {s.phone || "—"}</span></td>
+                      <td><span className="contact-tag"><Mail size={12} /> {s.email || "—"}</span></td>
+                      <td><span className="address-text"><MapPin size={12} /> {s.address || "Phnom Penh, Cambodia"}</span></td>
+                      <td>
+                        <span className={`status-pill status-${(s.status || "active").toLowerCase()}`}>
+                          {s.status || "Active"}
                         </span>
                       </td>
                     </tr>
@@ -1410,19 +1918,19 @@ function ReportPage() {
 
             {/* Mobile Cards */}
             <div className="mobile-cards-container">
-              {topProducts.map((p, idx) => (
-                <div className="kanban-card" key={p.id || idx}>
+              {filteredSuppliers.map((s) => (
+                <div className="kanban-card" key={s.id}>
                   <div className="kanban-card-header">
-                    <strong>#{idx + 1} {p.name}</strong>
-                    <span className="cat-pill">{p.category}</span>
-                  </div>
-                  <div className="card-info-row price-row">
-                    <span className="info-label">Revenue / Units:</span>
-                    <strong className="price-value">{formatUSD(p.revenue)} ({p.unitsSold} sold)</strong>
+                    <strong>#{s.id} {s.name || s.company_name}</strong>
+                    <span className="status-pill status-active">{s.status || "Active"}</span>
                   </div>
                   <div className="card-info-row">
-                    <span className="info-label">Net Profit:</span>
-                    <strong className="profit-val">{formatUSD(p.profit)} ({p.margin})</strong>
+                    <span className="info-label">Contact:</span>
+                    <span>{s.contact_person || "Partner"} ({s.phone || "—"})</span>
+                  </div>
+                  <div className="card-info-row">
+                    <span className="info-label">Email:</span>
+                    <span>{s.email || "—"}</span>
                   </div>
                 </div>
               ))}
@@ -1431,13 +1939,21 @@ function ReportPage() {
         </div>
       )}
 
-      {/* TAB 4: INVENTORY HEALTH */}
-      {activeTab === "inventory" && (
+      {/* TAB 5: PURCHASE ORDERS (PO) REPORT */}
+      {activeTab === "purchases" && (
         <div className="panel report-table-panel">
           <div className="panel-header-row">
             <div>
-              <h3>{isKhmer ? "តារាងសុខភាពស្តុកទំនិញ" : "Inventory Valuation & Stock Levels"}</h3>
-              <p>{isKhmer ? "តាមដានស្តុកជិតអស់ ស្តុកលើស និងអនុសាសន៍បញ្ជាទិញ" : "Automated reorder triggers and asset valuation"}</p>
+              <h3>{isKhmer ? "របាយការណ៍ទិញចូល (Purchase Orders / Procurement)" : "Purchase Orders (PO) Report"}</h3>
+              <p>{isKhmer ? `សរុប ${filteredPurchases.length} កំណត់ត្រាទិញចូល` : `Showing ${filteredPurchases.length} procurement orders`}</p>
+            </div>
+            <div className="tab-quick-exports">
+              <button type="button" className="tab-export-btn excel" onClick={() => exportDomainExcel("purchases")}>
+                <FileSpreadsheet size={14} /> Export Excel
+              </button>
+              <button type="button" className="tab-export-btn pdf" onClick={() => exportDomainPdf("purchases")}>
+                <FileText size={14} /> Export PDF
+              </button>
             </div>
           </div>
 
@@ -1445,11 +1961,175 @@ function ReportPage() {
             <table className="report-data-table desktop-table">
               <thead>
                 <tr>
-                  <th onClick={() => handleColumnSort("name")}>Product</th>
+                  <th>PO Number</th>
+                  <th>Supplier Name</th>
+                  <th>Order Date</th>
+                  <th>Expected Delivery</th>
+                  <th>Status</th>
+                  <th>Total Spend ($)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPurchases.length === 0 ? (
+                  <tr><td colSpan={6} className="empty-cell">No purchase orders found matching query.</td></tr>
+                ) : (
+                  filteredPurchases.map((po) => (
+                    <tr key={po.id}>
+                      <td><strong className="id-tag">{po.po_number || `PO-${po.id}`}</strong></td>
+                      <td><strong>{po.supplier?.name || po.supplier_name || "Official Partner"}</strong></td>
+                      <td><span>{po.order_date || po.created_at || "—"}</span></td>
+                      <td><span>{po.delivery_date || po.expected_delivery || "—"}</span></td>
+                      <td><span className={`status-pill status-${(po.status || "completed").toLowerCase()}`}>{po.status || "Completed"}</span></td>
+                      <td><strong className="amount-val">{formatUSD(po.total_amount)}</strong></td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            {/* Mobile Cards */}
+            <div className="mobile-cards-container">
+              {filteredPurchases.map((po) => (
+                <div className="kanban-card" key={po.id}>
+                  <div className="kanban-card-header">
+                    <span className="id-tag">{po.po_number || `PO-${po.id}`}</span>
+                    <span className="status-pill status-completed">{po.status || "Completed"}</span>
+                  </div>
+                  <div className="card-info-row">
+                    <span className="info-label">Supplier:</span>
+                    <strong>{po.supplier?.name || "Partner"}</strong>
+                  </div>
+                  <div className="card-info-row price-row">
+                    <span className="info-label">Spend:</span>
+                    <strong className="price-value">{formatUSD(po.total_amount)}</strong>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 6: STAFF ATTENDANCE REPORT */}
+      {activeTab === "attendance" && (
+        <div className="panel report-table-panel">
+          <div className="panel-header-row">
+            <div>
+              <h3>{isKhmer ? "របាយការណ៍វត្តមានបុគ្គលិក (Staff Attendance)" : "Staff Attendance Report"}</h3>
+              <p>{isKhmer ? `សរុប ${filteredAttendance.length} កំណត់ត្រាវត្តមាន` : `Showing ${filteredAttendance.length} attendance clock records`}</p>
+            </div>
+            <div className="tab-quick-exports">
+              <button type="button" className="tab-export-btn excel" onClick={() => exportDomainExcel("attendance")}>
+                <FileSpreadsheet size={14} /> Export Excel
+              </button>
+              <button type="button" className="tab-export-btn pdf" onClick={() => exportDomainPdf("attendance")}>
+                <FileText size={14} /> Export PDF
+              </button>
+            </div>
+          </div>
+
+          <div className="table-responsive-container">
+            <table className="report-data-table desktop-table">
+              <thead>
+                <tr>
+                  <th>Staff Name</th>
+                  <th>Employee ID</th>
+                  <th>Department</th>
+                  <th>Position</th>
+                  <th>Date</th>
+                  <th>Check-In</th>
+                  <th>Check-Out</th>
+                  <th>Work Hours</th>
+                  <th>Late (Mins)</th>
+                  <th>Location Status</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAttendance.length === 0 ? (
+                  <tr><td colSpan={11} className="empty-cell">No attendance records found matching query.</td></tr>
+                ) : (
+                  filteredAttendance.map((r, idx) => (
+                    <tr key={r.id || idx}>
+                      <td><strong className="user-name">{r.employeeName || r.employee_name || "Staff Member"}</strong></td>
+                      <td><span className="id-tag">{r.employeeId || r.employee_id || `EMP-${idx+1}`}</span></td>
+                      <td><span>{r.department || "Operations"}</span></td>
+                      <td><span>{r.role || "Staff"}</span></td>
+                      <td><span className="date-tag">{r.date || "—"}</span></td>
+                      <td><span className="time-tag">{r.checkInTime || r.check_in || "—"}</span></td>
+                      <td><span className="time-tag">{r.checkOutTime || r.check_out || "—"}</span></td>
+                      <td><strong>{r.totalWorkHours || 0} hrs</strong></td>
+                      <td>
+                        <span className={r.lateMinutes > 0 ? "text-amber font-bold" : "text-slate"}>
+                          {r.lateMinutes > 0 ? `${r.lateMinutes}m` : "On Time"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`geofence-tag ${r.checkInLocation?.isWithinGeofence !== false ? "inside" : "outside"}`}>
+                          <ShieldCheck size={11} /> {r.checkInLocation?.isWithinGeofence !== false ? "Inside Mall" : "Remote"}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`status-pill status-${(r.status || "present").toLowerCase()}`}>
+                          {r.status || "Present"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            {/* Mobile Cards */}
+            <div className="mobile-cards-container">
+              {filteredAttendance.map((r, idx) => (
+                <div className="kanban-card" key={r.id || idx}>
+                  <div className="kanban-card-header">
+                    <strong>{r.employeeName || r.employee_name}</strong>
+                    <span className="status-pill status-present">{r.status || "Present"}</span>
+                  </div>
+                  <div className="card-info-row">
+                    <span className="info-label">Time Clock:</span>
+                    <span>In: {r.checkInTime || "—"} | Out: {r.checkOutTime || "—"} ({r.totalWorkHours || 0} hrs)</span>
+                  </div>
+                  <div className="card-info-row">
+                    <span className="info-label">Department:</span>
+                    <span>{r.department || "Store Operations"} ({r.role || "Staff"})</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 7: INVENTORY HEALTH */}
+      {activeTab === "inventory" && (
+        <div className="panel report-table-panel">
+          <div className="panel-header-row">
+            <div>
+              <h3>{isKhmer ? "តារាងសុខភាពស្តុកទំនិញ (Inventory Health)" : "Inventory Health Report"}</h3>
+              <p>{isKhmer ? "តាមដានស្តុកជិតអស់ ស្តុកលើស និងអនុសាសន៍បញ្ជាទិញ" : "Automated reorder triggers and asset valuation"}</p>
+            </div>
+            <div className="tab-quick-exports">
+              <button type="button" className="tab-export-btn excel" onClick={() => exportDomainExcel("inventory")}>
+                <FileSpreadsheet size={14} /> Export Excel
+              </button>
+              <button type="button" className="tab-export-btn pdf" onClick={() => exportDomainPdf("inventory")}>
+                <FileText size={14} /> Export PDF
+              </button>
+            </div>
+          </div>
+
+          <div className="table-responsive-container">
+            <table className="report-data-table desktop-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
                   <th>SKU</th>
                   <th>Category</th>
-                  <th onClick={() => handleColumnSort("stock")}>Current Stock {sortBy === "stock" && (sortOrder === "asc" ? "▲" : "▼")}</th>
-                  <th onClick={() => handleColumnSort("value")}>Stock Valuation {sortBy === "value" && (sortOrder === "asc" ? "▲" : "▼")}</th>
+                  <th>Current Stock</th>
+                  <th>Stock Valuation</th>
                   <th>Health Status</th>
                   <th>Recommendation</th>
                 </tr>
@@ -1479,7 +2159,7 @@ function ReportPage() {
                 <div className="kanban-card" key={p.id}>
                   <div className="kanban-card-header">
                     <strong>{p.name}</strong>
-                    <span className={`urgency-badge ${p.urgency}`}>{p.urgency}</span>
+                    <span className={`urgency-badge ${p.urgency}`}>{p.urgency.toUpperCase()}</span>
                   </div>
                   <div className="card-info-row">
                     <span className="info-label">Stock / Value:</span>
@@ -1496,65 +2176,132 @@ function ReportPage() {
         </div>
       )}
 
-      {/* TAB 5: PURCHASES & RE-STOCKING */}
-      {activeTab === "purchases" && (
-        <div className="panel report-table-panel">
-          <div className="panel-header-row">
-            <div>
-              <h3>{isKhmer ? "ការទិញចូលពីអ្នកផ្គត់ផ្គង់" : "Procurement & Restocking Records"}</h3>
-              <p>{isKhmer ? "តាមដានលំហូរសាច់ប្រាក់ចំណាយទិញទំនិញចូល" : "Supplier purchase orders and invoice expenditures"}</p>
-            </div>
-          </div>
-
-          <div className="table-responsive-container">
-            <table className="report-data-table desktop-table">
-              <thead>
-                <tr>
-                  <th>PO Number</th>
-                  <th>Supplier</th>
-                  <th onClick={() => handleColumnSort("date")}>Order Date</th>
-                  <th>Status</th>
-                  <th onClick={() => handleColumnSort("amount")}>Total Spend ($)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {purchaseRows.map((po) => (
-                  <tr key={po.id}>
-                    <td><strong className="id-tag">{po.po_number || `PO-${po.id}`}</strong></td>
-                    <td><strong>{po.supplier?.name || po.supplier_name || "Official Partner"}</strong></td>
-                    <td><span>{po.order_date || po.created_at || "—"}</span></td>
-                    <td><span className={`status-pill status-${po.status || "completed"}`}>{po.status || "completed"}</span></td>
-                    <td><strong className="amount-val">{formatUSD(po.total_amount)}</strong></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {/* Mobile Cards */}
-            <div className="mobile-cards-container">
-              {purchaseRows.map((po) => (
-                <div className="kanban-card" key={po.id}>
-                  <div className="kanban-card-header">
-                    <span className="id-tag">{po.po_number || `PO-${po.id}`}</span>
-                    <span className={`status-pill status-${po.status || "completed"}`}>{po.status || "completed"}</span>
+      {/* ========================================================
+          6. EXPORT CENTER HUB MODAL (EXCEL & PDF)
+         ======================================================== */}
+      <AnimatePresence>
+        {isExportHubOpen && (
+          <div className="kpi-modal-backdrop" onClick={() => setIsExportHubOpen(false)}>
+            <motion.div
+              className="kpi-modal-card export-hub-card"
+              onClick={(e) => e.stopPropagation()}
+              initial={{ opacity: 0, scale: 0.92, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 20 }}
+            >
+              <div className="kpi-modal-header">
+                <div className="kpi-modal-title-group">
+                  <div className="kpi-modal-icon-badge emerald">
+                    <FileDown size={22} />
                   </div>
-                  <div className="card-info-row">
-                    <span className="info-label">Supplier:</span>
-                    <strong>{po.supplier?.name || "Partner"}</strong>
-                  </div>
-                  <div className="card-info-row price-row">
-                    <span className="info-label">Spend:</span>
-                    <strong className="price-value">{formatUSD(po.total_amount)}</strong>
+                  <div>
+                    <h3>{isKhmer ? "មជ្ឈមណ្ឌលនាំចេញរបាយការណ៍" : "Report Export Center"}</h3>
+                    <span className="kpi-modal-badge">Excel (.xlsx) & Official PDF</span>
                   </div>
                 </div>
-              ))}
-            </div>
+                <button
+                  type="button"
+                  className="kpi-modal-close"
+                  onClick={() => setIsExportHubOpen(false)}
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="kpi-modal-body">
+                <div className="export-hub-domain-select">
+                  <label>{isKhmer ? "ជ្រើសរើសប្រភេទរបាយការណ៍:" : "Select Report Domain to Export:"}</label>
+                  <div className="export-domain-grid">
+                    {[
+                      { id: "orders", icon: ShoppingCart, title: "Detail Orders Report", desc: "Sales transactions, client info, amounts & status" },
+                      { id: "products", icon: Package, title: "Product Catalog Report", desc: "Stock quantities, asset value, SKU & pricing" },
+                      { id: "suppliers", icon: Building2, title: "Suppliers Directory", desc: "Vendor companies, contact persons & address" },
+                      { id: "purchases", icon: Truck, title: "Purchase Orders (PO)", desc: "Procurement records, expenditures & fulfillment" },
+                      { id: "attendance", icon: UserCheck, title: "Staff Attendance Report", desc: "Time clocks, shifts, hours worked & GPS logs" }
+                    ].map((item) => {
+                      const Icon = item.icon;
+                      const isSelected = selectedExportDomain === item.id;
+                      return (
+                        <div
+                          key={item.id}
+                          className={`export-domain-card ${isSelected ? "selected" : ""}`}
+                          onClick={() => setSelectedExportDomain(item.id)}
+                        >
+                          <div className="domain-card-icon">
+                            <Icon size={18} />
+                          </div>
+                          <div className="domain-card-content">
+                            <strong>{item.title}</strong>
+                            <small>{item.desc}</small>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="export-hub-format-select">
+                  <label>{isKhmer ? "ជ្រើសរើសទម្រង់ឯកសារ:" : "Choose Export Format:"}</label>
+                  <div className="export-format-options">
+                    <button
+                      type="button"
+                      className={`format-option-btn ${exportFormat === "excel" ? "active" : ""}`}
+                      onClick={() => setExportFormat("excel")}
+                    >
+                      <FileSpreadsheet size={22} className="text-emerald" />
+                      <div>
+                        <strong>Excel Spreadsheet (.xlsx / .xls)</strong>
+                        <small>Styled multi-column spreadsheet for Microsoft Excel & Google Sheets</small>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`format-option-btn ${exportFormat === "pdf" ? "active" : ""}`}
+                      onClick={() => setExportFormat("pdf")}
+                    >
+                      <FileText size={22} className="text-blue" />
+                      <div>
+                        <strong>Official PDF Document (.pdf)</strong>
+                        <small>Print-ready corporate report with official Angkor Mall letterhead & signatures</small>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="kpi-modal-footer">
+                <button
+                  type="button"
+                  className="kpi-btn-secondary"
+                  onClick={() => setIsExportHubOpen(false)}
+                >
+                  {isKhmer ? "បិទ" : "Cancel"}
+                </button>
+
+                <button
+                  type="button"
+                  className="kpi-btn-primary"
+                  onClick={() => {
+                    if (exportFormat === "excel") {
+                      exportDomainExcel(selectedExportDomain);
+                    } else {
+                      exportDomainPdf(selectedExportDomain);
+                    }
+                    setIsExportHubOpen(false);
+                  }}
+                >
+                  <Download size={16} />
+                  <span>{isKhmer ? "ទាញយកឯកសារឥឡូវនេះ" : "Generate & Download Report"}</span>
+                </button>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* ========================================================
-          6. EXCEL / CSV IMPORT DATASET MODAL
+          7. EXCEL / CSV IMPORT DATASET MODAL
          ======================================================== */}
       <AnimatePresence>
         {isImportModalOpen && (
@@ -1616,7 +2363,6 @@ function ReportPage() {
                   )}
                 </div>
 
-                {/* Import Preview Table */}
                 {importPreviewRows.length > 0 && (
                   <div className="import-preview-box">
                     <h5>
@@ -1652,7 +2398,7 @@ function ReportPage() {
                   className="kpi-btn-secondary"
                   onClick={() => setIsImportModalOpen(false)}
                 >
-                  {isKhmer ? "បោះបង់" : "Cancel"}
+                  {isKhmer ? "បិទ" : "Cancel"}
                 </button>
 
                 <button
@@ -1663,77 +2409,6 @@ function ReportPage() {
                 >
                   <Check size={15} />
                   <span>{isKhmer ? "បញ្ចូលទិន្នន័យ" : "Confirm Import"}</span>
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* ========================================================
-          7. INTERACTIVE KPI DRILL-DOWN MODAL
-         ======================================================== */}
-      <AnimatePresence>
-        {kpiModal && (
-          <div className="kpi-modal-backdrop" onClick={() => setKpiModal(null)}>
-            <motion.div
-              className={`kpi-modal-card ${kpiModal.color}`}
-              onClick={(e) => e.stopPropagation()}
-              initial={{ opacity: 0, scale: 0.92, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.92, y: 20 }}
-            >
-              <div className="kpi-modal-header">
-                <div className="kpi-modal-title-group">
-                  <div className={`kpi-modal-icon-badge ${kpiModal.color}`}>
-                    {kpiModal.icon}
-                  </div>
-                  <div>
-                    <h3>{kpiModal.title}</h3>
-                    <span className="kpi-modal-badge">{kpiModal.badge}</span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  className="kpi-modal-close"
-                  onClick={() => setKpiModal(null)}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="kpi-modal-body">
-                <div className="kpi-modal-highlight">
-                  <span className="highlight-caption">{isKhmer ? "សរុបបច្ចុប្បន្ន" : "Aggregated Metric"}</span>
-                  <h2 className="highlight-number">{kpiModal.summary}</h2>
-                </div>
-
-                <div className="kpi-details-grid">
-                  {kpiModal.details.map((d, i) => (
-                    <div className="kpi-detail-item" key={i}>
-                      <span className="detail-label">{d.label}</span>
-                      <strong className="detail-value">{d.value}</strong>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="kpi-modal-footer">
-                <button
-                  type="button"
-                  className="kpi-btn-secondary"
-                  onClick={() => setKpiModal(null)}
-                >
-                  {isKhmer ? "បិទ" : "Close"}
-                </button>
-
-                <button
-                  type="button"
-                  className="kpi-btn-primary"
-                  onClick={() => kpiModal.onAction && kpiModal.onAction()}
-                >
-                  <span>{kpiModal.actionText}</span>
-                  <ChevronRight size={14} />
                 </button>
               </div>
             </motion.div>

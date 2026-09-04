@@ -709,6 +709,38 @@ body.dark-theme,
   border-color: #10b981;
 }
 
+/* Ensure Search Inputs & Selects inside Wrappers stay clean and borderless in Dark Mode */
+[data-theme="dark"] .staff-search-box input,
+[data-theme="dark"] .report-search-wrap input,
+[data-theme="dark"] .report-time-filter select,
+[data-theme="dark"] .sort-dropdown-wrap select,
+[data-theme="dark"] .search input,
+[data-theme="dark"] .search-box input,
+[data-theme="dark"] .search-input-wrapper input,
+[data-theme="dark"] .search-box-inventory input,
+[data-theme="dark"] .order-controls .search-box input,
+[data-theme="dark"] .supplier-toolbar .search-input,
+[data-theme="dark"] .purchase-toolbar .search-input,
+[data-theme="dark"] .supplier-search-box input,
+[data-theme="dark"] .purchase-search-box input,
+[data-theme="dark"] .supplier-search-input,
+[data-theme="dark"] .purchase-search-input,
+[data-theme="dark"] .staff-search-box input:focus,
+[data-theme="dark"] .report-search-wrap input:focus,
+[data-theme="dark"] .report-time-filter select:focus,
+[data-theme="dark"] .sort-dropdown-wrap select:focus,
+[data-theme="dark"] .supplier-search-box input:focus,
+[data-theme="dark"] .purchase-search-box input:focus,
+[data-theme="dark"] .search input:focus,
+[data-theme="dark"] .search-box input:focus {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 [data-theme="dark"] .modal-content,
 [data-theme="dark"] .dialog-box {
   background-color: #0f172a;
@@ -1542,7 +1574,16 @@ body.dark-theme,
 }
 
 [data-theme="dark"] .testimonial-card {
-  background-color: #090d16;
+  background-color: #0f172a;
+  border-color: #1e293b;
+}
+
+[data-theme="dark"] .testimonial-card .author-name {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .testimonial-card .testimonial-quote {
+  color: #e2e8f0 !important;
 }
 
 [data-theme="dark"] .trading-page-container .card {
@@ -2198,4 +2239,22 @@ body.dark-theme .kpi-content h1 {
   background: rgba(16, 185, 129, 0.15);
   border-color: rgba(16, 185, 129, 0.3);
   color: #34d399;
+}
+
+/* Attendance Search & Filter Dark Mode Protection */
+[data-theme="dark"] .search-input-box input,
+body.dark-theme .search-input-box input {
+  background: transparent !important;
+  border: 0 none transparent !important;
+  box-shadow: none !important;
+  outline: 0 none transparent !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .search-input-box input:focus,
+body.dark-theme .search-input-box input:focus {
+  background: transparent !important;
+  border: 0 none transparent !important;
+  box-shadow: none !important;
+  outline: 0 none transparent !important;
 }

@@ -74,6 +74,14 @@ import {
 } from "../../services/attendanceService";
 import "./style/AttendancePage.css";
 
+const formatStaffId = (id, idx = 0) => {
+  if (!id) return `EMP-${String(idx + 101).padStart(4, "0")}`;
+  const str = String(id);
+  if (str.startsWith("EMP-") || str.startsWith("STF-")) return str;
+  if (!str.includes("-") && str.length <= 6) return `EMP-${str.padStart(4, "0")}`;
+  return `EMP-${String(idx + 101).padStart(4, "0")}`;
+};
+
 function AttendancePage() {
   const { isKhmer } = useTranslation();
   const { isDark } = useTheme();
@@ -1316,7 +1324,7 @@ function AttendancePage() {
                     <p>{isKhmer ? "គ្មានបុគ្គលិក" : "No staff"}</p>
                   </div>
                 ) : (
-                  col.records.map((item) => {
+                  col.records.map((item, idx) => {
                     const isAttendanceRec = col.type === "attendance";
                     const loc = isAttendanceRec ? item.checkInLocation : null;
                     const isInside = loc ? loc.isWithinGeofence : true;
@@ -1342,7 +1350,7 @@ function AttendancePage() {
                           <div className="kanban-card-info">
                             <h5>{isAttendanceRec ? item.employeeName : item.name}</h5>
                             <p>
-                              {isAttendanceRec ? item.employeeId : item.id} • {item.role}
+                              {isAttendanceRec ? formatStaffId(item.employeeId, idx) : formatStaffId(item.id, idx)} • {item.role}
                             </p>
                             <span className="kanban-dept-badge">{item.department}</span>
                           </div>
@@ -1508,7 +1516,7 @@ function AttendancePage() {
                       </td>
                     </tr>
                   ) : (
-                    sortedRecords.map((r) => {
+                    sortedRecords.map((r, idx) => {
                       const loc = r.checkInLocation;
                       const isInside = loc ? loc.isWithinGeofence : true;
                       const distMeters = loc?.distanceMeters || 0;
@@ -1533,7 +1541,7 @@ function AttendancePage() {
                                 <h5>{r.employeeName}</h5>
                                 <p>
                                   {r.khmerName && <span style={{ marginRight: "4px" }}>{r.khmerName} •</span>}
-                                  ID: {r.employeeId}
+                                  ID: {formatStaffId(r.employeeId || r.id, idx)}
                                 </p>
                               </div>
                             </div>
@@ -2302,7 +2310,7 @@ function AttendancePage() {
               />
               <div className="detail-profile-info">
                 <h4>{selectedRecord.employeeName}</h4>
-                <p>ID: {selectedRecord.employeeId} • {selectedRecord.role} • {selectedRecord.department}</p>
+                <p>ID: {formatStaffId(selectedRecord.employeeId || selectedRecord.id)} • {selectedRecord.role} • {selectedRecord.department}</p>
                 <span className="shift-badge" style={{ marginTop: "6px" }}>
                   {selectedRecord.shiftName}
                 </span>

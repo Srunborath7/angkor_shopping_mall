@@ -18,7 +18,8 @@ import {
     FaTimes,
     FaCog,
     FaInfoCircle,
-    FaUser
+    FaUser,
+    FaMagic
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -101,6 +102,7 @@ function ProductPage() {
     const [isVariantFormOpen, setIsVariantFormOpen] = useState(false);
     const [selectedVariant, setSelectedVariant] = useState(null);
     const [vSku, setVSku] = useState("");
+    const [isSkuManuallyEdited, setIsSkuManuallyEdited] = useState(false);
     const [vPrice, setVPrice] = useState("");
     const [vStockQuantity, setVStockQuantity] = useState("0");
     const [vAttributes, setVAttributes] = useState([]); // { key, value }
@@ -436,13 +438,37 @@ function ProductPage() {
         }
     };
 
+    // Auto-generate Variant SKU from Product Name and Attributes
+    const generateAutoSku = (prodName, attrs = [], variantList = []) => {
+        const cleanStr = (str) =>
+            (str || "")
+                .trim()
+                .toUpperCase()
+                .replace(/[^A-Z0-9]/g, "-")
+                .replace(/-+/g, "-")
+                .replace(/^-|-$/g, "");
+
+        const prodPrefix = cleanStr(prodName) || "PROD";
+        const attrSegments = (attrs || [])
+            .map(a => cleanStr(a.value))
+            .filter(Boolean);
+
+        if (attrSegments.length > 0) {
+            return `${prodPrefix}-${attrSegments.join("-")}`;
+        }
+        return `${prodPrefix}-VAR-${(variantList?.length || 0) + 1}`;
+    };
+
     // Variants Management
     const openAddVariantForm = () => {
         setSelectedVariant(null);
-        setVSku("");
+        const initialAttrs = [{ key: "Color", value: "" }];
+        setVAttributes(initialAttrs);
+        const autoSku = generateAutoSku(selectedProduct?.name || name, initialAttrs, variants);
+        setVSku(autoSku);
+        setIsSkuManuallyEdited(false);
         setVPrice("");
         setVStockQuantity("0");
-        setVAttributes([{ key: "Color", value: "" }]);
         setVImageFile(null);
         setVImagePreview("");
         setIsVariantFormOpen(true);
@@ -451,6 +477,7 @@ function ProductPage() {
     const openEditVariantForm = (v) => {
         setSelectedVariant(v);
         setVSku(v.sku || "");
+        setIsSkuManuallyEdited(true);
         setVPrice(v.price || "");
         setVStockQuantity(v.stock_quantity || "0");
 
@@ -476,10 +503,17 @@ function ProductPage() {
         const updated = [...vAttributes];
         updated[index][field] = value;
         setVAttributes(updated);
+        if (!isSkuManuallyEdited || !vSku) {
+            setVSku(generateAutoSku(selectedProduct?.name || name, updated, variants));
+        }
     };
 
     const handleRemoveVAttrRow = (index) => {
-        setVAttributes(prev => prev.filter((_, i) => i !== index));
+        const updated = vAttributes.filter((_, i) => i !== index);
+        setVAttributes(updated);
+        if (!isSkuManuallyEdited || !vSku) {
+            setVSku(generateAutoSku(selectedProduct?.name || name, updated, variants));
+        }
     };
 
     const handleVFileChange = (e) => {
@@ -501,8 +535,10 @@ function ProductPage() {
             }
         });
 
+        const finalSku = (vSku && vSku.trim()) || generateAutoSku(selectedProduct?.name || name, vAttributes, variants);
+
         const formData = new FormData();
-        formData.append("sku", vSku);
+        formData.append("sku", finalSku);
         if (vPrice) formData.append("price", Number(vPrice));
         formData.append("stock_quantity", Number(vStockQuantity));
         formData.append("attributes", JSON.stringify(attrsObj));
@@ -1324,11 +1360,28 @@ function ProductPage() {
                                     </div>
                                     <div className="form-grid">
                                         <div className="form-group">
-                                            <label>Variant SKU (Stock Keeping Unit)</label>
+                                            <div className="sku-label-row">
+                                                <label>Variant SKU (Stock Keeping Unit)</label>
+                                                <button
+                                                    type="button"
+                                                    className="auto-sku-btn"
+                                                    onClick={() => {
+                                                        const auto = generateAutoSku(selectedProduct?.name || name, vAttributes, variants);
+                                                        setVSku(auto);
+                                                        setIsSkuManuallyEdited(false);
+                                                    }}
+                                                    title="Auto-generate SKU from product name and attributes"
+                                                >
+                                                    <FaMagic /> Auto-generate
+                                                </button>
+                                            </div>
                                             <input
                                                 type="text"
                                                 value={vSku}
-                                                onChange={e => setVSku(e.target.value)}
+                                                onChange={e => {
+                                                    setVSku(e.target.value.toUpperCase());
+                                                    setIsSkuManuallyEdited(true);
+                                                }}
                                                 required
                                                 placeholder="e.g. I16-PRO-RED-256G"
                                             />

@@ -1746,24 +1746,169 @@
   color: #34d399;
 }
 
-/* Brand Partners & Copy Voucher Enhancements */
+/* ============================================================
+   BRAND PARTNERS & TESTIMONIALS & NEWSLETTER THEME ENHANCEMENTS
+   ============================================================ */
+.brand-partners-section {
+  padding: 30px 40px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.brand-partners-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.brand-partners-badge {
+  font-size: 11px;
+  font-weight: 800;
+  color: #10b981;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  display: inline-block;
+  margin-bottom: 4px;
+}
+
+.brand-partners-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.brands-marquee-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
 .brand-logo-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 10px 22px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  font-weight: 800;
+  color: #334155;
+  font-size: 14px;
   transition: all 0.2s ease;
+  user-select: none;
 }
 
 .brand-logo-card:hover {
-  border-color: #10b981 !important;
-  color: #10b981 !important;
   transform: translateY(-2px);
-}
-
-[data-theme="dark"] .brand-logo-card {
-  background: #0f172a !important;
-  border-color: #1e293b !important;
-  color: #f1f5f9 !important;
+  border-color: #10b981;
+  color: #10b981;
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.15);
 }
 
 .copy-voucher-btn:hover {
   background: #e8f7ee !important;
   transform: translateY(-1px);
+}
+
+/* Dark Theme Overrides */
+[data-theme="dark"] .testimonials-section .section-header-row h2,
+body.dark-theme .testimonials-section .section-header-row h2 {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .testimonials-section .section-header-row p,
+body.dark-theme .testimonials-section .section-header-row p {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .testimonial-card,
+body.dark-theme .testimonial-card {
+  background-color: #0f172a !important;
+  border-color: #1e293b !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .testimonial-card:hover,
+body.dark-theme .testimonial-card:hover {
+  border-color: #10b981 !important;
+  box-shadow: 0 12px 30px rgba(16, 185, 129, 0.15) !important;
+}
+
+[data-theme="dark"] .quote-icon,
+body.dark-theme .quote-icon {
+  color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .testimonial-quote,
+body.dark-theme .testimonial-quote {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .testimonial-author,
+body.dark-theme .testimonial-author {
+  border-top-color: #1e293b !important;
+}
+
+[data-theme="dark"] .author-name,
+body.dark-theme .author-name {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .author-role,
+body.dark-theme .author-role {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .brand-partners-title,
+body.dark-theme .brand-partners-title {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .brand-partners-badge,
+body.dark-theme .brand-partners-badge {
+  color: #34d399 !important;
+}
+
+[data-theme="dark"] .brand-logo-card,
+body.dark-theme .brand-logo-card {
+  background: #0f172a !important;
+  border-color: #1e293b !important;
+  color: #cbd5e1 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+[data-theme="dark"] .brand-logo-card:hover,
+body.dark-theme .brand-logo-card:hover {
+  border-color: #34d399 !important;
+  color: #34d399 !important;
+  background: #1e293b !important;
+}
+
+[data-theme="dark"] .newsletter-card,
+body.dark-theme .newsletter-card {
+  background: #0f172a !important;
+  border-color: #1e293b !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-theme="dark"] .newsletter-text h3,
+body.dark-theme .newsletter-text h3 {
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .newsletter-text p,
+body.dark-theme .newsletter-text p {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .newsletter-form input,
+body.dark-theme .newsletter-form input {
+  background: #0b1120 !important;
+  border-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+[data-theme="dark"] .newsletter-form input:focus,
+body.dark-theme .newsletter-form input:focus {
+  border-color: #10b981 !important;
 }

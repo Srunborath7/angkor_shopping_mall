@@ -557,14 +557,25 @@ function CartDrawer({ isOpen, onClose }) {
 
       // 2. Execute Checkout API call
       const finalAddress = addressMode === "map" ? mapLocation.formattedAddress : `${form.address}, ${form.city}`;
+      const generatedOrderSeq = `ORD-${Date.now().toString().slice(-6)}`;
+      const activeStaffId = user?.role?.toLowerCase()?.includes("staff") || user?.role?.toLowerCase()?.includes("cashier") || user?.role?.toLowerCase()?.includes("manager")
+        ? user?.id || user?.user_id
+        : null;
+
       const res = await checkoutApi({
+        order_number: generatedOrderSeq,
+        order_seq: generatedOrderSeq,
+        staff_id: activeStaffId,
+        created_by: user?.id || user?.user_id,
         shipping_address: finalAddress,
         contact_phone: form.phone
       });
 
       const orderData = res.data?.order || res.order || res.data;
-      const numericId = orderData?.id || Math.floor(1000 + Math.random() * 9000);
-      const orderId = `#ORD-${numericId}`;
+      const numericId = (orderData?.id && !String(orderData.id).includes("-") && String(orderData.id).length <= 6)
+        ? String(orderData.id).padStart(4, "0")
+        : orderData?.order_number || Math.floor(1000 + Math.random() * 9000);
+      const orderId = String(numericId).startsWith("#") ? numericId : `#ORD-${numericId}`;
 
       // 3. Mark payment processed ONLY for non-ABA immediate methods (e.g. COD / card demo)
       // ABA PayWay orders must remain 'pending' so the QR payment gateway can generate and process the payment.

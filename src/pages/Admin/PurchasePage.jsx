@@ -427,14 +427,14 @@ function PurchasePage() {
             <div className="purchase-card">
                 {/* Toolbar */}
                 <div className="purchase-toolbar">
-                    <div className="search-group">
-                        <FaSearch className="search-icon" />
+                    <div className="search-group purchase-search-box">
+                        <FaSearch className="purchase-search-icon" />
                         <input
                             type="text"
                             placeholder="Search by PO number or supplier name..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="search-input"
+                            className="purchase-search-input"
                         />
                     </div>
 

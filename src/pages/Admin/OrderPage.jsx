@@ -277,8 +277,16 @@ function OrderPage() {
     if (!createPhone.trim()) return Swal.fire("Validation Error", "Please provide a contact phone number.", "warning");
 
     try {
+      const generatedOrderSeq = `ORD-${Date.now().toString().slice(-6)}`;
+      const currentStaffId = currentUser?.id || currentUser?.user_id;
+
       const payload = {
         user_id: createUserId,
+        order_number: generatedOrderSeq,
+        order_seq: generatedOrderSeq,
+        staff_id: currentStaffId,
+        created_by_staff_id: currentStaffId,
+        staff_name: currentUser?.name || "Store Staff",
         shipping_address: createAddress,
         contact_phone: createPhone,
         status: createStatus,
@@ -367,12 +375,19 @@ function OrderPage() {
   // Open customer detail modal
   const openCustomerModal = (ord, e) => {
     e.stopPropagation();
+    const orderDisplayCode = ord.order_number
+      ? (String(ord.order_number).startsWith("#") ? ord.order_number : `#${ord.order_number}`)
+      : (typeof ord.id === "number" || (ord.id && !String(ord.id).includes("-") && String(ord.id).length <= 6))
+      ? `#ORD-${String(ord.id).padStart(4, "0")}`
+      : `#ORD-${String(ord.id).slice(-6).toUpperCase()}`;
+
     setSelectedCustomer({
       name: ord.user?.name || "Guest Customer",
       email: ord.user?.email || "—",
       phone: ord.contact_phone || ord.user?.phone || "—",
       address: ord.shipping_address || "—",
       orderId: ord.id,
+      orderCode: orderDisplayCode,
       orderStatus: ord.status,
       totalAmount: ord.total_amount,
       orderDate: ord.created_at
@@ -383,7 +398,13 @@ function OrderPage() {
   // Open items detail modal
   const openItemsModal = (ord, e) => {
     e.stopPropagation();
-    setSelectedOrderItems({ orderId: ord.id, items: ord.items || [] });
+    const orderDisplayCode = ord.order_number
+      ? (String(ord.order_number).startsWith("#") ? ord.order_number : `#${ord.order_number}`)
+      : (typeof ord.id === "number" || (ord.id && !String(ord.id).includes("-") && String(ord.id).length <= 6))
+      ? `#ORD-${String(ord.id).padStart(4, "0")}`
+      : `#ORD-${String(ord.id).slice(-6).toUpperCase()}`;
+
+    setSelectedOrderItems({ orderId: ord.id, orderCode: orderDisplayCode, items: ord.items || [] });
     setIsItemsModalOpen(true);
   };
 
@@ -611,10 +632,15 @@ function OrderPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredOrders.map((ord) => {
+                  filteredOrders.map((ord, idx) => {
                     const customerName = ord.user?.name || "Guest Customer";
                     const initial = customerName.charAt(0).toUpperCase();
                     const itemCount = ord.items ? ord.items.length : 0;
+                    const orderDisplayCode = ord.order_number
+                      ? (String(ord.order_number).startsWith("#") ? ord.order_number : `#${ord.order_number}`)
+                      : (typeof ord.id === "number" || (ord.id && !String(ord.id).includes("-") && String(ord.id).length <= 6))
+                      ? `#ORD-${String(ord.id).padStart(4, "0")}`
+                      : `#ORD-${String(idx + 1).padStart(4, "0")}`;
 
                     return (
                       <tr key={ord.id}>
@@ -622,11 +648,11 @@ function OrderPage() {
                           <td>
                             <span
                               className="order-id-code"
-                              title={ord.id}
+                              title={`Database ID: ${ord.id}`}
                               onClick={() => { setSelectedOrder(ord); setIsViewModalOpen(true); }}
                               style={{ cursor: "pointer" }}
                             >
-                              #ORD-{ord.id.slice(-6).toUpperCase()}
+                              {orderDisplayCode}
                             </span>
                           </td>
                         )}
@@ -823,7 +849,7 @@ function OrderPage() {
                 <div>
                   <label>Order ID</label>
                   <span className="customer-modal-ord-id">
-                    #ORD-{selectedCustomer.orderId?.slice(-8).toUpperCase()}
+                    {selectedCustomer.orderCode || `#ORD-${selectedCustomer.orderId?.slice(-6).toUpperCase()}`}
                   </span>
                 </div>
               </div>
@@ -850,7 +876,7 @@ function OrderPage() {
             <div className="items-modal-top-bar">
               <div className="order-tag-wrap">
                 <span className="order-id-chip">
-                  <FaTag size={11} /> #ORD-{selectedOrderItems.orderId?.slice(-8).toUpperCase()}
+                  <FaTag size={11} /> {selectedOrderItems.orderCode || `#ORD-${selectedOrderItems.orderId?.slice(-6).toUpperCase()}`}
                 </span>
                 <span className="items-count-pill">
                   <FaBoxes size={12} /> {selectedOrderItems.items.length} {selectedOrderItems.items.length === 1 ? "Product" : "Products"} Ordered
@@ -954,7 +980,7 @@ function OrderPage() {
             <div className="order-detail-header">
               <div>
                 <h3 className="order-detail-header-title">
-                  Order #ORD-{selectedOrder.id.slice(-6).toUpperCase()}
+                  Order {selectedOrder.order_number ? (String(selectedOrder.order_number).startsWith("#") ? selectedOrder.order_number : `#${selectedOrder.order_number}`) : (typeof selectedOrder.id === "number" || (selectedOrder.id && !String(selectedOrder.id).includes("-") && String(selectedOrder.id).length <= 6) ? `#ORD-${String(selectedOrder.id).padStart(4, "0")}` : `#ORD-${String(selectedOrder.id).slice(-6).toUpperCase()}`)}
                 </h3>
                 <span className="order-detail-header-date">
                   Placed on {formatDate(selectedOrder.created_at)}

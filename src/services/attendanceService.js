@@ -340,8 +340,17 @@ export const getStaffListApi = async (currentUser = null) => {
         (1000 + Number(u.id || idx + 1)).toString().slice(-4)
       );
 
+      // Format clean readable employee ID
+      const cleanEmpId = u.employee_id || u.employeeId || u.staff_id || (
+        (u.id && !String(u.id).includes("-") && String(u.id).length <= 6)
+          ? `EMP-${String(u.id).padStart(4, "0")}`
+          : `EMP-${String(idx + 101).padStart(4, "0")}`
+      );
+
       return {
         id: String(u.id || u.user_id || `EMP-${idx + 1}`),
+        employee_id: cleanEmpId,
+        employeeId: cleanEmpId,
         name: staffName,
         khmerName: u.khmer_name || u.khmerName || "",
         email: u.email || "",
@@ -819,40 +828,50 @@ export const getAttendanceRecordsApi = async ({
 
     const rawList = apiRes?.data || (Array.isArray(apiRes) ? apiRes : null);
     if (rawList && Array.isArray(rawList) && rawList.length > 0) {
-      liveApiRecords = rawList.map((r, i) => ({
-        id: String(r.id || `ATT-${i + 1}`),
-        employeeId: String(r.employee_id || r.user_id || r.userId || r.employeeId || `EMP-${i + 1}`),
-        employeeName: r.employee_name || r.user?.name || r.name || "Staff Member",
-        khmerName: r.khmer_name || r.user?.khmer_name || "",
-        department: r.department || r.user?.department || "Store Operations",
-        role: r.role || r.user?.role || "Staff",
-        avatar: r.avatar || r.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(r.employee_name || "Staff")}&background=0284c7&color=fff`,
-        date: r.date || new Date().toISOString().split("T")[0],
-        shiftId: r.shift_id || r.shiftId || "shift_morning",
-        shiftName: r.shift_name || r.shiftName || "Morning Shift",
-        checkInTime: r.check_in_time || r.checkInTime || r.check_in || "--:--:--",
-        checkInStatus: r.check_in_status || r.checkInStatus || "On Time",
-        lateMinutes: Number(r.late_minutes || r.lateMinutes || 0),
-        checkInMethod: r.check_in_method || r.checkInMethod || "Web App",
-        checkInLocation: r.check_in_location || {
-          latitude: Number(r.latitude || 11.5564),
-          longitude: Number(r.longitude || 104.9282),
-          address: r.location_address || "Angkor Mall Center",
-          isWithinGeofence: r.is_within_geofence !== false,
-          distanceMeters: Number(r.distance_meters || 0)
-        },
-        checkOutTime: r.check_out_time || r.checkOutTime || r.check_out || null,
-        checkOutStatus: r.check_out_status || r.checkOutStatus || (r.check_out_time ? "Completed" : "On Shift"),
-        earlyMinutes: Number(r.early_minutes || r.earlyMinutes || 0),
-        checkOutMethod: r.check_out_method || r.checkOutMethod || null,
-        checkOutLocation: r.check_out_location || null,
-        breakStatus: r.break_status || r.breakStatus || "None",
-        totalBreakMinutes: Number(r.total_break_minutes || r.totalBreakMinutes || 0),
-        totalWorkHours: Number(r.total_work_hours || r.totalWorkHours || 0),
-        overtimeHours: Number(r.overtime_hours || r.overtimeHours || 0),
-        status: r.status || "Present",
-        notes: r.notes || ""
-      }));
+      liveApiRecords = rawList.map((r, i) => {
+        const rawEmpId = r.employee_id || r.user_id || r.userId || r.employeeId || "";
+        const cleanEmpId = (rawEmpId && !String(rawEmpId).includes("-") && String(rawEmpId).length <= 6)
+          ? `EMP-${String(rawEmpId).padStart(4, "0")}`
+          : (rawEmpId && (String(rawEmpId).startsWith("EMP-") || String(rawEmpId).startsWith("STF-")))
+          ? String(rawEmpId)
+          : `EMP-${String(i + 101).padStart(4, "0")}`;
+
+        return {
+          id: String(r.id || `ATT-${i + 1}`),
+          employeeId: cleanEmpId,
+          rawUserId: r.user_id || r.userId || r.employee_id,
+          employeeName: r.employee_name || r.user?.name || r.name || "Staff Member",
+          khmerName: r.khmer_name || r.user?.khmer_name || "",
+          department: r.department || r.user?.department || "Store Operations",
+          role: r.role || r.user?.role || "Staff",
+          avatar: r.avatar || r.user?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(r.employee_name || "Staff")}&background=0284c7&color=fff`,
+          date: r.date || new Date().toISOString().split("T")[0],
+          shiftId: r.shift_id || r.shiftId || "shift_morning",
+          shiftName: r.shift_name || r.shiftName || "Morning Shift",
+          checkInTime: r.check_in_time || r.checkInTime || r.check_in || "--:--:--",
+          checkInStatus: r.check_in_status || r.checkInStatus || "On Time",
+          lateMinutes: Number(r.late_minutes || r.lateMinutes || 0),
+          checkInMethod: r.check_in_method || r.checkInMethod || "Web App",
+          checkInLocation: r.check_in_location || {
+            latitude: Number(r.latitude || 11.5564),
+            longitude: Number(r.longitude || 104.9282),
+            address: r.location_address || "Angkor Mall Center",
+            isWithinGeofence: r.is_within_geofence !== false,
+            distanceMeters: Number(r.distance_meters || 0)
+          },
+          checkOutTime: r.check_out_time || r.checkOutTime || r.check_out || null,
+          checkOutStatus: r.check_out_status || r.checkOutStatus || (r.check_out_time ? "Completed" : "On Shift"),
+          earlyMinutes: Number(r.early_minutes || r.earlyMinutes || 0),
+          checkOutMethod: r.check_out_method || r.checkOutMethod || null,
+          checkOutLocation: r.check_out_location || null,
+          breakStatus: r.break_status || r.breakStatus || "None",
+          totalBreakMinutes: Number(r.total_break_minutes || r.totalBreakMinutes || 0),
+          totalWorkHours: Number(r.total_work_hours || r.totalWorkHours || 0),
+          overtimeHours: Number(r.overtime_hours || r.overtimeHours || 0),
+          status: r.status || "Present",
+          notes: r.notes || ""
+        };
+      });
     }
   } catch (err) {}
 

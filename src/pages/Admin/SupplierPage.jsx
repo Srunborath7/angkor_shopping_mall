@@ -299,14 +299,14 @@ function SupplierPage() {
             <div className="supplier-card">
                 {/* Toolbar */}
                 <div className="supplier-toolbar">
-                    <div className="search-group">
-                        <FaSearch className="search-icon" />
+                    <div className="search-group supplier-search-box">
+                        <FaSearch className="supplier-search-icon" />
                         <input
                             type="text"
                             placeholder="Search by supplier name, contact, email or phone..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="search-input"
+                            className="supplier-search-input"
                         />
                     </div>
 

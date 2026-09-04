@@ -1111,18 +1111,18 @@ function HomePage() {
       )}
 
       {/* Authorized Brand Partners */}
-      <section className="brand-partners-section" style={{ padding: "20px 40px", maxWidth: "1280px", margin: "0 auto" }}>
-        <div className="section-header-row" style={{ marginBottom: "16px", textAlign: "center", display: "block" }}>
-          <span style={{ fontSize: "11px", fontWeight: "800", color: "#166534", letterSpacing: "1px", textTransform: "uppercase" }}>
+      <section className="brand-partners-section">
+        <div className="brand-partners-header">
+          <span className="brand-partners-badge">
             AUTHORIZED DISTRIBUTOR
           </span>
-          <h3 style={{ fontSize: "20px", fontWeight: "800", color: "#0f172a", marginTop: "4px" }}>
+          <h3 className="brand-partners-title">
             {language === "km" ? "ដៃគូម៉ាកល្បីៗលំដាប់ពិភពលោក" : "Official Global Brand Partners"}
           </h3>
         </div>
-        <div className="brands-marquee-row" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "16px", flexWrap: "wrap" }}>
+        <div className="brands-marquee-row">
           {["Apple", "Samsung", "Sony", "Nike", "Adidas", "Asus", "Xiaomi", "Dyson", "Logitech", "LG"].map((b, i) => (
-            <div key={i} className="brand-logo-card" style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "10px 22px", boxShadow: "0 2px 6px rgba(0,0,0,0.03)", fontWeight: "800", color: "#334155", fontSize: "14px" }}>
+            <div key={i} className="brand-logo-card">
               {b}
             </div>
           ))}

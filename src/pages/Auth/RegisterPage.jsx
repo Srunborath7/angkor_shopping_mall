@@ -10,7 +10,9 @@ import {
   FaShieldAlt,
   FaGift,
   FaCheckCircle,
-  FaUserPlus
+  FaTruck,
+  FaUserPlus,
+  FaExclamationCircle
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
@@ -39,6 +41,9 @@ function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [agreeTerms, setAgreeTerms] = useState(false);
 
+  // Field validation errors state
+  const [fieldErrors, setFieldErrors] = useState({});
+
   const [roleId, setRoleId] = useState("");
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -62,23 +67,56 @@ function RegisterPage() {
     }
   };
 
+  const clearFieldError = (field) => {
+    if (fieldErrors[field]) {
+      setFieldErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[field];
+        return updated;
+      });
+    }
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
+    setFieldErrors({});
 
-    if (password.length < 6) {
-      Swal.fire({
-        icon: "warning",
-        title: "Weak Password",
-        text: "Password must be at least 6 characters long.",
-      });
-      return;
+    const clientErrors = {};
+
+    const fullName = `${firstName} ${lastName}`.trim();
+    if (!firstName.trim() && !lastName.trim()) {
+      clientErrors.name = "First name and last name are required";
+    } else if (fullName.length < 2) {
+      clientErrors.name = "Full name must be at least 2 characters";
+    }
+
+    if (!email.trim()) {
+      clientErrors.email = "Email address is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      clientErrors.email = "Please enter a valid email address";
+    }
+
+    if (!phone.trim()) {
+      clientErrors.phone = "Phone number is required";
+    } else if (!/^[0-9+()\-\s]{8,20}$/.test(phone.trim())) {
+      clientErrors.phone = "Please enter a valid phone number";
+    }
+
+    if (!password) {
+      clientErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      clientErrors.password = "Password must be at least 6 characters long";
     }
 
     if (password !== confirmPassword) {
+      clientErrors.confirmPassword = "Passwords do not match";
+    }
+
+    if (Object.keys(clientErrors).length > 0) {
+      setFieldErrors(clientErrors);
       Swal.fire({
         icon: "warning",
         title: "Validation Error",
-        text: "Passwords do not match!",
       });
       return;
     }
@@ -87,19 +125,18 @@ function RegisterPage() {
       Swal.fire({
         icon: "warning",
         title: "Terms & Conditions",
-        text: "Please agree to the Terms & Conditions to proceed.",
+        text: "Please agree to the Terms of Service & Privacy Policy to proceed.",
       });
       return;
     }
 
     try {
       setLoading(true);
-      const fullName = `${firstName} ${lastName}`.trim();
       const payload = {
         name: fullName,
-        email,
+        email: email.trim().toLowerCase(),
         password,
-        phone,
+        phone: phone.trim(),
       };
 
       // Admin create user
@@ -123,13 +160,26 @@ function RegisterPage() {
       setPassword("");
       setConfirmPassword("");
       setRoleId("");
+      setFieldErrors({});
       navigate("/auth/login");
     } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Registration Failed",
-        text: error.message || "Registration failed. Please check your credentials.",
-      });
+      const errData = error.response?.data || error;
+      const serverErrors = errData?.errors || {};
+      const errorMessage = errData?.message || error?.message || "Registration failed. Please check your information.";
+
+      if (Object.keys(serverErrors).length > 0) {
+        setFieldErrors(serverErrors);
+        Swal.fire({
+          icon: "error",
+          title: "Registration Failed",
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Registration Failed",
+          text: errorMessage,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -162,75 +212,78 @@ function RegisterPage() {
         Swal.fire({
           icon: "success",
           title: "Welcome to Angkor Mall!",
-          text: `Account ready for ${user.name}!`,
-          timer: 1800,
+          text: "Google sign-in successful.",
+          timer: 1500,
           showConfirmButton: false,
         });
 
-        if (role === "admin" || role === "sale") {
-          navigate("/admin/dashboard");
-        } else {
-          navigate("/");
-        }
+        navigate("/");
       } catch (error) {
+        console.error("Google login error:", error);
+        const errData = error.response?.data || error;
         Swal.fire({
           icon: "error",
           title: "Google Sign-In Failed",
-          text: error?.message || "Could not complete Google authentication.",
+          text: errData?.message || error.message || "Failed to sign up with Google.",
         });
       } finally {
         setLoading(false);
       }
     },
-    onError: (error) => {
-      console.warn("Google OAuth popup closed or error:", error);
+    onError: () => {
+      Swal.fire({
+        icon: "error",
+        title: "Google Sign-In Cancelled",
+        text: "Could not authenticate with Google.",
+      });
     },
   });
 
   return (
     <div className="auth-page-container">
-      {/* Left Split Panel (Desktop) */}
+      {/* Left Split Banner (Desktop Only) */}
       <div className="auth-split-left">
         <div className="auth-left-content">
           <div className="auth-logo-brand" onClick={() => navigate("/")}>
-            <span className="auth-logo-icon">
-              <img src={logo} alt="AngkorMall Logo" />
-            </span>
+            <div className="auth-logo-icon">
+              <img src={logo} alt="Angkor Shopping Mall" />
+            </div>
             <span className="auth-logo-text">Angkor Shopping Mall</span>
           </div>
 
-          <h1 className="auth-left-heading">Join Cambodia's Premier Marketplace</h1>
+          <h1 className="auth-left-heading">Join Thousands of Smart Shoppers in Cambodia</h1>
           <p className="auth-left-desc">
-            Create an account to unlock member discounts, real-time order tracking, AI recommendations, and fast customer care.
+            Experience seamless e-commerce, instant KHQR payments, exclusive rewards,
+            and fast nationwide delivery with a single account.
           </p>
 
           <div className="auth-features-list">
             <div className="auth-feature-pill">
               <FaGift className="feature-icon" />
-              <span>Exclusive Member Deals & Flash Discounts</span>
+              <span>Welcome Voucher Pack up to $10 off</span>
+            </div>
+            <div className="auth-feature-pill">
+              <FaTruck className="feature-icon" />
+              <span>Fast nationwide express delivery</span>
             </div>
             <div className="auth-feature-pill">
               <FaCheckCircle className="feature-icon" />
-              <span>Smart AI Assistant & Live Order Updates</span>
-            </div>
-            <div className="auth-feature-pill">
-              <FaShieldAlt className="feature-icon" />
-              <span>100% Guaranteed Genuine Products</span>
+              <span>100% Genuine product warranty</span>
             </div>
           </div>
 
           <div className="auth-stats-grid">
             <div className="auth-stat-item">
               <span className="auth-stat-number">50K+</span>
-              <span className="auth-stat-label">Products</span>
+              <span className="auth-stat-label">Active Users</span>
             </div>
             <div className="auth-stat-item">
-              <span className="auth-stat-number">120K+</span>
-              <span className="auth-stat-label">Happy Users</span>
+              <span className="auth-stat-number">100%</span>
+              <span className="auth-stat-label">Secure KHQR</span>
             </div>
             <div className="auth-stat-item">
-              <span className="auth-stat-number">99%</span>
-              <span className="auth-stat-label">Satisfaction</span>
+              <span className="auth-stat-number">24/7</span>
+              <span className="auth-stat-label">Support</span>
             </div>
           </div>
         </div>
@@ -238,7 +291,7 @@ function RegisterPage() {
 
       {/* Right Split Panel */}
       <div className="auth-split-right">
-        {/* Mobile Hero Header (Visible on Mobile & Tablet) */}
+        {/* Mobile Fluid Brand Hero */}
         <div className="auth-mobile-hero">
           <div className="auth-mobile-hero-orb orb-1" />
           <div className="auth-mobile-hero-orb orb-2" />
@@ -247,17 +300,17 @@ function RegisterPage() {
               <img src={logo} alt="Angkor Shopping Mall" className="auth-mobile-brand-logo" />
               <div className="auth-mobile-brand-meta">
                 <span className="auth-mobile-brand-name">Angkor Shopping Mall</span>
-                <span className="auth-mobile-brand-badge">🇰🇭 Cambodia's #1 Mall</span>
+                <span className="auth-mobile-brand-badge">Cambodia's #1 Mall</span>
               </div>
             </div>
-            <h2 className="auth-mobile-hero-title">Create Account ✨</h2>
-            <p className="auth-mobile-hero-sub">Join thousands of happy shoppers in Cambodia</p>
+            <h2 className="auth-mobile-hero-title">Create Account</h2>
+            <p className="auth-mobile-hero-sub">Sign up for rewards and fast checkout</p>
           </div>
         </div>
 
         {/* Auth Form Card */}
         <motion.div
-          className="auth-form-card register-card-wide"
+          className="auth-form-card"
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
@@ -267,18 +320,21 @@ function RegisterPage() {
             <p>Fill in your details below to create your free account.</p>
           </div>
 
-          <form onSubmit={handleRegister} className="auth-form">
+          <form onSubmit={handleRegister} className="auth-form" noValidate>
             {/* First Name & Last Name Row */}
             <div className="auth-row-2col">
               <div className="auth-input-wrapper">
                 <label className="auth-input-label">First Name</label>
-                <div className="auth-input-group">
+                <div className={`auth-input-group ${fieldErrors.name ? "has-error" : ""}`}>
                   <FaUser className="auth-field-icon" />
                   <input
                     type="text"
                     placeholder="First name"
                     value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
+                    onChange={(e) => {
+                      setFirstName(e.target.value);
+                      clearFieldError("name");
+                    }}
                     required
                   />
                 </div>
@@ -286,62 +342,89 @@ function RegisterPage() {
 
               <div className="auth-input-wrapper">
                 <label className="auth-input-label">Last Name</label>
-                <div className="auth-input-group">
+                <div className={`auth-input-group ${fieldErrors.name ? "has-error" : ""}`}>
                   <FaUser className="auth-field-icon" />
                   <input
                     type="text"
                     placeholder="Last name"
                     value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
+                    onChange={(e) => {
+                      setLastName(e.target.value);
+                      clearFieldError("name");
+                    }}
                     required
                   />
                 </div>
               </div>
             </div>
+            {fieldErrors.name && (
+              <div className="auth-field-error-text">
+                <FaExclamationCircle /> {fieldErrors.name}
+              </div>
+            )}
 
             {/* Email Field */}
             <div className="auth-input-wrapper">
               <label className="auth-input-label">Email Address</label>
-              <div className="auth-input-group">
+              <div className={`auth-input-group ${fieldErrors.email ? "has-error" : ""}`}>
                 <FaEnvelope className="auth-field-icon" />
                 <input
                   type="email"
                   placeholder="name@example.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    clearFieldError("email");
+                  }}
                   autoComplete="email"
                   required
                 />
               </div>
+              {fieldErrors.email && (
+                <div className="auth-field-error-text">
+                  <FaExclamationCircle /> {fieldErrors.email}
+                </div>
+              )}
             </div>
 
             {/* Phone Field */}
             <div className="auth-input-wrapper">
               <label className="auth-input-label">Phone Number</label>
-              <div className="auth-input-group">
+              <div className={`auth-input-group ${fieldErrors.phone ? "has-error" : ""}`}>
                 <FaPhone className="auth-field-icon" />
                 <input
                   type="tel"
                   placeholder="012 345 678"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => {
+                    setPhone(e.target.value);
+                    clearFieldError("phone");
+                  }}
                   autoComplete="tel"
                   required
                 />
               </div>
+              {fieldErrors.phone && (
+                <div className="auth-field-error-text">
+                  <FaExclamationCircle /> {fieldErrors.phone}
+                </div>
+              )}
             </div>
 
             {/* Password & Confirm Password Row */}
             <div className="auth-row-2col">
               <div className="auth-input-wrapper">
                 <label className="auth-input-label">Password</label>
-                <div className="auth-input-group">
+                <div className={`auth-input-group ${fieldErrors.password ? "has-error" : ""}`}>
                   <FaLock className="auth-field-icon" />
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="Min 6 chars"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      clearFieldError("password");
+                    }}
                     required
                   />
                   <span
@@ -351,17 +434,25 @@ function RegisterPage() {
                     {showPassword ? <FaEyeSlash /> : <FaEye />}
                   </span>
                 </div>
+                {fieldErrors.password && (
+                  <div className="auth-field-error-text">
+                    <FaExclamationCircle /> {fieldErrors.password}
+                  </div>
+                )}
               </div>
 
               <div className="auth-input-wrapper">
                 <label className="auth-input-label">Confirm Password</label>
-                <div className="auth-input-group">
+                <div className={`auth-input-group ${fieldErrors.confirmPassword ? "has-error" : ""}`}>
                   <FaLock className="auth-field-icon" />
                   <input
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="Repeat password"
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      clearFieldError("confirmPassword");
+                    }}
                     required
                   />
                   <span
@@ -371,6 +462,11 @@ function RegisterPage() {
                     {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                   </span>
                 </div>
+                {fieldErrors.confirmPassword && (
+                  <div className="auth-field-error-text">
+                    <FaExclamationCircle /> {fieldErrors.confirmPassword}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -430,10 +526,10 @@ function RegisterPage() {
 
           {/* Divider */}
           <div className="auth-divider">
-            <span>or sign up with</span>
+            <span>or continue with</span>
           </div>
 
-          {/* Full-width Branded Google Login Button (UNDER Button Register) */}
+          {/* Full-width Branded Google Login Button */}
           <button
             type="button"
             className="auth-google-btn"
@@ -458,7 +554,7 @@ function RegisterPage() {
                 d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
               />
             </svg>
-            <span>Sign up with Google</span>
+            <span>Continue with Google</span>
           </button>
 
           {/* Footer Link */}
