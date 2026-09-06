@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
     FaPlus,
     FaSearch,
@@ -10,7 +10,8 @@ import {
     FaTshirt,
     FaChevronRight,
     FaArrowUp,
-    FaSlidersH
+    FaSlidersH,
+    FaTimes
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -42,7 +43,7 @@ function getCategoryIcon(name) {
 }
 
 function CategoryPage() {
-    const { can } = usePermissions();
+    const { can, isAdmin } = usePermissions();
     const [categories, setCategories] = useState([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(false);
@@ -186,6 +187,56 @@ function CategoryPage() {
     const filtered = categories.filter(item =>
         item.name?.toLowerCase().includes(search.toLowerCase())
     );
+
+    // Multi-select state & handlers
+    const [selectedIds, setSelectedIds] = useState([]);
+    const visibleIds = useMemo(() => filtered.map(c => c.id), [filtered]);
+    const isAllSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+    const isSomeSelected = visibleIds.some(id => selectedIds.includes(id)) && !isAllSelected;
+
+    const handleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
+        } else {
+            const allMerged = new Set([...selectedIds, ...visibleIds]);
+            setSelectedIds(Array.from(allMerged));
+        }
+    };
+
+    const handleSelectRow = (id, e) => {
+        e.stopPropagation();
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = () => {
+        if (selectedIds.length === 0) return;
+        const count = selectedIds.length;
+        Swal.fire({
+            title: `Delete ${count} Categories?`,
+            text: "This action will permanently delete all selected product categories.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#ef4444",
+            cancelButtonColor: "#64748b",
+            confirmButtonText: `Yes, delete ${count} categories`
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    setLoading(true);
+                    await Promise.all(selectedIds.map(id => deleteCategoryApi(id)));
+                    setSelectedIds([]);
+                    Swal.fire("Deleted!", `${count} categories deleted successfully.`, "success");
+                    fetchCategories();
+                } catch (error) {
+                    Swal.fire("Error", error.message || "Failed to delete categories", "error");
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+    };
 
     if (!can("categories", "view")) {
         return <AccessDeniedView moduleName="Product Categories" />;
@@ -346,14 +397,69 @@ function CategoryPage() {
                     </div>
                 </div>
 
+                {isAdmin && selectedIds.length > 0 && (
+                    <div className="admin-bulk-actions-banner">
+                        <div className="bulk-banner-left">
+                            <span className="bulk-select-badge">{selectedIds.length}</span>
+                            <span className="bulk-select-label">
+                                <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? "category" : "categories"} selected
+                            </span>
+                            <button type="button" className="bulk-banner-text-btn" onClick={() => setSelectedIds([])}>
+                                Deselect all
+                            </button>
+                            {categories.length > filtered.length && (
+                                <button
+                                    type="button"
+                                    className="bulk-banner-text-btn"
+                                    onClick={() => setSelectedIds(categories.map(c => c.id))}
+                                >
+                                    Select all {categories.length} in database
+                                </button>
+                            )}
+                        </div>
+                        <div className="bulk-banner-actions">
+                            {can("categories", "delete") && (
+                                <button
+                                    type="button"
+                                    className="bulk-delete-btn"
+                                    onClick={handleBulkDelete}
+                                    disabled={loading}
+                                >
+                                    <FaTrash /> Delete Selected ({selectedIds.length})
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                className="bulk-cancel-btn"
+                                onClick={() => setSelectedIds([])}
+                                title="Cancel selection"
+                            >
+                                <FaTimes />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {loading && categories.length === 0 ? (
-                    <TableSkeleton rows={5} cols={6} hasImage={false} />
+                    <TableSkeleton rows={5} cols={isAdmin ? 7 : 6} hasImage={false} />
                 ) : (
                     <div className="product-table-wrapper">
                         {/* Table view (Desktop/iPad) */}
                         <table className="desktop-table">
                             <thead>
                                 <tr>
+                                    {isAdmin && (
+                                        <th className="admin-th-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                className="admin-master-checkbox"
+                                                checked={isAllSelected}
+                                                ref={el => { if (el) el.indeterminate = isSomeSelected; }}
+                                                onChange={handleSelectAll}
+                                                title="Select all visible categories"
+                                            />
+                                        </th>
+                                    )}
                                     {visibleColumns.hash && <th>#</th>}
                                     {visibleColumns.icon && <th>Icon</th>}
                                     {visibleColumns.name && <th>Category Name</th>}
@@ -366,7 +472,18 @@ function CategoryPage() {
                                 {filtered.map((item, index) => {
                                     const categoryIconVal = item.icon || iconMap[item.name] || getCategoryIcon(item.name);
                                     return (
-                                        <tr key={item.id}>
+                                        <tr key={item.id} className={isAdmin && selectedIds.includes(item.id) ? "admin-row-selected" : ""}>
+                                            {isAdmin && (
+                                                <td className="admin-td-checkbox" onClick={e => e.stopPropagation()}>
+                                                    <input
+                                                        type="checkbox"
+                                                        className="admin-row-checkbox"
+                                                        checked={selectedIds.includes(item.id)}
+                                                        onChange={e => handleSelectRow(item.id, e)}
+                                                        title="Select this category"
+                                                    />
+                                                </td>
+                                            )}
                                             {visibleColumns.hash && <td>{index + 1}</td>}
                                             {visibleColumns.icon && (
                                                 <td style={{ fontSize: "1.4rem" }}>{categoryIconVal}</td>
@@ -409,7 +526,7 @@ function CategoryPage() {
                                 })}
                                 {filtered.length === 0 && (
                                     <tr>
-                                        <td colSpan="6" className="no-data">No categories found</td>
+                                        <td colSpan={isAdmin ? 7 : 6} className="no-data">No categories found</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -420,9 +537,18 @@ function CategoryPage() {
                             {filtered.map((item) => {
                                 const categoryIconVal = item.icon || iconMap[item.name] || getCategoryIcon(item.name);
                                 return (
-                                    <div className="kanban-card product-card-item" key={item.id}>
+                                    <div className={`kanban-card product-card-item ${isAdmin && selectedIds.includes(item.id) ? "admin-row-selected" : ""}`} key={item.id}>
                                         <div className="kanban-card-header">
-                                            <div className="product-preview-info">
+                                            <div className="product-preview-info" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                {isAdmin && (
+                                                    <input
+                                                        type="checkbox"
+                                                        className="admin-row-checkbox"
+                                                        checked={selectedIds.includes(item.id)}
+                                                        onChange={e => handleSelectRow(item.id, e)}
+                                                        title="Select this category"
+                                                    />
+                                                )}
                                                 <div className="mobile-product-icon-placeholder" style={{ fontSize: "1.3rem" }}>
                                                     {categoryIconVal}
                                                 </div>

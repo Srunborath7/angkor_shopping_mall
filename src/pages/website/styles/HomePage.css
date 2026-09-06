@@ -1117,6 +1117,11 @@
   padding: 0 40px;
 }
 
+[data-theme="dark"] .newsletter-section {
+  background-color: #090d1600 !important;
+  color: #f8fafc;
+}
+
 .newsletter-card {
   background: #ffffff;
   border: 1.5px solid #cbd5e1;

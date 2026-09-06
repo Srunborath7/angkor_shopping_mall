@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
     FaPlus,
     FaSearch,
@@ -44,7 +44,7 @@ import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx
 import "./style/ProductPage.css";
 
 function ProductPage() {
-    const { can } = usePermissions();
+    const { can, isAdmin } = usePermissions();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [brands, setBrands] = useState([]);
@@ -90,6 +90,8 @@ function ProductPage() {
     const [isActive, setIsActive] = useState(true);
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState("");
+    const [promoCode, setPromoCode] = useState("");
+    const [promoDiscount, setPromoDiscount] = useState("");
 
     // Tab 2: Specifications states
     const [longDescription, setLongDescription] = useState("");
@@ -203,6 +205,8 @@ function ProductPage() {
         setIsActive(true);
         setImageFile(null);
         setImagePreview("");
+        setPromoCode("");
+        setPromoDiscount("");
 
         // Reset sub-tab states
         setLongDescription("");
@@ -239,6 +243,8 @@ function ProductPage() {
         setIsActive(item.is_active !== undefined ? item.is_active : true);
         setImageFile(null);
         setImagePreview(primaryImg);
+        setPromoCode(item.promo_code || item.detail?.specifications?.promo_code || "");
+        setPromoDiscount(item.promo_discount !== undefined && item.promo_discount !== null ? item.promo_discount : (item.detail?.specifications?.promo_discount || ""));
 
         // Specs & Details from item
         setLongDescription(item.detail?.long_description || item.description || "");
@@ -264,6 +270,8 @@ function ProductPage() {
                 if (detailed.stock_quantity !== undefined) setStockQuantity(detailed.stock_quantity);
                 if (detailed.category_id) setCategoryId(detailed.category_id);
                 if (detailed.brand_id) setBrandId(detailed.brand_id);
+                if (detailed.promo_code !== undefined) setPromoCode(detailed.promo_code || "");
+                if (detailed.promo_discount !== undefined) setPromoDiscount(detailed.promo_discount || "");
                 if (detailed.detail) {
                     if (detailed.detail.long_description) setLongDescription(detailed.detail.long_description);
                     if (detailed.detail.warranty_info) setWarrantyInfo(detailed.detail.warranty_info);
@@ -271,6 +279,8 @@ function ProductPage() {
                     if (detailed.detail.specifications) {
                         const s = detailed.detail.specifications;
                         setSpecifications(Object.keys(s).map(k => ({ key: k, value: s[k] })));
+                        if (s.promo_code) setPromoCode(s.promo_code);
+                        if (s.promo_discount) setPromoDiscount(s.promo_discount);
                     }
                 }
                 if (Array.isArray(detailed.variants) && detailed.variants.length > 0) {
@@ -348,6 +358,8 @@ function ProductPage() {
         formData.append("category_id", categoryId);
         formData.append("brand_id", brandId);
         formData.append("is_active", isActive);
+        formData.append("promo_code", promoCode.trim().toUpperCase());
+        formData.append("promo_discount", promoDiscount !== "" ? Number(promoDiscount) : 0);
         if (imageFile) {
             formData.append("image", imageFile);
         }
@@ -356,6 +368,23 @@ function ProductPage() {
             setLoading(true);
             if (selectedProduct) {
                 await updateProductApi(selectedProduct.id, formData);
+
+                // Keep specifications in sync for backward compatibility
+                try {
+                    const currentSpecs = selectedProduct.detail?.specifications || {};
+                    await upsertProductDetailApi(selectedProduct.id, {
+                        long_description: selectedProduct.detail?.long_description || description,
+                        warranty_info: selectedProduct.detail?.warranty_info || "",
+                        shipping_info: selectedProduct.detail?.shipping_info || "",
+                        specifications: {
+                            ...currentSpecs,
+                            promo_code: promoCode.trim().toUpperCase(),
+                            promo_discount: promoDiscount !== "" ? Number(promoDiscount) : 0
+                        }
+                    });
+                } catch (specErr) {
+                    console.warn("Specification promo sync notice:", specErr?.message);
+                }
                 Swal.fire({
                     title: "Success",
                     text: "Product updated successfully",
@@ -707,6 +736,85 @@ function ProductPage() {
         return matchesSearch;
     });
 
+    // Multi-select state & handlers
+    const [selectedIds, setSelectedIds] = useState([]);
+    const visibleIds = useMemo(() => filteredProducts.map(p => p.id), [filteredProducts]);
+    const isAllSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+    const isSomeSelected = visibleIds.some(id => selectedIds.includes(id)) && !isAllSelected;
+
+    const handleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
+        } else {
+            const allMerged = new Set([...selectedIds, ...visibleIds]);
+            setSelectedIds(Array.from(allMerged));
+        }
+    };
+
+    const handleSelectRow = (id, e) => {
+        e.stopPropagation();
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = () => {
+        if (selectedIds.length === 0) return;
+        const count = selectedIds.length;
+        Swal.fire({
+            title: `Delete ${count} Products?`,
+            text: "This action will permanently delete all selected products.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#ef4444",
+            cancelButtonColor: "#64748b",
+            confirmButtonText: `Yes, delete ${count} items`
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    setLoading(true);
+                    await Promise.all(selectedIds.map(id => deleteProductApi(id)));
+                    setSelectedIds([]);
+                    Swal.fire("Deleted!", `${count} products deleted successfully.`, "success");
+                    fetchData();
+                } catch (error) {
+                    Swal.fire("Error", error.message || "Failed to delete selected products", "error");
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+    };
+
+    const handleBulkStatusChange = (newStatus) => {
+        if (selectedIds.length === 0) return;
+        const count = selectedIds.length;
+        Swal.fire({
+            title: `Set ${count} products to ${newStatus ? "Active" : "Inactive"}?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#10b981",
+            cancelButtonColor: "#64748b",
+            confirmButtonText: "Confirm"
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    setLoading(true);
+                    const formData = new FormData();
+                    formData.append("is_active", newStatus ? "true" : "false");
+                    await Promise.all(selectedIds.map(id => updateProductApi(id, formData)));
+                    setSelectedIds([]);
+                    Swal.fire("Updated!", `${count} products updated.`, "success");
+                    fetchData();
+                } catch (error) {
+                    Swal.fire("Error", error.message || "Failed to update products", "error");
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+    };
+
     const totalProductCount = products.length;
     const activeProductCount = products.filter(product => product.is_active).length;
     const inactiveProductCount = products.filter(product => !product.is_active).length;
@@ -874,13 +982,84 @@ function ProductPage() {
                     </div>
                 </div>
 
+                {isAdmin && selectedIds.length > 0 && (
+                    <div className="admin-bulk-actions-banner">
+                        <div className="bulk-banner-left">
+                            <span className="bulk-select-badge">{selectedIds.length}</span>
+                            <span className="bulk-select-label">
+                                <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? "product" : "products"} selected
+                            </span>
+                            <button type="button" className="bulk-banner-text-btn" onClick={() => setSelectedIds([])}>
+                                Deselect all
+                            </button>
+                            {products.length > filteredProducts.length && (
+                                <button
+                                    type="button"
+                                    className="bulk-banner-text-btn"
+                                    onClick={() => setSelectedIds(products.map(p => p.id))}
+                                >
+                                    Select all {products.length} in catalog
+                                </button>
+                            )}
+                        </div>
+                        <div className="bulk-banner-actions">
+                            <button
+                                type="button"
+                                className="bulk-action-secondary-btn"
+                                onClick={() => handleBulkStatusChange(true)}
+                                disabled={loading}
+                            >
+                                <FaCheckCircle /> Set Active
+                            </button>
+                            <button
+                                type="button"
+                                className="bulk-action-secondary-btn"
+                                onClick={() => handleBulkStatusChange(false)}
+                                disabled={loading}
+                            >
+                                <FaTimes /> Set Inactive
+                            </button>
+                            {can("products", "delete") && (
+                                <button
+                                    type="button"
+                                    className="bulk-delete-btn"
+                                    onClick={handleBulkDelete}
+                                    disabled={loading}
+                                >
+                                    <FaTrash /> Delete Selected ({selectedIds.length})
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                className="bulk-cancel-btn"
+                                onClick={() => setSelectedIds([])}
+                                title="Cancel selection"
+                            >
+                                <FaTimes />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {loading && products.length === 0 ? (
-                    <TableSkeleton rows={6} cols={10} hasImage={true} />
+                    <TableSkeleton rows={6} cols={isAdmin ? 11 : 10} hasImage={true} />
                 ) : (
                     <div className="product-table-wrapper">
                         <table className="desktop-table">
                             <thead>
                                 <tr>
+                                    {isAdmin && (
+                                        <th className="admin-th-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                className="admin-master-checkbox"
+                                                checked={isAllSelected}
+                                                ref={el => { if (el) el.indeterminate = isSomeSelected; }}
+                                                onChange={handleSelectAll}
+                                                title="Select all visible products"
+                                            />
+                                        </th>
+                                    )}
                                     {visibleColumns.hash && <th>#</th>}
                                     {visibleColumns.image && <th>Image</th>}
                                     {visibleColumns.name && <th>Product Name</th>}
@@ -895,7 +1074,18 @@ function ProductPage() {
                             </thead>
                             <tbody>
                                 {filteredProducts.map((item, index) => (
-                                    <tr key={item.id}>
+                                    <tr key={item.id} className={isAdmin && selectedIds.includes(item.id) ? "admin-row-selected" : ""}>
+                                        {isAdmin && (
+                                            <td className="admin-td-checkbox" onClick={e => e.stopPropagation()}>
+                                                <input
+                                                    type="checkbox"
+                                                    className="admin-row-checkbox"
+                                                    checked={selectedIds.includes(item.id)}
+                                                    onChange={e => handleSelectRow(item.id, e)}
+                                                    title="Select this product"
+                                                />
+                                            </td>
+                                        )}
                                         {visibleColumns.hash && <td>{index + 1}</td>}
                                         {visibleColumns.image && (
                                              <td>
@@ -913,6 +1103,23 @@ function ProductPage() {
                                                 <div className="product-info-cell">
                                                     <strong>{item.name}</strong>
                                                     <small>{item.description?.substring(0, 50)}{item.description?.length > 50 ? "..." : ""}</small>
+                                                    {(item.promo_code || item.detail?.specifications?.promo_code) && (
+                                                        <span style={{
+                                                            display: "inline-flex",
+                                                            alignItems: "center",
+                                                            gap: "4px",
+                                                            marginTop: "4px",
+                                                            padding: "2px 7px",
+                                                            background: "#f0fdf4",
+                                                            color: "#15803d",
+                                                            border: "1px solid #bbf7d0",
+                                                            borderRadius: "6px",
+                                                            fontSize: "11px",
+                                                            fontWeight: "700"
+                                                        }}>
+                                                            🏷️ {item.promo_code || item.detail?.specifications?.promo_code} (-{Number(item.promo_discount || item.detail?.specifications?.promo_discount || 5)}%)
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </td>
                                         )}
@@ -974,7 +1181,7 @@ function ProductPage() {
                                 ))}
                                 {filteredProducts.length === 0 && (
                                     <tr>
-                                        <td colSpan="9" className="no-data">No products found</td>
+                                        <td colSpan={isAdmin ? 11 : 10} className="no-data">No products found</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -983,9 +1190,18 @@ function ProductPage() {
                         {/* Kanban layout for Mobile */}
                         <div className="mobile-cards-container">
                             {filteredProducts.map((item) => (
-                                <div className="kanban-card product-card-item" key={item.id}>
+                                <div className={`kanban-card product-card-item ${isAdmin && selectedIds.includes(item.id) ? "admin-row-selected" : ""}`} key={item.id}>
                                     <div className="kanban-card-header">
-                                        <div className="product-preview-info">
+                                        <div className="product-preview-info" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                            {isAdmin && (
+                                                <input
+                                                    type="checkbox"
+                                                    className="admin-row-checkbox"
+                                                    checked={selectedIds.includes(item.id)}
+                                                    onChange={e => handleSelectRow(item.id, e)}
+                                                    title="Select this product"
+                                                />
+                                            )}
                                             {item.image_url ? (
                                                 <img src={item.image_url} alt={item.name} className="mobile-product-img" />
                                             ) : (
@@ -1183,6 +1399,36 @@ function ProductPage() {
                                         placeholder="Brief summary for catalog listing..."
                                         rows="3"
                                     />
+                                </div>
+                                <div className="form-row-2">
+                                    <div className="form-group">
+                                        <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                            <span>Promo Code</span>
+                                            <span style={{ fontSize: "11px", color: "#6b7280", fontWeight: "normal" }}>(Optional)</span>
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={promoCode}
+                                            onChange={e => setPromoCode(e.target.value.toUpperCase())}
+                                            placeholder="e.g. FRENCH5 or KIDS5"
+                                            style={{ textTransform: "uppercase", letterSpacing: "1px", fontWeight: "600" }}
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                            <span>Promo Discount (%)</span>
+                                            <span style={{ fontSize: "11px", color: "#6b7280", fontWeight: "normal" }}>(e.g. 5 for 5%)</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            min="0"
+                                            max="100"
+                                            value={promoDiscount}
+                                            onChange={e => setPromoDiscount(e.target.value)}
+                                            placeholder="5.0"
+                                        />
+                                    </div>
                                 </div>
                                 <div className="checkbox-group">
                                     <label className="checkbox-label">
@@ -1594,6 +1840,14 @@ function ProductPage() {
                                             {detailProduct.stock_quantity} units
                                         </span>
                                     </div>
+                                    {(detailProduct.promo_code || detailProduct.detail?.specifications?.promo_code) && (
+                                        <div className="stat-card" style={{ background: "#f0fdf4", border: "1px solid #bbf7d0" }}>
+                                            <span className="stat-label" style={{ color: "#166534" }}>Active Promo Code</span>
+                                            <span className="stat-value" style={{ color: "#15803d", fontSize: "16px", fontWeight: "800" }}>
+                                                🏷️ {detailProduct.promo_code || detailProduct.detail?.specifications?.promo_code} (-{Number(detailProduct.promo_discount || detailProduct.detail?.specifications?.promo_discount || 5)}%)
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>

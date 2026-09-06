@@ -10,7 +10,8 @@ export const getOrdersApi = () => {
 };
 
 export const getOrderByIdApi = (id) => {
-    return api(`/api/orders/${id}`, "get");
+    const cleanId = String(id || "").replace(/^#/, "").trim();
+    return api(`/api/orders/${cleanId}`, "get");
 };
 
 export const getAdminOrdersApi = async () => {
@@ -29,13 +30,14 @@ export const getAdminOrdersApi = async () => {
 };
 
 export const updateOrderStatusApi = async (id, data) => {
+    const cleanId = String(id || "").replace(/^#/, "").trim();
     try {
-        return await api(`/api/orders/${id}/status`, "put", data);
+        return await api(`/api/orders/${cleanId}/status`, "put", data);
     } catch (error) {
         const status = error?.status || error?.statusCode || error?.response?.status;
         if (status === 404 || String(error?.message).includes("404")) {
             if (data?.status === "paid") {
-                return await payOrderApi(id);
+                return await payOrderApi(cleanId);
             }
         }
         throw error;
@@ -43,11 +45,13 @@ export const updateOrderStatusApi = async (id, data) => {
 };
 
 export const deleteOrderApi = (id) => {
-    return api(`/api/orders/${id}`, "delete");
+    const cleanId = String(id || "").replace(/^#/, "").trim();
+    return api(`/api/orders/${cleanId}`, "delete");
 };
 
 export const payOrderApi = (id, paymentIntent = null) => {
-    return api(`/api/orders/${id}/pay`, "post", { payment_intent: paymentIntent });
+    const cleanId = String(id || "").replace(/^#/, "").trim();
+    return api(`/api/orders/${cleanId}/pay`, "post", { payment_intent: paymentIntent });
 };
 
 export const createAdminOrderApi = (data) => {

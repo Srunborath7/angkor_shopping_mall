@@ -42,12 +42,25 @@ import { TableSkeleton } from "../../components/loading/LoadingSkeleton";
 import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx";
 import "./style/OrderPage.css";
 
+const formatAdminOrderCode = (order, idx = 0) => {
+  if (!order) return "#OR-00001";
+  const num = order.order_number;
+  if (num && String(num).startsWith("#OR-")) return num;
+  if (num && String(num).startsWith("OR-")) return `#${num}`;
+  if (num && !isNaN(Number(num)) && !String(num).includes("-")) return `#OR-${String(num).padStart(5, "0")}`;
+  if (typeof order.id === "number" || (order.id && !String(order.id).includes("-") && String(order.id).length <= 5)) {
+    return `#OR-${String(order.id).padStart(5, "0")}`;
+  }
+  return `#OR-${String(idx + 1).padStart(5, "0")}`;
+};
+
 function OrderPage() {
-  const { can } = usePermissions();
+  const { can, isAdmin } = usePermissions();
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
 
   // Filters & Search
   const [search, setSearch] = useState("");
@@ -72,11 +85,26 @@ function OrderPage() {
 
   // Customer Detail Modal
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [selectedCustomer, setSelectedCustomer] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    orderId: "",
+    orderCode: "",
+    orderStatus: "",
+    totalAmount: 0,
+    orderDate: ""
+  });
 
   // Items Detail Modal
   const [isItemsModalOpen, setIsItemsModalOpen] = useState(false);
   const [selectedOrderItems, setSelectedOrderItems] = useState(null);
+
+  // Quick Status Edit Modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingOrder, setEditingOrder] = useState(null);
+  const [newStatus, setNewStatus] = useState("pending");
 
   // Create Order Modal
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -193,6 +221,98 @@ function OrderPage() {
     }
   };
 
+  // Multi-Selection Computations
+  const visibleIds = useMemo(() => filteredOrders.map((o) => o.id), [filteredOrders]);
+  const isAllSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
+  const isSomeSelected = visibleIds.some((id) => selectedIds.includes(id)) && !isAllSelected;
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      const allMerged = new Set([...selectedIds, ...visibleIds]);
+      setSelectedIds(Array.from(allMerged));
+    } else {
+      setSelectedIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+    }
+  };
+
+  const handleSelectRow = (orderId, e) => {
+    if (e) e.stopPropagation();
+    setSelectedIds((prev) => {
+      if (prev.includes(orderId)) {
+        return prev.filter((id) => id !== orderId);
+      } else {
+        return [...prev, orderId];
+      }
+    });
+  };
+
+  // Handle Bulk Delete Orders
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    const count = selectedIds.length;
+
+    Swal.fire({
+      title: `Delete ${count} Orders?`,
+      text: `Are you sure you want to delete ${count} selected order${count > 1 ? "s" : ""}? This action cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: `Yes, Delete ${count} Orders`,
+      cancelButtonText: "Cancel"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        setLoading(true);
+        let deletedCount = 0;
+        const idsToDelete = [...selectedIds];
+
+        try {
+          // 1. Delete concurrently via API
+          await Promise.allSettled(
+            idsToDelete.map(async (id) => {
+              try {
+                await deleteOrderApi(id);
+                deletedCount++;
+              } catch (err) {
+                console.warn(`Failed to delete order ${id}:`, err);
+              }
+            })
+          );
+
+          // 2. Remove from localStorage orders if present
+          try {
+            const saved = localStorage.getItem("orders");
+            if (saved) {
+              const parsed = JSON.parse(saved);
+              if (Array.isArray(parsed)) {
+                const filtered = parsed.filter(
+                  (o) => !idsToDelete.includes(o.id) && !idsToDelete.includes(o.rawId) && !idsToDelete.includes(String(o.id).replace(/^#/, ""))
+                );
+                localStorage.setItem("orders", JSON.stringify(filtered));
+              }
+            }
+          } catch (e) {}
+
+          // 3. Update React state
+          setOrders((prev) => prev.filter((o) => !idsToDelete.includes(o.id)));
+          setSelectedIds([]);
+
+          Swal.fire({
+            icon: "success",
+            title: "Deleted!",
+            text: `${deletedCount} order${deletedCount > 1 ? "s" : ""} deleted successfully.`,
+            timer: 2000,
+            showConfirmButton: false
+          });
+        } catch (error) {
+          Swal.fire("Error", error.message || "Failed to delete selected orders", "error");
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+  };
+
   // Handle Delete Order
   const handleDeleteOrder = (orderId) => {
     Swal.fire({
@@ -208,6 +328,7 @@ function OrderPage() {
         try {
           await deleteOrderApi(orderId);
           setOrders((prev) => prev.filter((o) => o.id !== orderId));
+          setSelectedIds((prev) => prev.filter((id) => id !== orderId));
           Swal.fire("Deleted!", "Order has been deleted successfully.", "success");
         } catch (error) {
           Swal.fire("Error", error.message || "Failed to delete order", "error");
@@ -277,7 +398,8 @@ function OrderPage() {
     if (!createPhone.trim()) return Swal.fire("Validation Error", "Please provide a contact phone number.", "warning");
 
     try {
-      const generatedOrderSeq = `ORD-${Date.now().toString().slice(-6)}`;
+      const nextSeqNum = orders.length + 1;
+      const generatedOrderSeq = `OR-${String(nextSeqNum).padStart(5, "0")}`;
       const currentStaffId = currentUser?.id || currentUser?.user_id;
 
       const payload = {
@@ -375,11 +497,7 @@ function OrderPage() {
   // Open customer detail modal
   const openCustomerModal = (ord, e) => {
     e.stopPropagation();
-    const orderDisplayCode = ord.order_number
-      ? (String(ord.order_number).startsWith("#") ? ord.order_number : `#${ord.order_number}`)
-      : (typeof ord.id === "number" || (ord.id && !String(ord.id).includes("-") && String(ord.id).length <= 6))
-      ? `#ORD-${String(ord.id).padStart(4, "0")}`
-      : `#ORD-${String(ord.id).slice(-6).toUpperCase()}`;
+    const orderDisplayCode = formatAdminOrderCode(ord);
 
     setSelectedCustomer({
       name: ord.user?.name || "Guest Customer",
@@ -398,11 +516,7 @@ function OrderPage() {
   // Open items detail modal
   const openItemsModal = (ord, e) => {
     e.stopPropagation();
-    const orderDisplayCode = ord.order_number
-      ? (String(ord.order_number).startsWith("#") ? ord.order_number : `#${ord.order_number}`)
-      : (typeof ord.id === "number" || (ord.id && !String(ord.id).includes("-") && String(ord.id).length <= 6))
-      ? `#ORD-${String(ord.id).padStart(4, "0")}`
-      : `#ORD-${String(ord.id).slice(-6).toUpperCase()}`;
+    const orderDisplayCode = formatAdminOrderCode(ord);
 
     setSelectedOrderItems({ orderId: ord.id, orderCode: orderDisplayCode, items: ord.items || [] });
     setIsItemsModalOpen(true);
@@ -602,15 +716,82 @@ function OrderPage() {
         </div>
       </div>
 
+      {/* Bulk Selection Actions Bar */}
+      {isAdmin && selectedIds.length > 0 && (
+        <div className="order-bulk-actions-banner">
+          <div className="bulk-banner-left">
+            <span className="bulk-select-badge">{selectedIds.length}</span>
+            <span className="bulk-select-label">
+              <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? "order" : "orders"} selected
+            </span>
+            <button
+              type="button"
+              className="bulk-banner-text-btn"
+              onClick={() => {
+                if (isAllSelected) {
+                  setSelectedIds([]);
+                } else {
+                  setSelectedIds(filteredOrders.map((o) => o.id));
+                }
+              }}
+            >
+              {isAllSelected ? "Deselect all visible" : `Select all ${filteredOrders.length} visible`}
+            </button>
+            {orders.length > filteredOrders.length && (
+              <button
+                type="button"
+                className="bulk-banner-text-btn"
+                onClick={() => setSelectedIds(orders.map((o) => o.id))}
+              >
+                Select all {orders.length} in database
+              </button>
+            )}
+          </div>
+          <div className="bulk-banner-actions">
+            <button
+              type="button"
+              className="bulk-delete-btn"
+              onClick={handleBulkDelete}
+              disabled={loading}
+              title="Delete all selected orders"
+            >
+              <FaTrash /> Delete Selected ({selectedIds.length})
+            </button>
+            <button
+              type="button"
+              className="bulk-cancel-btn"
+              onClick={() => setSelectedIds([])}
+              title="Cancel selection"
+            >
+              <FaTimes />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Orders Data Table */}
       {loading && orders.length === 0 ? (
-        <TableSkeleton rows={6} cols={7} hasAvatar={true} />
+        <TableSkeleton rows={6} cols={isAdmin ? 8 : 7} hasAvatar={true} />
       ) : (
         <div className="order-table-container">
           <div className="table-responsive">
             <table className="order-table">
               <thead>
                 <tr>
+                  {isAdmin && (
+                    <th className="order-th-checkbox" style={{ width: "42px", textAlign: "center" }}>
+                      <input
+                        type="checkbox"
+                        className="order-master-checkbox"
+                        checked={isAllSelected}
+                        ref={(el) => {
+                          if (el) el.indeterminate = isSomeSelected;
+                        }}
+                        onChange={handleSelectAll}
+                        title="Select all visible orders"
+                      />
+                    </th>
+                  )}
                   {visibleColumns.orderId && <th>Order ID</th>}
                   {visibleColumns.customer && <th>Customer</th>}
                   {visibleColumns.date && <th>Date & Time</th>}
@@ -623,7 +804,7 @@ function OrderPage() {
               <tbody>
                 {filteredOrders.length === 0 ? (
                   <tr>
-                    <td colSpan="7">
+                    <td colSpan={isAdmin ? 8 : 7}>
                       <div className="order-empty-state">
                         <FaShoppingCart />
                         <h4>No orders found</h4>
@@ -636,14 +817,21 @@ function OrderPage() {
                     const customerName = ord.user?.name || "Guest Customer";
                     const initial = customerName.charAt(0).toUpperCase();
                     const itemCount = ord.items ? ord.items.length : 0;
-                    const orderDisplayCode = ord.order_number
-                      ? (String(ord.order_number).startsWith("#") ? ord.order_number : `#${ord.order_number}`)
-                      : (typeof ord.id === "number" || (ord.id && !String(ord.id).includes("-") && String(ord.id).length <= 6))
-                      ? `#ORD-${String(ord.id).padStart(4, "0")}`
-                      : `#ORD-${String(idx + 1).padStart(4, "0")}`;
+                    const orderDisplayCode = formatAdminOrderCode(ord, idx);
 
                     return (
-                      <tr key={ord.id}>
+                      <tr key={ord.id} className={isAdmin && selectedIds.includes(ord.id) ? "order-row-selected" : ""}>
+                        {isAdmin && (
+                          <td className="order-td-checkbox" style={{ width: "42px", textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
+                            <input
+                              type="checkbox"
+                              className="order-row-checkbox"
+                              checked={selectedIds.includes(ord.id)}
+                              onChange={(e) => handleSelectRow(ord.id, e)}
+                              title="Select this order"
+                            />
+                          </td>
+                        )}
                         {visibleColumns.orderId && (
                           <td>
                             <span
@@ -849,7 +1037,7 @@ function OrderPage() {
                 <div>
                   <label>Order ID</label>
                   <span className="customer-modal-ord-id">
-                    {selectedCustomer.orderCode || `#ORD-${selectedCustomer.orderId?.slice(-6).toUpperCase()}`}
+                    {selectedCustomer.orderCode || "#OR-00001"}
                   </span>
                 </div>
               </div>
@@ -876,7 +1064,7 @@ function OrderPage() {
             <div className="items-modal-top-bar">
               <div className="order-tag-wrap">
                 <span className="order-id-chip">
-                  <FaTag size={11} /> {selectedOrderItems.orderCode || `#ORD-${selectedOrderItems.orderId?.slice(-6).toUpperCase()}`}
+                  <FaTag size={11} /> {selectedOrderItems.orderCode || "#OR-00001"}
                 </span>
                 <span className="items-count-pill">
                   <FaBoxes size={12} /> {selectedOrderItems.items.length} {selectedOrderItems.items.length === 1 ? "Product" : "Products"} Ordered
@@ -980,7 +1168,7 @@ function OrderPage() {
             <div className="order-detail-header">
               <div>
                 <h3 className="order-detail-header-title">
-                  Order {selectedOrder.order_number ? (String(selectedOrder.order_number).startsWith("#") ? selectedOrder.order_number : `#${selectedOrder.order_number}`) : (typeof selectedOrder.id === "number" || (selectedOrder.id && !String(selectedOrder.id).includes("-") && String(selectedOrder.id).length <= 6) ? `#ORD-${String(selectedOrder.id).padStart(4, "0")}` : `#ORD-${String(selectedOrder.id).slice(-6).toUpperCase()}`)}
+                  Order {selectedOrder ? formatAdminOrderCode(selectedOrder) : "#OR-00001"}
                 </h3>
                 <span className="order-detail-header-date">
                   Placed on {formatDate(selectedOrder.created_at)}

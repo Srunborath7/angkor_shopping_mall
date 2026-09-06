@@ -55,19 +55,60 @@ const normalizeFlashSaleItem = (item) => {
   };
 };
 
+/**
+ * Check whether a flash sale item is actively valid and not expired by duration/end_time.
+ */
+export const isFlashSaleActive = (item) => {
+  if (!item) return false;
+  if (item.status && item.status !== "active") return false;
+  const now = Date.now();
+  let end = null;
+  if (item.endTime || item.end_time) {
+    end = new Date(item.endTime || item.end_time).getTime();
+  } else if (item.created_at || item.createdAt) {
+    end = new Date(item.created_at || item.createdAt).getTime() + (item.durationHours || 24) * 3600 * 1000;
+  }
+  if (end && !isNaN(end) && end <= now) return false;
+  return true;
+};
+
 export const getFlashSalesApi = async () => {
   try {
     const res = await api("/api/flash-sales", "get");
-    const raw = res?.data?.data || res?.data || (Array.isArray(res) ? res : []);
-    if (Array.isArray(raw) && raw.length > 0) {
+    const raw = res?.data?.data !== undefined ? res.data.data : (res?.data !== undefined ? res.data : (Array.isArray(res) ? res : null));
+    if (Array.isArray(raw)) {
       const normalized = raw.map(normalizeFlashSaleItem);
-      saveFlashSalesToStorage(normalized, false);
-      return normalized;
+      const activeList = [];
+      const expiredList = [];
+
+      normalized.forEach((item) => {
+        if (isFlashSaleActive(item)) {
+          activeList.push(item);
+        } else {
+          expiredList.push(item);
+        }
+      });
+
+      // Automatically clean up expired items from backend database
+      if (expiredList.length > 0) {
+        expiredList.forEach(async (exp) => {
+          try {
+            if (exp.id) await api(`/api/flash-sales/${exp.id}`, "delete");
+          } catch (e) {
+            console.debug("Auto-cleanup expired flash sale notice:", e?.message);
+          }
+        });
+      }
+
+      // Always sync active list (including empty array when all expired/deleted)
+      saveFlashSalesToStorage(activeList, false);
+      return activeList;
     }
   } catch (err) {
     console.warn("Failed to fetch flash sales from API:", err);
   }
-  return getFlashSalesFromStorage();
+  const cached = getFlashSalesFromStorage();
+  return Array.isArray(cached) ? cached.filter(isFlashSaleActive) : [];
 };
 
 /**

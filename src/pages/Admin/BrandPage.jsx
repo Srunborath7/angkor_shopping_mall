@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
     FaPlus,
     FaSearch,
@@ -9,7 +9,8 @@ import {
     FaGlobe,
     FaChevronRight,
     FaArrowUp,
-    FaSlidersH
+    FaSlidersH,
+    FaTimes
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -24,7 +25,7 @@ import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx
 import "./style/BrandPage.css";
 
 function BrandPage() {
-    const { can } = usePermissions();
+    const { can, isAdmin } = usePermissions();
     const [brands, setBrands] = useState([]);
     const [search, setSearch] = useState("");
     const [loading, setLoading] = useState(false);
@@ -138,6 +139,56 @@ function BrandPage() {
         item.name?.toLowerCase().includes(search.toLowerCase()) ||
         item.description?.toLowerCase().includes(search.toLowerCase())
     );
+
+    // Multi-select state & handlers
+    const [selectedIds, setSelectedIds] = useState([]);
+    const visibleIds = useMemo(() => filtered.map(b => b.id), [filtered]);
+    const isAllSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+    const isSomeSelected = visibleIds.some(id => selectedIds.includes(id)) && !isAllSelected;
+
+    const handleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
+        } else {
+            const allMerged = new Set([...selectedIds, ...visibleIds]);
+            setSelectedIds(Array.from(allMerged));
+        }
+    };
+
+    const handleSelectRow = (id, e) => {
+        e.stopPropagation();
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = () => {
+        if (selectedIds.length === 0) return;
+        const count = selectedIds.length;
+        Swal.fire({
+            title: `Delete ${count} Brands?`,
+            text: "This action will permanently delete all selected partner brands.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#ef4444",
+            cancelButtonColor: "#64748b",
+            confirmButtonText: `Yes, delete ${count} brands`
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    setLoading(true);
+                    await Promise.all(selectedIds.map(id => deleteBrandApi(id)));
+                    setSelectedIds([]);
+                    Swal.fire("Deleted!", `${count} brands deleted successfully.`, "success");
+                    fetchBrands();
+                } catch (error) {
+                    Swal.fire("Error", error.message || "Failed to delete brands", "error");
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+    };
 
     if (!can("brands", "view")) {
         return <AccessDeniedView moduleName="Brands & Partners" />;
@@ -290,14 +341,69 @@ function BrandPage() {
                     </div>
                 </div>
 
+                {isAdmin && selectedIds.length > 0 && (
+                    <div className="admin-bulk-actions-banner">
+                        <div className="bulk-banner-left">
+                            <span className="bulk-select-badge">{selectedIds.length}</span>
+                            <span className="bulk-select-label">
+                                <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? "brand" : "brands"} selected
+                            </span>
+                            <button type="button" className="bulk-banner-text-btn" onClick={() => setSelectedIds([])}>
+                                Deselect all
+                            </button>
+                            {brands.length > filtered.length && (
+                                <button
+                                    type="button"
+                                    className="bulk-banner-text-btn"
+                                    onClick={() => setSelectedIds(brands.map(b => b.id))}
+                                >
+                                    Select all {brands.length} in database
+                                </button>
+                            )}
+                        </div>
+                        <div className="bulk-banner-actions">
+                            {can("brands", "delete") && (
+                                <button
+                                    type="button"
+                                    className="bulk-delete-btn"
+                                    onClick={handleBulkDelete}
+                                    disabled={loading}
+                                >
+                                    <FaTrash /> Delete Selected ({selectedIds.length})
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                className="bulk-cancel-btn"
+                                onClick={() => setSelectedIds([])}
+                                title="Cancel selection"
+                            >
+                                <FaTimes />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {loading && brands.length === 0 ? (
-                    <TableSkeleton rows={5} cols={4} hasImage={false} />
+                    <TableSkeleton rows={5} cols={isAdmin ? 5 : 4} hasImage={false} />
                 ) : (
                     <div className="brand-table-wrapper">
                         {/* Table view (Desktop/iPad) */}
                         <table className="desktop-table">
                             <thead>
                                 <tr>
+                                    {isAdmin && (
+                                        <th className="admin-th-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                className="admin-master-checkbox"
+                                                checked={isAllSelected}
+                                                ref={el => { if (el) el.indeterminate = isSomeSelected; }}
+                                                onChange={handleSelectAll}
+                                                title="Select all visible brands"
+                                            />
+                                        </th>
+                                    )}
                                     {visibleColumns.hash && <th>#</th>}
                                     {visibleColumns.name && <th>Brand Name</th>}
                                     {visibleColumns.description && <th>Description</th>}
@@ -306,10 +412,21 @@ function BrandPage() {
                             </thead>
                             <tbody>
                                 {filtered.map((item, index) => (
-                                    <tr key={item.id}>
+                                    <tr key={item.id} className={isAdmin && selectedIds.includes(item.id) ? "admin-row-selected" : ""}>
+                                        {isAdmin && (
+                                            <td className="admin-td-checkbox" onClick={e => e.stopPropagation()}>
+                                                <input
+                                                    type="checkbox"
+                                                    className="admin-row-checkbox"
+                                                    checked={selectedIds.includes(item.id)}
+                                                    onChange={e => handleSelectRow(item.id, e)}
+                                                    title="Select this brand"
+                                                />
+                                            </td>
+                                        )}
                                         {visibleColumns.hash && <td>{index + 1}</td>}
                                         {visibleColumns.name && (
-                                            <td>
+                                             <td>
                                                 <div className="brand-name">
                                                     <div className="brand-icon">
                                                         <FaBookmark />
@@ -339,7 +456,7 @@ function BrandPage() {
                                 ))}
                                 {filtered.length === 0 && (
                                     <tr>
-                                        <td colSpan="4" className="no-data">No brands found</td>
+                                        <td colSpan={isAdmin ? 5 : 4} className="no-data">No brands found</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -348,9 +465,18 @@ function BrandPage() {
                         {/* Kanban cards view (Mobile) */}
                         <div className="mobile-cards-container">
                             {filtered.map((item) => (
-                                <div className="kanban-card product-card-item" key={item.id}>
+                                <div className={`kanban-card product-card-item ${isAdmin && selectedIds.includes(item.id) ? "admin-row-selected" : ""}`} key={item.id}>
                                     <div className="kanban-card-header">
-                                        <div className="product-preview-info">
+                                        <div className="product-preview-info" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                            {isAdmin && (
+                                                <input
+                                                    type="checkbox"
+                                                    className="admin-row-checkbox"
+                                                    checked={selectedIds.includes(item.id)}
+                                                    onChange={e => handleSelectRow(item.id, e)}
+                                                    title="Select this brand"
+                                                />
+                                            )}
                                             <div className="mobile-product-icon-placeholder"><FaBookmark /></div>
                                             <div>
                                                 <h4 className="mobile-product-name">{item.name}</h4>

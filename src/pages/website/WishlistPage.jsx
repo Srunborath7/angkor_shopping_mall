@@ -17,7 +17,7 @@ import {
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
 import { productsPagedApi } from "../../services/productsService";
-import { getFlashSalesApi } from "../../services/flashSaleService";
+import { getFlashSalesApi, isFlashSaleActive } from "../../services/flashSaleService";
 import { addToCartApi } from "../../services/cartService";
 import { ProductCardSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./styles/WishlistPage.css";
@@ -182,7 +182,7 @@ function WishlistPage() {
 
         let flashList = [];
         if (flashResult.status === "fulfilled" && Array.isArray(flashResult.value)) {
-          flashList = flashResult.value.filter((item) => item.status === "active" || !item.status);
+          flashList = flashResult.value.filter(isFlashSaleActive);
         }
 
         // Map through catalog and enrich with active flash sale pricing/badge if matched
@@ -429,59 +429,12 @@ function WishlistPage() {
         ) : (
           /* Wishlist Items Grid */
           <div className="wishlist-grid">
-            {wishlistedProducts.map((prod) => (
-              <div key={prod.id} className={`wishlist-card ${prod.isFlashSale ? "is-flash-deal-card" : ""}`}>
-                <div
-                  className="wishlist-card-img-box"
-                  onClick={() =>
-                    navigate(`/product/${prod.product_id || prod.id}`, {
-                      state: prod.isFlashSale
-                        ? { fromFlashSale: true, flashSale: prod.flashSaleData || prod, flashPrice: prod.price }
-                        : { fromFlashSale: false }
-                    })
-                  }
-                >
-                  <img
-                    src={prod.image}
-                    alt={prod.name}
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = NO_IMAGE_PLACEHOLDER;
-                    }}
-                  />
-                  {prod.isFlashSale ? (
-                    <span className="wishlist-flash-deal-badge">
-                      <Flame size={12} /> {prod.badge || "Flash Deal"}
-                    </span>
-                  ) : null}
-                  {prod.discount > 0 && (
-                    <span
-                      className="wishlist-discount-badge"
-                      style={prod.isFlashSale ? { top: "42px" } : {}}
-                    >
-                      -{prod.discount}% OFF
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    className="wishlist-remove-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveFromWishlist(prod);
-                    }}
-                    title="Remove from Wishlist"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-
-                <div className="wishlist-card-content">
-                  <span className="wishlist-card-category">
-                    {prod.brand ? `${prod.brand} · ${prod.category}` : prod.category}
-                  </span>
-
-                  <h3
-                    className="wishlist-card-title"
+            {wishlistedProducts.map((prod) => {
+              const isOutOfStock = (prod.stockQuantity !== undefined ? Number(prod.stockQuantity) : Number(prod.stock_quantity ?? 10)) <= 0;
+              return (
+                <div key={prod.id} className={`wishlist-card ${prod.isFlashSale ? "is-flash-deal-card" : ""} ${isOutOfStock ? "is-out-of-stock" : ""}`}>
+                  <div
+                    className="wishlist-card-img-box"
                     onClick={() =>
                       navigate(`/product/${prod.product_id || prod.id}`, {
                         state: prod.isFlashSale
@@ -490,42 +443,110 @@ function WishlistPage() {
                       })
                     }
                   >
-                    {prod.name}
-                  </h3>
-
-                  <div className="wishlist-card-rating">
-                    <div className="wishlist-stars-row">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          size={14}
-                          fill={i < Math.floor(prod.rating) ? "#FFC107" : "none"}
-                          stroke={i < Math.floor(prod.rating) ? "#FFC107" : "#E5E7EB"}
-                        />
-                      ))}
-                    </div>
-                    <span className="wishlist-rating-val">{prod.rating} ({prod.reviews})</span>
-                  </div>
-
-                  <div className="wishlist-card-price-row">
-                    <span className={`wishlist-sale-price ${prod.isFlashSale ? "flash-sale-price-highlight" : ""}`}>
-                      ${prod.price.toFixed(2)}
-                    </span>
-                    {prod.originalPrice > prod.price && (
-                      <span className="wishlist-original-price">${prod.originalPrice.toFixed(2)}</span>
+                    <img
+                      src={prod.image}
+                      alt={prod.name}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = NO_IMAGE_PLACEHOLDER;
+                      }}
+                    />
+                    {isOutOfStock ? (
+                      <span className="card-stock-badge unavailable">
+                        Stock Unavailable
+                      </span>
+                    ) : (
+                      <>
+                        {prod.isFlashSale ? (
+                          <span className="wishlist-flash-deal-badge">
+                            <Flame size={12} /> {prod.badge || "Flash Deal"}
+                          </span>
+                        ) : null}
+                        {prod.discount > 0 && (
+                          <span
+                            className="wishlist-discount-badge"
+                            style={prod.isFlashSale ? { top: "42px" } : {}}
+                          >
+                            -{prod.discount}% OFF
+                          </span>
+                        )}
+                      </>
                     )}
+                    <button
+                      type="button"
+                      className="wishlist-remove-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFromWishlist(prod);
+                      }}
+                      title="Remove from Wishlist"
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
 
-                  <button
-                    type="button"
-                    className={`wishlist-add-cart-btn ${prod.isFlashSale ? "wishlist-flash-cart-btn" : ""}`}
-                    onClick={() => handleAddToCart(prod)}
-                  >
-                    <ShoppingCart size={16} /> {prod.isFlashSale ? "Claim Flash Deal" : "Add To Cart"}
-                  </button>
+                  <div className="wishlist-card-content">
+                    <span className="wishlist-card-category">
+                      {prod.brand ? `${prod.brand} · ${prod.category}` : prod.category}
+                    </span>
+
+                    <h3
+                      className="wishlist-card-title"
+                      onClick={() =>
+                        navigate(`/product/${prod.product_id || prod.id}`, {
+                          state: prod.isFlashSale
+                            ? { fromFlashSale: true, flashSale: prod.flashSaleData || prod, flashPrice: prod.price }
+                            : { fromFlashSale: false }
+                        })
+                      }
+                    >
+                      {prod.name}
+                    </h3>
+
+                    {isOutOfStock && (
+                      <span className="product-out-of-stock">
+                        Stock Unavailable
+                      </span>
+                    )}
+
+                    <div className="wishlist-card-rating">
+                      <div className="wishlist-stars-row">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            size={14}
+                            fill={i < Math.floor(prod.rating) ? "#FFC107" : "none"}
+                            stroke={i < Math.floor(prod.rating) ? "#FFC107" : "#E5E7EB"}
+                          />
+                        ))}
+                      </div>
+                      <span className="wishlist-rating-val">{prod.rating} ({prod.reviews})</span>
+                    </div>
+
+                    <div className="wishlist-card-price-row">
+                      <span className={`wishlist-sale-price ${prod.isFlashSale ? "flash-sale-price-highlight" : ""}`}>
+                        ${prod.price.toFixed(2)}
+                      </span>
+                      {prod.originalPrice > prod.price && (
+                        <span className="wishlist-original-price">${prod.originalPrice.toFixed(2)}</span>
+                      )}
+                    </div>
+
+                    <button
+                      type="button"
+                      className={`wishlist-add-cart-btn ${prod.isFlashSale ? "wishlist-flash-cart-btn" : ""} ${isOutOfStock ? "disabled" : ""}`}
+                      disabled={isOutOfStock}
+                      onClick={() => {
+                        if (!isOutOfStock) handleAddToCart(prod);
+                      }}
+                    >
+                      <ShoppingCart size={16} />
+                      {isOutOfStock ? "Stock Unavailable" : (prod.isFlashSale ? "Claim Flash Deal" : "Add To Cart")}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>

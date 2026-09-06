@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
     FaPlus,
     FaSearch,
@@ -14,7 +14,8 @@ import {
     FaBoxOpen,
     FaBoxes,
     FaChevronRight,
-    FaArrowUp
+    FaArrowUp,
+    FaTimes
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -32,7 +33,7 @@ import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx
 import "./style/PurchasePage.css";
 
 function PurchasePage() {
-    const { can } = usePermissions();
+    const { can, isAdmin } = usePermissions();
     const [purchaseOrders, setPurchaseOrders] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
     const [products, setProducts] = useState([]);
@@ -303,6 +304,83 @@ function PurchasePage() {
         return matchesSearch && matchesStatus && matchesSupplier;
     });
 
+    // Multi-select state & handlers
+    const [selectedIds, setSelectedIds] = useState([]);
+    const visibleIds = useMemo(() => filteredPOs.map(po => po.id), [filteredPOs]);
+    const isAllSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+    const isSomeSelected = visibleIds.some(id => selectedIds.includes(id)) && !isAllSelected;
+
+    const handleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
+        } else {
+            const allMerged = new Set([...selectedIds, ...visibleIds]);
+            setSelectedIds(Array.from(allMerged));
+        }
+    };
+
+    const handleSelectRow = (id, e) => {
+        e.stopPropagation();
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = () => {
+        if (selectedIds.length === 0) return;
+        const count = selectedIds.length;
+        Swal.fire({
+            title: `Delete ${count} Purchase Orders?`,
+            text: "This action will permanently delete all selected purchase orders.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#ef4444",
+            cancelButtonColor: "#64748b",
+            confirmButtonText: `Yes, delete ${count} POs`
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    setLoading(true);
+                    await Promise.all(selectedIds.map(id => deletePurchaseOrderApi(id)));
+                    setSelectedIds([]);
+                    Swal.fire("Deleted!", `${count} purchase orders deleted.`, "success");
+                    fetchPurchaseOrders();
+                } catch (error) {
+                    Swal.fire("Error", error.message || "Failed to delete purchase orders", "error");
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+    };
+
+    const handleBulkStatusChange = (newStatus) => {
+        if (selectedIds.length === 0) return;
+        const count = selectedIds.length;
+        Swal.fire({
+            title: `Update ${count} purchase orders to ${newStatus}?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#10b981",
+            cancelButtonColor: "#64748b",
+            confirmButtonText: "Confirm"
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    setLoading(true);
+                    await Promise.all(selectedIds.map(id => updatePurchaseOrderStatusApi(id, newStatus)));
+                    setSelectedIds([]);
+                    Swal.fire("Updated!", `${count} purchase orders set to ${newStatus}.`, "success");
+                    fetchPurchaseOrders();
+                } catch (error) {
+                    Swal.fire("Error", error.message || "Failed to update purchase orders", "error");
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+    };
+
     // KPI Metrics
     const totalSpend = purchaseOrders.reduce((sum, po) => sum + (parseFloat(po.total_amount) || 0), 0);
     const pendingCount = purchaseOrders.filter(po => po.status === "pending").length;
@@ -526,9 +604,68 @@ function PurchasePage() {
                     </div>
                 </div>
 
+                {isAdmin && selectedIds.length > 0 && (
+                    <div className="admin-bulk-actions-banner">
+                        <div className="bulk-banner-left">
+                            <span className="bulk-select-badge">{selectedIds.length}</span>
+                            <span className="bulk-select-label">
+                                <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? "purchase order" : "purchase orders"} selected
+                            </span>
+                            <button type="button" className="bulk-banner-text-btn" onClick={() => setSelectedIds([])}>
+                                Deselect all
+                            </button>
+                            {purchaseOrders.length > filteredPOs.length && (
+                                <button
+                                    type="button"
+                                    className="bulk-banner-text-btn"
+                                    onClick={() => setSelectedIds(purchaseOrders.map(p => p.id))}
+                                >
+                                    Select all {purchaseOrders.length} in database
+                                </button>
+                            )}
+                        </div>
+                        <div className="bulk-banner-actions">
+                            <button
+                                type="button"
+                                className="bulk-action-secondary-btn"
+                                onClick={() => handleBulkStatusChange("received")}
+                                disabled={loading}
+                            >
+                                <FaCheckCircle /> Mark Received
+                            </button>
+                            <button
+                                type="button"
+                                className="bulk-action-secondary-btn"
+                                onClick={() => handleBulkStatusChange("cancelled")}
+                                disabled={loading}
+                            >
+                                <FaBan /> Mark Cancelled
+                            </button>
+                            {can("purchases", "delete") && (
+                                <button
+                                    type="button"
+                                    className="bulk-delete-btn"
+                                    onClick={handleBulkDelete}
+                                    disabled={loading}
+                                >
+                                    <FaTrash /> Delete Selected ({selectedIds.length})
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                className="bulk-cancel-btn"
+                                onClick={() => setSelectedIds([])}
+                                title="Cancel selection"
+                            >
+                                <FaTimes />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Table */}
                 {loading && purchaseOrders.length === 0 ? (
-                    <TableSkeleton rows={5} cols={7} hasAvatar={false} />
+                    <TableSkeleton rows={5} cols={isAdmin ? 8 : 7} hasAvatar={false} />
                 ) : filteredPOs.length === 0 ? (
                     <div className="empty-box">
                         <p>No purchase orders found matching your criteria.</p>
@@ -538,6 +675,18 @@ function PurchasePage() {
                         <table className="purchase-table">
                             <thead>
                                 <tr>
+                                    {isAdmin && (
+                                        <th className="admin-th-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                className="admin-master-checkbox"
+                                                checked={isAllSelected}
+                                                ref={el => { if (el) el.indeterminate = isSomeSelected; }}
+                                                onChange={handleSelectAll}
+                                                title="Select all visible purchase orders"
+                                            />
+                                        </th>
+                                    )}
                                     {visibleColumns.poNumber && <th>PO Number</th>}
                                     {visibleColumns.supplier && <th>Supplier</th>}
                                     {visibleColumns.date && <th>Order Date</th>}
@@ -549,7 +698,18 @@ function PurchasePage() {
                             </thead>
                             <tbody>
                                 {filteredPOs.map((po) => (
-                                    <tr key={po.id}>
+                                    <tr key={po.id} className={isAdmin && selectedIds.includes(po.id) ? "admin-row-selected" : ""}>
+                                        {isAdmin && (
+                                            <td className="admin-td-checkbox" onClick={e => e.stopPropagation()}>
+                                                <input
+                                                    type="checkbox"
+                                                    className="admin-row-checkbox"
+                                                    checked={selectedIds.includes(po.id)}
+                                                    onChange={e => handleSelectRow(po.id, e)}
+                                                    title="Select this purchase order"
+                                                />
+                                            </td>
+                                        )}
                                         {visibleColumns.poNumber && (
                                             <td>
                                                 <span className="po-number-tag">{po.po_number}</span>

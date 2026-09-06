@@ -479,19 +479,38 @@ function Dashboard() {
         const dateStr = o.created_at || o.createdAt || o.date;
         const formattedDate = dateStr ? new Date(dateStr).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
 
-        // Format clean sequential order identifier (e.g. #ORD-0001 or o.order_number) instead of raw UUID
-        const seqNumber = o.order_number
-          ? (String(o.order_number).startsWith("#") ? o.order_number : `#${o.order_number}`)
-          : (typeof o.id === "number" || (o.id && !String(o.id).includes("-") && String(o.id).length <= 6))
-          ? `#ORD-${String(o.id).padStart(4, "0")}`
-          : `#ORD-${String(idx + 1).padStart(4, "0")}`;
+        // Format clean sequential order identifier (e.g. #OR-00001 or o.order_number) instead of raw UUID
+        const seqNumber = (o.order_number && String(o.order_number).startsWith("OR-"))
+          ? `#${o.order_number}`
+          : (o.order_number && String(o.order_number).startsWith("#OR-"))
+          ? o.order_number
+          : (o.order_number && !String(o.order_number).includes("-") && !isNaN(Number(o.order_number)))
+          ? `#OR-${String(o.order_number).padStart(5, "0")}`
+          : (typeof o.id === "number" || (o.id && !String(o.id).includes("-") && String(o.id).length <= 5))
+          ? `#OR-${String(o.id).padStart(5, "0")}`
+          : `#OR-${String(idx + 1).padStart(5, "0")}`;
+
+        // Find clean product name (never show raw product ID)
+        const firstItem = o.items?.[0];
+        let prodName = firstItem?.product?.name;
+        if (!prodName && firstItem?.product_id && rawProducts?.length > 0) {
+          const match = rawProducts.find(p => String(p.id) === String(firstItem.product_id));
+          if (match?.name) prodName = match.name;
+        }
+        if (!prodName && o.product_id && rawProducts?.length > 0) {
+          const match = rawProducts.find(p => String(p.id) === String(o.product_id));
+          if (match?.name) prodName = match.name;
+        }
+        if (!prodName) {
+          prodName = o.items?.length ? `${o.items.length} Item(s)` : `Product #${idx + 1}`;
+        }
 
         return {
           id: seqNumber,
           rawId: o.id,
           customer: o.user?.name || o.customer_name || o.contact_phone || "Registered Client",
           email: o.user?.email || "customer@angkor.com",
-          product: o.items?.[0]?.product?.name || (o.items?.length ? `${o.items.length} Item(s)` : "Catalog Product"),
+          product: prodName,
           price: total > 0 ? total : 45.0,
           paymentMethod: payMethod,
           status: normalizedStatus,
@@ -501,13 +520,13 @@ function Dashboard() {
     }
 
     return [
-      { id: "#ORD-0001", customer: "Dara Srun", email: "dara@angkor.com", product: "iPhone 15 Pro Max 256GB", price: 1200.0, paymentMethod: "ABA KHQR", status: "Completed", date: "2026-08-31" },
-      { id: "#ORD-0002", customer: "Sokha Chen", email: "sokha@angkor.com", product: "ASUS ROG Gaming Laptop 16GB", price: 850.0, paymentMethod: "VISA Card", status: "Pending", date: "2026-08-31" },
-      { id: "#ORD-0003", customer: "John Miller", email: "john.m@angkor.com", product: "AirPods Pro Wireless v2", price: 250.0, paymentMethod: "ABA KHQR", status: "Completed", date: "2026-08-30" },
-      { id: "#ORD-0004", customer: "Bopha Heng", email: "bopha@angkor.com", product: "Waterproof Travel Backpack", price: 39.99, paymentMethod: "Cash on Delivery", status: "Processing", date: "2026-08-30" },
-      { id: "#ORD-0005", customer: "Vannak Touch", email: "vannak@angkor.com", product: "Active Smart Watch Pro", price: 59.99, paymentMethod: "ABA KHQR", status: "Completed", date: "2026-08-29" }
+      { id: "#OR-00001", customer: "Dara Srun", email: "dara@angkor.com", product: "iPhone 15 Pro Max 256GB", price: 1200.0, paymentMethod: "ABA KHQR", status: "Completed", date: "2026-08-31" },
+      { id: "#OR-00002", customer: "Sokha Chen", email: "sokha@angkor.com", product: "ASUS ROG Gaming Laptop 16GB", price: 850.0, paymentMethod: "VISA Card", status: "Pending", date: "2026-08-31" },
+      { id: "#OR-00003", customer: "John Miller", email: "john.m@angkor.com", product: "AirPods Pro Wireless v2", price: 250.0, paymentMethod: "ABA KHQR", status: "Completed", date: "2026-08-30" },
+      { id: "#OR-00004", customer: "Bopha Heng", email: "bopha@angkor.com", product: "Waterproof Travel Backpack", price: 39.99, paymentMethod: "Cash on Delivery", status: "Processing", date: "2026-08-30" },
+      { id: "#OR-00005", customer: "Vannak Touch", email: "vannak@angkor.com", product: "Active Smart Watch Pro", price: 59.99, paymentMethod: "ABA KHQR", status: "Completed", date: "2026-08-29" }
     ];
-  }, [filteredTimeOrders, rawOrders]);
+  }, [filteredTimeOrders, rawOrders, rawProducts]);
 
   // KPI Card Click Handler (Dynamic Details)
   const handleKpiCardClick = (kpiKey) => {
@@ -1281,6 +1300,7 @@ function Dashboard() {
             <table className="desktop-table">
               <thead>
                 <tr>
+                  <th style={{ width: "48px", textAlign: "center" }}>#</th>
                   <th>Order ID</th>
                   <th>Customer</th>
                   <th>Product Item</th>
@@ -1293,13 +1313,14 @@ function Dashboard() {
               <tbody>
                 {filteredOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="empty-table-cell">
+                    <td colSpan={8} className="empty-table-cell">
                       {isKhmer ? "មិនមានការបញ្ជាទិញត្រូវនឹងការស្វែងរកទេ" : "No orders matching search criteria"}
                     </td>
                   </tr>
                 ) : (
-                  filteredOrders.map((order) => (
-                    <tr key={order.id}>
+                  filteredOrders.map((order, index) => (
+                    <tr key={order.rawId || order.id || index}>
+                      <td style={{ textAlign: "center" }}><span className="order-index-badge">#{index + 1}</span></td>
                       <td><strong className="order-id-link">{order.id}</strong></td>
                       <td>
                         <div className="customer-cell">
@@ -1343,10 +1364,13 @@ function Dashboard() {
                   {isKhmer ? "មិនមានការបញ្ជាទិញត្រូវនឹងការស្វែងរកទេ" : "No orders matching search criteria"}
                 </div>
               ) : (
-                filteredOrders.map((order) => (
-                  <div className="kanban-card order-card" key={order.id}>
+                filteredOrders.map((order, index) => (
+                  <div className="kanban-card order-card" key={order.rawId || order.id || index}>
                     <div className="kanban-card-header">
-                      <span className="order-id-badge">{order.id}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span className="order-index-badge">#{index + 1}</span>
+                        <span className="order-id-badge">{order.id}</span>
+                      </div>
                       <span className={`status-pill ${order.status.toLowerCase()}`}>
                         {order.status === "Completed" ? <FaCheckCircle /> : <FaClock />} {order.status}
                       </span>

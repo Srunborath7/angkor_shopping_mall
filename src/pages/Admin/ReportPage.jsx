@@ -123,6 +123,18 @@ function orderDate(order) {
   return parseDate(order?.created_at || order?.createdAt || order?.order_date);
 }
 
+const formatAdminOrderCode = (order, idx = 0) => {
+  if (!order) return "#OR-00001";
+  const num = order.order_number;
+  if (num && String(num).startsWith("#OR-")) return num;
+  if (num && String(num).startsWith("OR-")) return `#${num}`;
+  if (num && !isNaN(Number(num)) && !String(num).includes("-")) return `#OR-${String(num).padStart(5, "0")}`;
+  if (typeof order.id === "number" || (order.id && !String(order.id).includes("-") && String(order.id).length <= 5)) {
+    return `#OR-${String(order.id).padStart(5, "0")}`;
+  }
+  return `#OR-${String(idx + 1).padStart(5, "0")}`;
+};
+
 function orderStatus(order) {
   return String(order?.status || "pending").toLowerCase();
 }
@@ -948,9 +960,10 @@ function ReportPage() {
         downloadExcel(
           `AngkorMall_Detailed_Orders_${nowStr}.xls`,
           "Detailed Orders",
-          ["Order ID", "Customer Name", "Email", "Phone", "Payment Gateway", "Order Date", "Total ($)", "Total (KHR)", "Status"],
-          filteredOrders.map((o) => [
-            `#${o.id}`,
+          ["#", "Order ID", "Customer Name", "Email", "Phone", "Payment Gateway", "Order Date", "Total ($)", "Total (KHR)", "Status"],
+          filteredOrders.map((o, idx) => [
+            idx + 1,
+            formatAdminOrderCode(o, idx),
             o.user?.name || "Client",
             o.user?.email || "—",
             o.contact_phone || o.user?.phone || "—",
@@ -965,9 +978,9 @@ function ReportPage() {
         downloadExcel(
           `AngkorMall_Products_Catalog_${nowStr}.xls`,
           "Products Catalog",
-          ["Product ID", "Product Name", "SKU", "Category", "Brand", "Unit Price ($)", "Stock Quantity", "Total Asset Value ($)", "Status"],
-          products.map((p) => [
-            `#${p.id}`,
+          ["#", "Product Name", "SKU", "Category", "Brand", "Unit Price ($)", "Stock Quantity", "Total Asset Value ($)", "Status"],
+          products.map((p, idx) => [
+            idx + 1,
             p.name,
             p.sku || "—",
             p.category?.name || p.category || "General",
@@ -975,16 +988,16 @@ function ReportPage() {
             money(p.price).toFixed(2),
             money(p.stock_quantity),
             (money(p.price) * money(p.stock_quantity)).toFixed(2),
-            p.is_active ? "ACTIVE" : "INACTIVE"
+            p.is_active ? "Active" : "Inactive"
           ])
         );
       } else if (domain === "suppliers") {
         downloadExcel(
           `AngkorMall_Suppliers_Directory_${nowStr}.xls`,
           "Suppliers",
-          ["Supplier ID", "Company Name", "Contact Person", "Phone", "Email", "Address", "Status"],
-          suppliers.map((s) => [
-            `#${s.id}`,
+          ["#", "Company Name", "Contact Person", "Phone", "Email", "Address", "Status"],
+          suppliers.map((s, idx) => [
+            idx + 1,
             s.name || s.company_name || "Supplier Partner",
             s.contact_person || s.contactPerson || "—",
             s.phone || "—",
@@ -1140,9 +1153,9 @@ function ReportPage() {
             { label: "Active Suppliers", value: `${suppliers.filter((s) => s.status !== "Inactive").length}` },
             { label: "Procurement POs", value: `${purchases.length}` }
           ],
-          headers: ["ID", "Company Name", "Contact Person", "Phone", "Email", "Address", "Status"],
-          rows: suppliers.map((s) => [
-            `#${s.id}`,
+          headers: ["#", "Company Name", "Contact Person", "Phone", "Email", "Address", "Status"],
+          rows: suppliers.map((s, idx) => [
+            `${idx + 1}`,
             s.name || s.company_name || "Supplier Partner",
             s.contact_person || s.contactPerson || "—",
             s.phone || "—",
@@ -1700,6 +1713,7 @@ function ReportPage() {
             <table className="report-data-table desktop-table">
               <thead>
                 <tr>
+                  <th style={{ width: "48px", textAlign: "center" }}>#</th>
                   <th>Order ID</th>
                   <th>Customer Name</th>
                   <th>Email & Phone</th>
@@ -1712,11 +1726,12 @@ function ReportPage() {
               </thead>
               <tbody>
                 {filteredOrders.length === 0 ? (
-                  <tr><td colSpan={8} className="empty-cell">No order records found matching query.</td></tr>
+                  <tr><td colSpan={9} className="empty-cell">No order records found matching query.</td></tr>
                 ) : (
-                  filteredOrders.map((ord) => (
-                    <tr key={ord.id}>
-                      <td><strong className="id-tag">#{ord.id}</strong></td>
+                  filteredOrders.map((ord, idx) => (
+                    <tr key={ord.id || idx}>
+                      <td style={{ textAlign: "center" }}><span className="index-tag">#{idx + 1}</span></td>
+                      <td><strong className="id-tag">{formatAdminOrderCode(ord, idx)}</strong></td>
                       <td>
                         <strong className="user-name">{ord.user?.name || "Client"}</strong>
                       </td>
@@ -1743,10 +1758,13 @@ function ReportPage() {
 
             {/* Mobile Cards */}
             <div className="mobile-cards-container">
-              {filteredOrders.map((ord) => (
-                <div className="kanban-card" key={ord.id}>
+              {filteredOrders.map((ord, idx) => (
+                <div className="kanban-card" key={ord.id || idx}>
                   <div className="kanban-card-header">
-                    <span className="id-tag">#{ord.id}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span className="index-tag">#{idx + 1}</span>
+                      <span className="id-tag">{formatAdminOrderCode(ord, idx)}</span>
+                    </div>
                     <span className={`status-pill status-${orderStatus(ord)}`}>{orderStatus(ord)}</span>
                   </div>
                   <div className="card-info-row">
@@ -1790,7 +1808,7 @@ function ReportPage() {
             <table className="report-data-table desktop-table">
               <thead>
                 <tr>
-                  <th>Product ID</th>
+                  <th style={{ width: "50px", textAlign: "center" }}>#</th>
                   <th>Product Name</th>
                   <th>SKU</th>
                   <th>Category</th>
@@ -1805,13 +1823,13 @@ function ReportPage() {
                 {products.length === 0 ? (
                   <tr><td colSpan={9} className="empty-cell">No products available in catalog.</td></tr>
                 ) : (
-                  products.map((p) => {
+                  products.map((p, idx) => {
                     const priceNum = money(p.price);
                     const stockNum = money(p.stock_quantity);
                     const assetVal = priceNum * stockNum;
                     return (
-                      <tr key={p.id}>
-                        <td><strong className="id-tag">#{p.id}</strong></td>
+                      <tr key={p.id || idx}>
+                        <td style={{ textAlign: "center" }}><strong className="id-tag">#{idx + 1}</strong></td>
                         <td><strong className="prod-name">{p.name}</strong></td>
                         <td><span className="sku-tag">{p.sku || "—"}</span></td>
                         <td><span className="cat-pill">{p.category?.name || p.category || "General"}</span></td>
@@ -1837,10 +1855,10 @@ function ReportPage() {
 
             {/* Mobile Cards */}
             <div className="mobile-cards-container">
-              {products.map((p) => (
-                <div className="kanban-card" key={p.id}>
+              {products.map((p, idx) => (
+                <div className="kanban-card" key={p.id || idx}>
                   <div className="kanban-card-header">
-                    <strong>#{p.id} {p.name}</strong>
+                    <strong>#{idx + 1} {p.name}</strong>
                     <span className={`status-pill status-${p.is_active ? "active" : "inactive"}`}>
                       {p.is_active ? "Active" : "Inactive"}
                     </span>
@@ -1882,7 +1900,7 @@ function ReportPage() {
             <table className="report-data-table desktop-table">
               <thead>
                 <tr>
-                  <th>Supplier ID</th>
+                  <th style={{ width: "48px", textAlign: "center" }}>#</th>
                   <th>Company / Vendor Name</th>
                   <th>Contact Person</th>
                   <th>Phone Number</th>
@@ -1895,9 +1913,9 @@ function ReportPage() {
                 {filteredSuppliers.length === 0 ? (
                   <tr><td colSpan={7} className="empty-cell">No supplier records found matching query.</td></tr>
                 ) : (
-                  filteredSuppliers.map((s) => (
-                    <tr key={s.id}>
-                      <td><strong className="id-tag">#{s.id}</strong></td>
+                  filteredSuppliers.map((s, idx) => (
+                    <tr key={s.id || idx}>
+                      <td style={{ textAlign: "center" }}><strong className="id-tag">#{idx + 1}</strong></td>
                       <td>
                         <strong className="vendor-title">{s.name || s.company_name || "Supplier Partner"}</strong>
                       </td>
@@ -1918,10 +1936,10 @@ function ReportPage() {
 
             {/* Mobile Cards */}
             <div className="mobile-cards-container">
-              {filteredSuppliers.map((s) => (
-                <div className="kanban-card" key={s.id}>
+              {filteredSuppliers.map((s, idx) => (
+                <div className="kanban-card" key={s.id || idx}>
                   <div className="kanban-card-header">
-                    <strong>#{s.id} {s.name || s.company_name}</strong>
+                    <strong>#{idx + 1} {s.name || s.company_name}</strong>
                     <span className="status-pill status-active">{s.status || "Active"}</span>
                   </div>
                   <div className="card-info-row">

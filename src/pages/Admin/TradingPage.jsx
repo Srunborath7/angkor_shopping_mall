@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   FaPlus,
   FaSearch,
@@ -12,6 +12,8 @@ import {
   FaHandshake,
   FaChevronRight,
   FaArrowUp,
+  FaTimes,
+  FaBan
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -42,7 +44,7 @@ function formatCondition(condition) {
 }
 
 function TradingPage() {
-  const { can } = usePermissions();
+  const { can, isAdmin } = usePermissions();
   const [tradeProducts, setTradeProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -287,6 +289,79 @@ function TradingPage() {
   const negotiatingCount = tradeProducts.filter(p => p.status === "in_negotiation").length;
   const tradedCount = tradeProducts.filter(p => p.status === "traded").length;
 
+  const [selectedIds, setSelectedIds] = useState([]);
+  const visibleIds = useMemo(() => tradeProducts.map(i => i.id), [tradeProducts]);
+  const isAllSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+  const isSomeSelected = visibleIds.some(id => selectedIds.includes(id)) && !isAllSelected;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
+    } else {
+      setSelectedIds(Array.from(new Set([...selectedIds, ...visibleIds])));
+    }
+  };
+
+  const handleSelectRow = (id, e) => {
+    e.stopPropagation();
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    Swal.fire({
+      title: `Delete ${selectedIds.length} trade listings?`,
+      text: "These trade listings will be permanently removed.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      confirmButtonText: `Yes, delete (${selectedIds.length})`,
+      cancelButtonText: "Cancel"
+    }).then(async (res) => {
+      if (res.isConfirmed) {
+        try {
+          setLoading(true);
+          await Promise.all(selectedIds.map(id => deleteTradeProductApi(id).catch(e => console.error(e))));
+          Swal.fire("Deleted!", `${selectedIds.length} listings deleted.`, "success");
+          setSelectedIds([]);
+          fetchTradeProducts();
+        } catch (err) {
+          toastError("Failed to delete some trade listings.");
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+  };
+
+  const handleBulkStatusChange = (newStatus) => {
+    if (selectedIds.length === 0) return;
+    const label = newStatus.replace("_", " ").toUpperCase();
+    Swal.fire({
+      title: `Change ${selectedIds.length} listings to ${label}?`,
+      text: `Update status of selected listings to ${newStatus}.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3b82f6",
+      confirmButtonText: `Yes, update to ${label}`,
+      cancelButtonText: "Cancel"
+    }).then(async (res) => {
+      if (res.isConfirmed) {
+        try {
+          setLoading(true);
+          await Promise.all(selectedIds.map(id => updateTradeProductApi(id, { status: newStatus }).catch(e => console.error(e))));
+          Swal.fire("Updated!", `Status changed for ${selectedIds.length} listings.`, "success");
+          setSelectedIds([]);
+          fetchTradeProducts();
+        } catch (err) {
+          toastError("Failed to update status for some listings.");
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+  };
+
   if (!can("trading", "view")) {
     return <AccessDeniedView moduleName="Trade-In & Exchange" />;
   }
@@ -463,8 +538,66 @@ function TradingPage() {
 
       {/* Main Table */}
       <div className="card">
+        {isAdmin && selectedIds.length > 0 && (
+          <div className="admin-bulk-actions-banner">
+            <div className="bulk-banner-left">
+              <span className="bulk-select-badge">{selectedIds.length}</span>
+              <span className="bulk-select-label">
+                <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? "listing" : "listings"} selected
+              </span>
+              <button type="button" className="bulk-banner-text-btn" onClick={() => setSelectedIds([])}>
+                Deselect all
+              </button>
+            </div>
+            <div className="bulk-banner-actions">
+              <button
+                type="button"
+                className="bulk-action-secondary-btn"
+                onClick={() => handleBulkStatusChange("available")}
+                disabled={loading}
+              >
+                <FaCheckCircle /> Mark Available
+              </button>
+              <button
+                type="button"
+                className="bulk-action-secondary-btn"
+                onClick={() => handleBulkStatusChange("traded")}
+                disabled={loading}
+              >
+                <FaHandshake /> Mark Traded
+              </button>
+              <button
+                type="button"
+                className="bulk-action-secondary-btn"
+                onClick={() => handleBulkStatusChange("cancelled")}
+                disabled={loading}
+              >
+                <FaBan /> Cancel
+              </button>
+              {(can("trading", "reject") || can("trading", "delete")) && (
+                <button
+                  type="button"
+                  className="bulk-delete-btn"
+                  onClick={handleBulkDelete}
+                  disabled={loading}
+                >
+                  <FaTrash /> Delete Selected ({selectedIds.length})
+                </button>
+              )}
+              <button
+                type="button"
+                className="bulk-cancel-btn"
+                onClick={() => setSelectedIds([])}
+                title="Cancel selection"
+              >
+                <FaTimes />
+              </button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
-          <TableSkeleton rows={5} cols={8} hasImage={true} />
+          <TableSkeleton rows={5} cols={isAdmin ? 9 : 8} hasImage={true} />
         ) : tradeProducts.length === 0 ? (
           <div style={{ textAlign: "center", padding: 40, color: "#64748b" }}>
             <FaExchangeAlt size={36} style={{ marginBottom: 12, opacity: 0.4 }} />
@@ -475,6 +608,18 @@ function TradingPage() {
             <table className="table">
               <thead>
                 <tr>
+                  {isAdmin && (
+                    <th className="admin-th-checkbox">
+                      <input
+                        type="checkbox"
+                        className="admin-master-checkbox"
+                        checked={isAllSelected}
+                        ref={el => { if (el) el.indeterminate = isSomeSelected; }}
+                        onChange={handleSelectAll}
+                        title="Select all visible trade listings"
+                      />
+                    </th>
+                  )}
                   <th>Product / Title</th>
                   <th>Origin & Verification</th>
                   <th>Condition</th>
@@ -487,7 +632,18 @@ function TradingPage() {
               </thead>
               <tbody>
                 {tradeProducts.map((item) => (
-                  <tr key={item.id}>
+                  <tr key={item.id} className={isAdmin && selectedIds.includes(item.id) ? "admin-row-selected" : ""}>
+                    {isAdmin && (
+                      <td className="admin-td-checkbox" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          className="admin-row-checkbox"
+                          checked={selectedIds.includes(item.id)}
+                          onChange={e => handleSelectRow(item.id, e)}
+                          title="Select this trade listing"
+                        />
+                      </td>
+                    )}
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                         <img

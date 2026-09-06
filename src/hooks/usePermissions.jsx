@@ -202,6 +202,19 @@ export function usePermissions() {
     );
   }, [user, role, userRoleStr]);
 
+  const isAdmin = useMemo(() => {
+    if (isSuperAdmin) return true;
+    if (!user && !role) return false;
+    const roleId = String(user?.role_id || user?.roles?.[0]?.id || "").toLowerCase();
+    return (
+      roleId === "admin" ||
+      roleId === "administrator" ||
+      userRoleStr === "admin" ||
+      userRoleStr === "administrator" ||
+      userRoleStr.includes("admin")
+    );
+  }, [isSuperAdmin, user, role, userRoleStr]);
+
   const currentRoleName = useMemo(() => {
     return (
       user?.role_name ||
@@ -384,6 +397,7 @@ export function usePermissions() {
   return {
     can,
     isSuperAdmin,
+    isAdmin,
     currentRoleName,
     permissions: permissionsMap
   };

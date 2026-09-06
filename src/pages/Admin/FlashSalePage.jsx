@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   FaPlus,
   FaSearch,
@@ -13,7 +13,9 @@ import {
   FaTimesCircle,
   FaSlidersH,
   FaChevronRight,
-  FaArrowUp
+  FaArrowUp,
+  FaTimes,
+  FaBan
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -56,7 +58,7 @@ function formatTimeRemaining(item) {
 }
 
 function FlashSalePage() {
-  const { can } = usePermissions();
+  const { can, isAdmin } = usePermissions();
   const [flashSales, setFlashSales] = useState([]);
   const [availableProducts, setAvailableProducts] = useState([]);
   const [search, setSearch] = useState("");
@@ -298,6 +300,79 @@ function FlashSalePage() {
     (item.badge || "").toLowerCase().includes(search.toLowerCase())
   );
 
+  const [selectedIds, setSelectedIds] = useState([]);
+  const visibleIds = useMemo(() => filtered.map(i => i.id), [filtered]);
+  const isAllSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+  const isSomeSelected = visibleIds.some(id => selectedIds.includes(id)) && !isAllSelected;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
+    } else {
+      setSelectedIds(Array.from(new Set([...selectedIds, ...visibleIds])));
+    }
+  };
+
+  const handleSelectRow = (id, e) => {
+    e.stopPropagation();
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    Swal.fire({
+      title: `Remove ${selectedIds.length} Flash Sale Deals?`,
+      text: "These deals will be removed from the homepage flash sale banner.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      confirmButtonText: `Yes, delete (${selectedIds.length})`,
+      cancelButtonText: "Cancel"
+    }).then(async (res) => {
+      if (res.isConfirmed) {
+        try {
+          setLoading(true);
+          await Promise.all(selectedIds.map(id => deleteFlashSaleApi(id).catch(e => console.error(e))));
+          Swal.fire("Deleted!", `${selectedIds.length} deals removed.`, "success");
+          setSelectedIds([]);
+          fetchFlashSales();
+        } catch (err) {
+          Swal.fire("Error", "Failed to delete some flash sale deals.", "error");
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+  };
+
+  const handleBulkStatusChange = (newStatus) => {
+    if (selectedIds.length === 0) return;
+    const label = newStatus === "active" ? "Active" : "Inactive";
+    Swal.fire({
+      title: `Set ${selectedIds.length} deals to ${label}?`,
+      text: `Change flash sale status for selected deals to ${label.toLowerCase()}.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: newStatus === "active" ? "#10b981" : "#d97706",
+      confirmButtonText: `Yes, set to ${label}`,
+      cancelButtonText: "Cancel"
+    }).then(async (res) => {
+      if (res.isConfirmed) {
+        try {
+          setLoading(true);
+          await Promise.all(selectedIds.map(id => updateFlashSaleApi(id, { status: newStatus }).catch(e => console.error(e))));
+          Swal.fire("Updated!", `Status updated for ${selectedIds.length} deals.`, "success");
+          setSelectedIds([]);
+          fetchFlashSales();
+        } catch (err) {
+          Swal.fire("Error", "Failed to update status for some flash sales.", "error");
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+  };
+
   const activeCount = flashSales.filter((s) => s.status === "active").length;
   const avgDiscount = flashSales.length > 0
     ? Math.round(flashSales.reduce((acc, s) => acc + (s.discount || 0), 0) / flashSales.length)
@@ -453,13 +528,84 @@ function FlashSalePage() {
           </div>
         </div>
 
+        {isAdmin && selectedIds.length > 0 && (
+          <div className="admin-bulk-actions-banner">
+            <div className="bulk-banner-left">
+              <span className="bulk-select-badge">{selectedIds.length}</span>
+              <span className="bulk-select-label">
+                <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? "deal" : "deals"} selected
+              </span>
+              <button type="button" className="bulk-banner-text-btn" onClick={() => setSelectedIds([])}>
+                Deselect all
+              </button>
+              {flashSales.length > filtered.length && (
+                <button
+                  type="button"
+                  className="bulk-banner-text-btn"
+                  onClick={() => setSelectedIds(flashSales.map(s => s.id))}
+                >
+                  Select all {flashSales.length} in database
+                </button>
+              )}
+            </div>
+            <div className="bulk-banner-actions">
+              <button
+                type="button"
+                className="bulk-action-secondary-btn"
+                onClick={() => handleBulkStatusChange("active")}
+                disabled={loading}
+              >
+                <FaCheckCircle /> Set Active
+              </button>
+              <button
+                type="button"
+                className="bulk-action-secondary-btn"
+                onClick={() => handleBulkStatusChange("inactive")}
+                disabled={loading}
+              >
+                <FaBan /> Set Inactive
+              </button>
+              {can("flash_sale", "delete") && (
+                <button
+                  type="button"
+                  className="bulk-delete-btn"
+                  onClick={handleBulkDelete}
+                  disabled={loading}
+                >
+                  <FaTrash /> Delete Selected ({selectedIds.length})
+                </button>
+              )}
+              <button
+                type="button"
+                className="bulk-cancel-btn"
+                onClick={() => setSelectedIds([])}
+                title="Cancel selection"
+              >
+                <FaTimes />
+              </button>
+            </div>
+          </div>
+        )}
+
         {loading && flashSales.length === 0 ? (
-          <TableSkeleton rows={5} cols={7} hasImage={true} />
+          <TableSkeleton rows={5} cols={isAdmin ? 8 : 7} hasImage={true} />
         ) : (
           <div className="product-table-wrapper">
             <table className="desktop-table">
               <thead>
                 <tr>
+                  {isAdmin && (
+                    <th className="admin-th-checkbox">
+                      <input
+                        type="checkbox"
+                        className="admin-master-checkbox"
+                        checked={isAllSelected}
+                        ref={el => { if (el) el.indeterminate = isSomeSelected; }}
+                        onChange={handleSelectAll}
+                        title="Select all visible deals"
+                      />
+                    </th>
+                  )}
                   {visibleColumns.hash && <th>#</th>}
                   {visibleColumns.product && <th>Product Deal</th>}
                   {visibleColumns.badge && <th>Badge Tag</th>}
@@ -471,7 +617,18 @@ function FlashSalePage() {
               </thead>
               <tbody>
                 {filtered.map((item, index) => (
-                  <tr key={item.id}>
+                  <tr key={item.id} className={isAdmin && selectedIds.includes(item.id) ? "admin-row-selected" : ""}>
+                    {isAdmin && (
+                      <td className="admin-td-checkbox" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          className="admin-row-checkbox"
+                          checked={selectedIds.includes(item.id)}
+                          onChange={e => handleSelectRow(item.id, e)}
+                          title="Select this deal"
+                        />
+                      </td>
+                    )}
                     {visibleColumns.hash && <td>{index + 1}</td>}
                     {visibleColumns.product && (
                       <td>
@@ -545,7 +702,7 @@ function FlashSalePage() {
                 ))}
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan="7" className="no-data">No flash sales configured</td>
+                    <td colSpan={isAdmin ? 8 : 7} className="no-data">No flash sales configured</td>
                   </tr>
                 )}
               </tbody>
@@ -556,9 +713,18 @@ function FlashSalePage() {
               {filtered.map((item, index) => {
                 const timeRemaining = formatTimeRemaining(item);
                 return (
-                  <div className="flash-mobile-card" key={item.id}>
+                  <div className={`flash-mobile-card ${isAdmin && selectedIds.includes(item.id) ? "admin-row-selected" : ""}`} key={item.id}>
                     <div className="flash-mobile-card-top">
-                      <div className="flash-mobile-prod-media">
+                      <div className="flash-mobile-prod-media" style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        {isAdmin && (
+                          <input
+                            type="checkbox"
+                            className="admin-row-checkbox"
+                            checked={selectedIds.includes(item.id)}
+                            onChange={e => handleSelectRow(item.id, e)}
+                            title="Select this deal"
+                          />
+                        )}
                         <img
                           src={item.image}
                           alt={item.name}

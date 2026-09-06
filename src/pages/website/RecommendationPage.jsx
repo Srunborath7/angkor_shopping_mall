@@ -281,112 +281,132 @@ function RecommendationPage() {
 
     return (
       <div className="recommendation-products-grid">
-        {products.map((prod) => (
-          <div
-            key={prod.id}
-            className="rec-product-card"
-            onClick={() => navigate(`/product/${prod.id}`, { state: { fromFlashSale: false } })}
-          >
-            <div className="rec-image-box">
-              <img
-                src={prod.image}
-                alt={prod.name}
-                loading="lazy"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = NO_IMAGE_PLACEHOLDER;
-                }}
-              />
-
-              {prod.rank && prod.rank <= 10 ? (
-                <span className={`rec-rank-badge rank-${prod.rank <= 3 ? prod.rank : "other"}`}>
-                  {prod.rank_badge || `#${prod.rank} Best Seller`}
-                </span>
-              ) : (
-                prod.badge && <span className="rec-generic-badge">{prod.badge}</span>
-              )}
-
-              {prod.discount > 0 && (
-                <span className="rec-discount-tag">-{prod.discount}%</span>
-              )}
-
-              <button
-                type="button"
-                className={`rec-wishlist-btn ${wishlist.some((item) => String(item) === String(prod.id)) ? "active" : ""}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleWishlist(prod.id);
-                }}
-                title="Toggle Wishlist"
-              >
-                <Heart
-                  size={16}
-                  fill={wishlist.some((item) => String(item) === String(prod.id)) ? "#ef4444" : "none"}
-                  stroke={wishlist.some((item) => String(item) === String(prod.id)) ? "#ef4444" : "#64748b"}
+        {products.map((prod) => {
+          const isOutOfStock = (prod.stockQuantity !== undefined ? Number(prod.stockQuantity) : 0) <= 0;
+          return (
+            <div
+              key={prod.id}
+              className={`rec-product-card ${isOutOfStock ? "is-out-of-stock" : ""}`}
+              onClick={() => navigate(`/product/${prod.id}`, { state: { fromFlashSale: false } })}
+            >
+              <div className="rec-image-box">
+                <img
+                  src={prod.image}
+                  alt={prod.name}
+                  loading="lazy"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = NO_IMAGE_PLACEHOLDER;
+                  }}
                 />
-              </button>
-            </div>
 
-            <div className="rec-info-box">
-              <div className="rec-meta-row">
-                <span className="rec-category-tag">
-                  {prod.brand ? `${prod.brand} • ${prod.category}` : prod.category}
-                </span>
-              </div>
-
-              <h3 className="rec-item-title" title={prod.name}>
-                {prod.name}
-              </h3>
-
-              {prod.recommendation_reason && (
-                <div className="rec-reason-pill" title={prod.recommendation_reason}>
-                  <Sparkles size={11} />
-                  <span>{prod.recommendation_reason}</span>
-                </div>
-              )}
-
-              <div className="rec-rating-sales-row">
-                <div className="rec-stars-box">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={13}
-                      fill={i < Math.floor(prod.rating) ? "#f59e0b" : "none"}
-                      stroke={i < Math.floor(prod.rating) ? "#f59e0b" : "#cbd5e1"}
-                    />
-                  ))}
-                  <span className="rec-rating-score">{prod.rating}</span>
-                  <span className="rec-reviews-count">({prod.reviews})</span>
-                </div>
-
-                {(prod.units_sold || prod.totalSales) && (
-                  <span className="rec-sales-tag">
-                    <Flame size={12} /> {prod.units_sold || prod.totalSales} sold
+                {isOutOfStock ? (
+                  <span className="card-stock-badge unavailable">
+                    Stock Unavailable
                   </span>
-                )}
-              </div>
+                ) : (
+                  <>
+                    {prod.rank && prod.rank <= 10 ? (
+                      <span className={`rec-rank-badge rank-${prod.rank <= 3 ? prod.rank : "other"}`}>
+                        {prod.rank_badge || `#${prod.rank} Best Seller`}
+                      </span>
+                    ) : (
+                      prod.badge && <span className="rec-generic-badge">{prod.badge}</span>
+                    )}
 
-              <div className="rec-card-footer">
-                <div className="rec-pricing-box">
-                  <span className="rec-price-amount">${Number(prod.price).toFixed(2)}</span>
-                  {prod.originalPrice > prod.price && (
-                    <span className="rec-strike-price">${Number(prod.originalPrice).toFixed(2)}</span>
-                  )}
-                </div>
+                    {prod.discount > 0 && (
+                      <span className="rec-discount-tag">-{prod.discount}%</span>
+                    )}
+                  </>
+                )}
 
                 <button
                   type="button"
-                  className="rec-add-cart-btn"
-                  disabled={prod.stockQuantity <= 0}
-                  onClick={(e) => { e.stopPropagation(); addToCart(prod); }}
+                  className={`rec-wishlist-btn ${wishlist.some((item) => String(item) === String(prod.id)) ? "active" : ""}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleWishlist(prod.id);
+                  }}
+                  title="Toggle Wishlist"
                 >
-                  <ShoppingBag size={14} />
-                  <span>{prod.stockQuantity <= 0 ? "Out of Stock" : "Add to Cart"}</span>
+                  <Heart
+                    size={16}
+                    fill={wishlist.some((item) => String(item) === String(prod.id)) ? "#ef4444" : "none"}
+                    stroke={wishlist.some((item) => String(item) === String(prod.id)) ? "#ef4444" : "#64748b"}
+                  />
                 </button>
               </div>
+
+              <div className="rec-info-box">
+                <div className="rec-meta-row">
+                  <span className="rec-category-tag">
+                    {prod.brand ? `${prod.brand} • ${prod.category}` : prod.category}
+                  </span>
+                </div>
+
+                <h3 className="rec-item-title" title={prod.name}>
+                  {prod.name}
+                </h3>
+
+                {isOutOfStock && (
+                  <span className="product-out-of-stock">
+                    Stock Unavailable
+                  </span>
+                )}
+
+                {prod.recommendation_reason && (
+                  <div className="rec-reason-pill" title={prod.recommendation_reason}>
+                    <Sparkles size={11} />
+                    <span>{prod.recommendation_reason}</span>
+                  </div>
+                )}
+
+                <div className="rec-rating-sales-row">
+                  <div className="rec-stars-box">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={13}
+                        fill={i < Math.floor(prod.rating) ? "#f59e0b" : "none"}
+                        stroke={i < Math.floor(prod.rating) ? "#f59e0b" : "#cbd5e1"}
+                      />
+                    ))}
+                    <span className="rec-rating-score">{prod.rating}</span>
+                    <span className="rec-reviews-count">({prod.reviews})</span>
+                  </div>
+
+                  {(prod.units_sold || prod.totalSales) && (
+                    <span className="rec-sales-tag">
+                      <Flame size={12} /> {prod.units_sold || prod.totalSales} sold
+                    </span>
+                  )}
+                </div>
+
+                <div className="rec-card-footer">
+                  <div className="rec-pricing-box">
+                    <span className="rec-price-amount">${Number(prod.price).toFixed(2)}</span>
+                    {prod.originalPrice > prod.price && (
+                      <span className="rec-strike-price">${Number(prod.originalPrice).toFixed(2)}</span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    className={`rec-add-cart-btn ${isOutOfStock ? "disabled" : ""}`}
+                    disabled={isOutOfStock}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!isOutOfStock) addToCart(prod);
+                    }}
+                  >
+                    <ShoppingBag size={14} />
+                    <span>{isOutOfStock ? "Stock Unavailable" : "Add to Cart"}</span>
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };

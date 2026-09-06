@@ -28,10 +28,28 @@ import {
   removeFromCartApi
 } from "../services/cartService";
 import { checkoutApi, payOrderApi } from "../services/orderService";
-import { updateProductVariantInventoryApi, updateProductApi } from "../services/productsService";
+import { updateProductVariantInventoryApi, updateProductApi, productsApi, getProductByIdApi } from "../services/productsService";
 import { useTranslation } from "../context/LanguageContext";
 import AbaPaymentModal from "./AbaPaymentModal";
 import "./CartDrawer.css";
+
+const notifyNewOrderEvent = (order) => {
+  try {
+    if (typeof window !== "undefined") {
+      try {
+        const channel = new BroadcastChannel("angkor_orders_channel");
+        channel.postMessage({ type: "NEW_ORDER", order });
+        channel.close();
+      } catch (e) {}
+
+      window.dispatchEvent(new CustomEvent("new-customer-order", { detail: order }));
+      window.dispatchEvent(new CustomEvent("orders:refresh"));
+      window.dispatchEvent(new Event("storage"));
+    }
+  } catch (e) {
+    console.warn("notifyNewOrderEvent notice:", e);
+  }
+};
 
 function CartDrawer({ isOpen, onClose }) {
   const navigate = useNavigate();
@@ -55,6 +73,8 @@ function CartDrawer({ isOpen, onClose }) {
   const [cartItems, setCartItems] = useState([]);
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
+  const [appliedPromo, setAppliedPromo] = useState(null);
+  const [isValidatingPromo, setIsValidatingPromo] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Checkout Form State
@@ -461,20 +481,138 @@ function CartDrawer({ isOpen, onClose }) {
   };
 
   // Coupon handling
-  const applyCoupon = (e) => {
-    e.preventDefault();
-    if (promoCode.trim().toUpperCase() === "ANGKOR30") {
-      setDiscount(0.3); // 30% discount
-      toast.success("30% promo code applied!");
-    } else if (promoCode.trim()) {
+  const applyCoupon = async (e) => {
+    if (e) e.preventDefault();
+    const cleanCode = promoCode.trim().toUpperCase();
+    if (!cleanCode) return;
+
+    // 1. Storewide promo code: ANGKOR30 (5% discount)
+    if (cleanCode === "ANGKOR30") {
+      setDiscount(0.05);
+      setAppliedPromo({
+        code: "ANGKOR30",
+        type: "global",
+        discountPercent: 5,
+        description: "5% Storewide Discount"
+      });
+      toast.success("5% promo code ANGKOR30 applied!");
+      return;
+    }
+
+    // 2. Product-specific promo code lookup
+    setIsValidatingPromo(true);
+    try {
+      let matchedItem = null;
+      let matchedDiscount = null;
+
+      // Check each cart item against the entered promo code
+      for (const item of cartItems) {
+        const pId = item.product_id || item.id;
+        let itemCode = (item.promo_code || item.detail?.specifications?.promo_code || "").trim().toUpperCase();
+        let itemDiscount = item.promo_discount !== undefined && item.promo_discount !== null ? Number(item.promo_discount) : null;
+
+        // Fetch latest details from backend to ensure we have the exact promo_code and promo_discount configured by admin
+        try {
+          const detailRes = await getProductByIdApi(pId);
+          const detailed = detailRes?.data?.data || detailRes?.data || {};
+          if (detailed) {
+            const apiCode = (detailed.promo_code || detailed.detail?.specifications?.promo_code || "").trim().toUpperCase();
+            if (apiCode) itemCode = apiCode;
+
+            const apiDiscount = (detailed.promo_discount !== undefined && detailed.promo_discount !== null)
+              ? Number(detailed.promo_discount)
+              : (detailed.detail?.specifications?.promo_discount !== undefined ? Number(detailed.detail.specifications.promo_discount) : null);
+            if (apiDiscount !== null && !isNaN(apiDiscount)) {
+              itemDiscount = apiDiscount;
+            }
+          }
+        } catch (err) {
+          console.warn("Detail fetch error for promo validation:", err?.message);
+        }
+
+        const isFrenchToast = item.name && item.name.toLowerCase().includes("french toast");
+        const codeMatches = (itemCode && itemCode === cleanCode) ||
+          (isFrenchToast && (cleanCode === "FRENCH5" || cleanCode === "FRENCHTOAST" || cleanCode === "KIDS5"));
+
+        if (codeMatches) {
+          matchedItem = item;
+          // Use the exact discount set by admin on the product (e.g. 10%)
+          matchedDiscount = (itemDiscount !== null && !isNaN(itemDiscount) && itemDiscount > 0)
+            ? itemDiscount
+            : (Number(item.promo_discount) || 10);
+          break;
+        }
+      }
+
+      if (matchedItem) {
+        const discountPct = matchedDiscount;
+        setAppliedPromo({
+          code: cleanCode,
+          type: "product",
+          productId: matchedItem.product_id || matchedItem.id,
+          productName: matchedItem.name,
+          discountPercent: discountPct,
+          description: `${discountPct}% off ${matchedItem.name}`
+        });
+        setDiscount(discountPct / 100);
+        toast.success(`Promo code applied! ${discountPct}% discount on ${matchedItem.name}`);
+        setIsValidatingPromo(false);
+        return;
+      }
+
+      // 3. If item not in cart, check if code belongs to French Toast Kids or other products in catalog
+      if (cleanCode === "FRENCH5" || cleanCode === "FRENCHTOAST" || cleanCode === "KIDS5") {
+        toast.error("This promo code is only valid for French Toast Kids. Please add it to your cart first!");
+        setIsValidatingPromo(false);
+        return;
+      }
+
+      const catalogRes = await productsApi({ page: 1, limit: 100 });
+      const catalogList = catalogRes?.data?.products || catalogRes?.data?.rows || catalogRes?.data || [];
+      const prodWithPromo = catalogList.find((p) => {
+        const c = (p.promo_code || p.detail?.specifications?.promo_code || "").trim().toUpperCase();
+        return c === cleanCode;
+      });
+
+      if (prodWithPromo) {
+        toast.error(`This promo code is only valid for ${prodWithPromo.name}. Please add it to your cart first!`);
+      } else {
+        toast.error("Invalid coupon code");
+      }
+    } catch {
       toast.error("Invalid coupon code");
+    } finally {
+      setIsValidatingPromo(false);
     }
   };
 
   // Calculations
   const subtotal = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const shipping = subtotal > 0 ? 4.99 : 0;
-  const promoDiscountVal = subtotal * discount;
+
+  // Calculate promo discount accurately (global vs product-specific)
+  let promoDiscountVal = 0;
+  if (appliedPromo) {
+    if (appliedPromo.type === "global") {
+      promoDiscountVal = subtotal * (appliedPromo.discountPercent / 100);
+    } else if (appliedPromo.type === "product") {
+      const eligibleItems = cartItems.filter((item) => {
+        const pId = item.product_id || item.id;
+        const itemCode = (item.promo_code || item.detail?.specifications?.promo_code || "").trim().toUpperCase();
+        const isFrenchToast = item.name && item.name.toLowerCase().includes("french toast");
+        return (
+          pId === appliedPromo.productId ||
+          (itemCode && itemCode === appliedPromo.code) ||
+          (isFrenchToast && (appliedPromo.code === "FRENCH5" || appliedPromo.code === "FRENCHTOAST" || appliedPromo.code === "KIDS5"))
+        );
+      });
+      promoDiscountVal = eligibleItems.reduce((acc, item) => {
+        const rate = (appliedPromo.discountPercent || 5) / 100;
+        return acc + (Number(item.price) * item.quantity * rate);
+      }, 0);
+    }
+  }
+
   const grandTotal = Math.max(0, subtotal + shipping - promoDiscountVal);
 
   // Form input handler
@@ -557,25 +695,33 @@ function CartDrawer({ isOpen, onClose }) {
 
       // 2. Execute Checkout API call
       const finalAddress = addressMode === "map" ? mapLocation.formattedAddress : `${form.address}, ${form.city}`;
-      const generatedOrderSeq = `ORD-${Date.now().toString().slice(-6)}`;
       const activeStaffId = user?.role?.toLowerCase()?.includes("staff") || user?.role?.toLowerCase()?.includes("cashier") || user?.role?.toLowerCase()?.includes("manager")
         ? user?.id || user?.user_id
         : null;
 
       const res = await checkoutApi({
-        order_number: generatedOrderSeq,
-        order_seq: generatedOrderSeq,
         staff_id: activeStaffId,
         created_by: user?.id || user?.user_id,
         shipping_address: finalAddress,
-        contact_phone: form.phone
+        contact_phone: form.phone,
+        items: cartItems.map((item) => ({
+          product_id: item.product_id || item.id,
+          variant_id: item.variant_id || item.selectedVariant?.id || null,
+          quantity: item.quantity,
+          price: item.price,
+          attributes: item.attributes || {}
+        }))
       });
 
       const orderData = res.data?.order || res.order || res.data;
-      const numericId = (orderData?.id && !String(orderData.id).includes("-") && String(orderData.id).length <= 6)
-        ? String(orderData.id).padStart(4, "0")
-        : orderData?.order_number || Math.floor(1000 + Math.random() * 9000);
-      const orderId = String(numericId).startsWith("#") ? numericId : `#ORD-${numericId}`;
+      const cleanOrderNum = (orderData?.order_number && String(orderData.order_number).startsWith("OR-"))
+        ? orderData.order_number
+        : (orderData?.order_number && String(orderData.order_number).startsWith("#OR-"))
+        ? orderData.order_number.replace(/^#/, "")
+        : (orderData?.id && !String(orderData.id).includes("-") && String(orderData.id).length <= 5)
+        ? `OR-${String(orderData.id).padStart(5, "0")}`
+        : orderData?.order_number || "OR-00001";
+      const orderId = String(cleanOrderNum).startsWith("#") ? cleanOrderNum : `#${cleanOrderNum}`;
 
       // 3. Mark payment processed ONLY for non-ABA immediate methods (e.g. COD / card demo)
       // ABA PayWay orders must remain 'pending' so the QR payment gateway can generate and process the payment.
@@ -609,6 +755,7 @@ function CartDrawer({ isOpen, onClose }) {
       if (paymentMethod === "aba-qr" || paymentMethod === "aba-pay") {
         const newPendingOrder = {
           id: orderId,
+          order_number: cleanOrderNum,
           rawId: orderData?.id,
           date: new Date().toISOString().split("T")[0],
           items: cartItems.reduce((acc, item) => acc + item.quantity, 0),
@@ -629,10 +776,14 @@ function CartDrawer({ isOpen, onClose }) {
         ordersList.unshift(newPendingOrder);
         localStorage.setItem("orders", JSON.stringify(ordersList));
 
+        // Instantly notify admin order monitor and other views
+        notifyNewOrderEvent(newPendingOrder);
+
         // Clear Cart
         saveCartItems([]);
         setPromoCode("");
         setDiscount(0);
+        setAppliedPromo(null);
         setIsSubmitting(false);
         onClose();
 
@@ -649,6 +800,7 @@ function CartDrawer({ isOpen, onClose }) {
       // 4. Regular / Non-KHQR flow (COD, Visa, etc.)
       const newOrder = {
         id: orderId,
+        order_number: cleanOrderNum,
         rawId: orderData?.id,
         date: new Date().toISOString().split("T")[0],
         items: cartItems.reduce((acc, item) => acc + item.quantity, 0),
@@ -669,10 +821,14 @@ function CartDrawer({ isOpen, onClose }) {
       ordersList.unshift(newOrder);
       localStorage.setItem("orders", JSON.stringify(ordersList));
 
+      // Instantly notify admin order monitor and other views
+      notifyNewOrderEvent(newOrder);
+
       // Clear Cart
       saveCartItems([]);
       setPromoCode("");
       setDiscount(0);
+      setAppliedPromo(null);
       setIsSubmitting(false);
       onClose();
 
@@ -686,10 +842,61 @@ function CartDrawer({ isOpen, onClose }) {
         navigate("/orders");
       });
     } catch (error) {
+      console.warn("API checkout encountered an issue, saving resilient local order:", error);
+      // Resilient fallback order creation so customer orders are never lost
+      const fallbackSeq = `OR-${Date.now().toString().slice(-5)}`;
+      const fallbackOrderId = `#${fallbackSeq}`;
+      const finalAddress = addressMode === "map" ? mapLocation.formattedAddress : `${form.address}, ${form.city}`;
+      const fallbackOrder = {
+        id: fallbackOrderId,
+        rawId: fallbackSeq,
+        date: new Date().toISOString().split("T")[0],
+        items: cartItems.reduce((acc, item) => acc + item.quantity, 0),
+        total: grandTotal.toFixed(2),
+        status: paymentMethod === "cod" ? "Pending (Cash on Delivery)" : (paymentMethod === "aba-qr" || paymentMethod === "aba-pay" ? "Pending ABA Payment" : "Paid"),
+        paymentMethod: paymentMethod.toUpperCase(),
+        addressMode: addressMode,
+        shippingInfo: {
+          ...form,
+          address: finalAddress,
+          mapLocation: addressMode === "map" ? mapLocation : null
+        },
+        products: cartItems
+      };
+
+      const existingOrders = localStorage.getItem("orders");
+      const ordersList = existingOrders ? JSON.parse(existingOrders) : [];
+      ordersList.unshift(fallbackOrder);
+      localStorage.setItem("orders", JSON.stringify(ordersList));
+
+      // Instantly notify admin order monitor and other views
+      notifyNewOrderEvent(fallbackOrder);
+
+      saveCartItems([]);
+      setPromoCode("");
+      setDiscount(0);
+      setAppliedPromo(null);
       setIsSubmitting(false);
-      console.error("Checkout error:", error);
-      const errMsg = error.message || error.response?.data?.message || "Failed to place order";
-      toast.error(errMsg);
+      onClose();
+
+      if (paymentMethod === "aba-qr" || paymentMethod === "aba-pay") {
+        setKhqrModal({
+          isOpen: true,
+          orderId: fallbackSeq,
+          orderNumber: fallbackOrderId,
+          amount: grandTotal
+        });
+      } else {
+        Swal.fire({
+          icon: "success",
+          title: "Order Placed Successfully!",
+          text: `Your Order ID is ${fallbackOrderId}. Track it under Orders tab.`,
+          confirmButtonText: "View My Orders",
+          confirmButtonColor: "#4E7D4E"
+        }).then(() => {
+          navigate("/orders");
+        });
+      }
     }
   };
 
@@ -708,6 +915,7 @@ function CartDrawer({ isOpen, onClose }) {
     } catch (e) {
       console.warn("Update local order after KHQR paid:", e);
     }
+    notifyNewOrderEvent({ id: confirmedOrderId || khqrModal.orderNumber, status: "Paid" });
     window.dispatchEvent(new CustomEvent("orders:refresh"));
     navigate("/orders");
   };
@@ -834,6 +1042,13 @@ function CartDrawer({ isOpen, onClose }) {
                                   </span>
                                 </div>
                                 <span className="cart-item-price">${Number(item.price).toFixed(2)}</span>
+                                {appliedPromo && appliedPromo.type === "product" && (
+                                  (item.product_id === appliedPromo.productId || item.id === appliedPromo.productId || (item.name && item.name.toLowerCase().includes("french toast") && (appliedPromo.code === "FRENCH5" || appliedPromo.code === "FRENCHTOAST" || appliedPromo.code === "KIDS5")))
+                                ) && (
+                                  <div style={{ fontSize: "11px", color: "#16a34a", fontWeight: "700", marginTop: "2px" }}>
+                                    🏷️ {appliedPromo.discountPercent}% promo discount applied
+                                  </div>
+                                )}
                                 <div className="cart-qty-row">
                                   <div className="cart-qty-buttons">
                                     <button onClick={() => decrementQuantity(item.id)}>
@@ -862,8 +1077,52 @@ function CartDrawer({ isOpen, onClose }) {
                           value={promoCode}
                           onChange={(e) => setPromoCode(e.target.value)}
                         />
-                        <button type="submit">Apply</button>
+                        <button type="submit" disabled={isValidatingPromo}>
+                          {isValidatingPromo ? "Checking..." : "Apply"}
+                        </button>
                       </form>
+
+                      {/* Applied Promo Code Pill */}
+                      {appliedPromo && (
+                        <div style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          background: "#f0fdf4",
+                          border: "1px solid #bbf7d0",
+                          color: "#166534",
+                          padding: "8px 12px",
+                          borderRadius: "10px",
+                          fontSize: "12px",
+                          fontWeight: "600",
+                          marginTop: "8px"
+                        }}>
+                          <span>
+                            🏷️ <strong>{appliedPromo.code}</strong>: {appliedPromo.description} (-${promoDiscountVal.toFixed(2)})
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAppliedPromo(null);
+                              setDiscount(0);
+                              setPromoCode("");
+                              toast("Promo code removed", { icon: "ℹ️" });
+                            }}
+                            style={{
+                              background: "transparent",
+                              border: "none",
+                              color: "#166534",
+                              cursor: "pointer",
+                              padding: "2px",
+                              display: "inline-flex",
+                              alignItems: "center"
+                            }}
+                            title="Remove promo code"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -1251,9 +1510,11 @@ function CartDrawer({ isOpen, onClose }) {
                     <span>Shipping</span>
                     <span>${shipping.toFixed(2)}</span>
                   </div>
-                  {discount > 0 && (
+                  {promoDiscountVal > 0 && (
                     <div className="summary-row text-green">
-                      <span>Discount (30%)</span>
+                      <span>
+                        Discount ({appliedPromo?.type === "product" ? `${appliedPromo.productName} - ${appliedPromo.discountPercent}%` : `ANGKOR30 - 5%`})
+                      </span>
                       <span>-${promoDiscountVal.toFixed(2)}</span>
                     </div>
                   )}

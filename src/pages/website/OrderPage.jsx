@@ -78,11 +78,15 @@ function OrderPage() {
                   : (Array.isArray(order.products) ? order.products : []));
 
             // Use readable order sequence or order_number instead of raw UUID
-            const displayId = order.order_number
-              ? (String(order.order_number).startsWith("#") ? order.order_number : `#${order.order_number}`)
-              : (typeof order.id === "number" || (order.id && !String(order.id).includes("-") && String(order.id).length <= 6))
-              ? `#ORD-${String(order.id).padStart(4, "0")}`
-              : `#ORD-${String(idx + 1).padStart(4, "0")}`;
+            const displayId = (order.order_number && String(order.order_number).startsWith("OR-"))
+              ? `#${order.order_number}`
+              : (order.order_number && String(order.order_number).startsWith("#OR-"))
+              ? order.order_number
+              : (order.order_number && !String(order.order_number).includes("-") && !isNaN(Number(order.order_number)))
+              ? `#OR-${String(order.order_number).padStart(5, "0")}`
+              : (typeof order.id === "number" || (order.id && !String(order.id).includes("-") && String(order.id).length <= 5))
+              ? `#OR-${String(order.id).padStart(5, "0")}`
+              : `#OR-${String(idx + 1).padStart(5, "0")}`;
 
             return {
               id: displayId,

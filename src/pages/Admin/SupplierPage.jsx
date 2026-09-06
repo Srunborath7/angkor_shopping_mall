@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
     FaPlus,
     FaSearch,
@@ -14,7 +14,8 @@ import {
     FaUserCheck,
     FaChevronRight,
     FaArrowUp,
-    FaBuilding
+    FaBuilding,
+    FaTimes
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -29,7 +30,7 @@ import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx
 import "./style/SupplierPage.css";
 
 function SupplierPage() {
-    const { can } = usePermissions();
+    const { can, isAdmin } = usePermissions();
     const [suppliers, setSuppliers] = useState([]);
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
@@ -177,6 +178,83 @@ function SupplierPage() {
 
         return matchesSearch && matchesStatus;
     });
+
+    // Multi-select state & handlers
+    const [selectedIds, setSelectedIds] = useState([]);
+    const visibleIds = useMemo(() => filteredSuppliers.map(s => s.id), [filteredSuppliers]);
+    const isAllSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+    const isSomeSelected = visibleIds.some(id => selectedIds.includes(id)) && !isAllSelected;
+
+    const handleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
+        } else {
+            const allMerged = new Set([...selectedIds, ...visibleIds]);
+            setSelectedIds(Array.from(allMerged));
+        }
+    };
+
+    const handleSelectRow = (id, e) => {
+        e.stopPropagation();
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = () => {
+        if (selectedIds.length === 0) return;
+        const count = selectedIds.length;
+        Swal.fire({
+            title: `Delete ${count} Suppliers?`,
+            text: "This action will permanently remove all selected vendor profiles.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#ef4444",
+            cancelButtonColor: "#64748b",
+            confirmButtonText: `Yes, delete ${count} suppliers`
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    setLoading(true);
+                    await Promise.all(selectedIds.map(id => deleteSupplierApi(id)));
+                    setSelectedIds([]);
+                    Swal.fire("Deleted!", `${count} suppliers deleted successfully.`, "success");
+                    fetchSuppliers();
+                } catch (error) {
+                    Swal.fire("Error", error.message || "Failed to delete suppliers", "error");
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+    };
+
+    const handleBulkStatusChange = (newStatus) => {
+        if (selectedIds.length === 0) return;
+        const count = selectedIds.length;
+        Swal.fire({
+            title: `Set ${count} suppliers to ${newStatus ? "Active" : "Inactive"}?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#10b981",
+            cancelButtonColor: "#64748b",
+            confirmButtonText: "Confirm"
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    setLoading(true);
+                    await Promise.all(selectedIds.map(id => updateSupplierApi(id, { is_active: newStatus })));
+                    setSelectedIds([]);
+                    Swal.fire("Updated!", `${count} suppliers updated.`, "success");
+                    fetchSuppliers();
+                } catch (error) {
+                    Swal.fire("Error", error.message || "Failed to update suppliers", "error");
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+    };
 
     const activeCount = suppliers.filter(s => s.is_active).length;
     const inactiveCount = suppliers.filter(s => !s.is_active).length;
@@ -386,9 +464,68 @@ function SupplierPage() {
                     </div>
                 </div>
 
+                {isAdmin && selectedIds.length > 0 && (
+                    <div className="admin-bulk-actions-banner">
+                        <div className="bulk-banner-left">
+                            <span className="bulk-select-badge">{selectedIds.length}</span>
+                            <span className="bulk-select-label">
+                                <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? "supplier" : "suppliers"} selected
+                            </span>
+                            <button type="button" className="bulk-banner-text-btn" onClick={() => setSelectedIds([])}>
+                                Deselect all
+                            </button>
+                            {suppliers.length > filteredSuppliers.length && (
+                                <button
+                                    type="button"
+                                    className="bulk-banner-text-btn"
+                                    onClick={() => setSelectedIds(suppliers.map(s => s.id))}
+                                >
+                                    Select all {suppliers.length} in database
+                                </button>
+                            )}
+                        </div>
+                        <div className="bulk-banner-actions">
+                            <button
+                                type="button"
+                                className="bulk-action-secondary-btn"
+                                onClick={() => handleBulkStatusChange(true)}
+                                disabled={loading}
+                            >
+                                <FaCheckCircle /> Set Active
+                            </button>
+                            <button
+                                type="button"
+                                className="bulk-action-secondary-btn"
+                                onClick={() => handleBulkStatusChange(false)}
+                                disabled={loading}
+                            >
+                                <FaTimes /> Set Inactive
+                            </button>
+                            {can("suppliers", "delete") && (
+                                <button
+                                    type="button"
+                                    className="bulk-delete-btn"
+                                    onClick={handleBulkDelete}
+                                    disabled={loading}
+                                >
+                                    <FaTrash /> Delete Selected ({selectedIds.length})
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                className="bulk-cancel-btn"
+                                onClick={() => setSelectedIds([])}
+                                title="Cancel selection"
+                            >
+                                <FaTimes />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Table */}
                 {loading && suppliers.length === 0 ? (
-                    <TableSkeleton rows={5} cols={7} hasAvatar={true} />
+                    <TableSkeleton rows={5} cols={isAdmin ? 8 : 7} hasAvatar={true} />
                 ) : filteredSuppliers.length === 0 ? (
                     <div className="empty-box">
                         <p>No suppliers found matching your filters.</p>
@@ -398,6 +535,18 @@ function SupplierPage() {
                         <table className="supplier-table">
                             <thead>
                                 <tr>
+                                    {isAdmin && (
+                                        <th className="admin-th-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                className="admin-master-checkbox"
+                                                checked={isAllSelected}
+                                                ref={el => { if (el) el.indeterminate = isSomeSelected; }}
+                                                onChange={handleSelectAll}
+                                                title="Select all visible suppliers"
+                                            />
+                                        </th>
+                                    )}
                                     {visibleColumns.hash && <th>#</th>}
                                     {visibleColumns.supplier && <th>Supplier Name</th>}
                                     {visibleColumns.contactPerson && <th>Contact Person</th>}
@@ -409,7 +558,18 @@ function SupplierPage() {
                             </thead>
                             <tbody>
                                 {filteredSuppliers.map((item, index) => (
-                                    <tr key={item.id || index}>
+                                    <tr key={item.id || index} className={isAdmin && selectedIds.includes(item.id) ? "admin-row-selected" : ""}>
+                                        {isAdmin && (
+                                            <td className="admin-td-checkbox" onClick={e => e.stopPropagation()}>
+                                                <input
+                                                    type="checkbox"
+                                                    className="admin-row-checkbox"
+                                                    checked={selectedIds.includes(item.id)}
+                                                    onChange={e => handleSelectRow(item.id, e)}
+                                                    title="Select this supplier"
+                                                />
+                                            </td>
+                                        )}
                                         {visibleColumns.hash && (
                                             <td style={{ fontWeight: 600, color: "#9ca3af" }}>
                                                 {index + 1}
@@ -424,7 +584,6 @@ function SupplierPage() {
                                                     </div>
                                                     <div className="supplier-details-cell">
                                                         <div className="supplier-title">{item.name}</div>
-                                                        <div className="supplier-sub">ID: {item.id ? item.id.substring(0, 8) : "N/A"}</div>
                                                     </div>
                                                 </div>
                                             </td>

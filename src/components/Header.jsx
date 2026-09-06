@@ -229,11 +229,14 @@ function Header() {
       <header className="home-header">
         <div className="header-container">
           {/* Logo Section */}
-          <div className="home-logo-brand" onClick={() => navigate("/")}>
+          <div className="home-logo-brand" onClick={() => navigate("/")} title="Angkor Shopping Mall">
             <span className="home-logo-icon">
-              <img src={logo} alt="AngkorMall Logo" />
+              <img src={logo} alt="Angkor Shopping Mall Logo" />
             </span>
-            <span className="home-logo-text auth-logo-text">AngkorMall</span>
+            <span className="home-logo-text auth-logo-text">
+              <span className="brand-word-angkor">Angkor</span>{" "}
+              <span className="brand-word-mall">Shopping Mall</span>
+            </span>
           </div>
 
           {/* Desktop Navigation */}

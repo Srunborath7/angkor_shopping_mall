@@ -333,7 +333,7 @@ function ShopPage() {
             <div className="sidebar-header-row">
               <div className="sidebar-title">
                 <SlidersHorizontal size={18} />
-                <h3>{t("shop.filters", "Filters")}</h3>
+                <h5>{t("shop.filters", "Filters")}</h5>
                 {activeFilterCount > 0 && (
                   <span className="active-filter-badge">{activeFilterCount}</span>
                 )}
@@ -533,90 +533,105 @@ function ShopPage() {
 
             {!isLoading && !loadError && filteredProducts.length > 0 && (
               <div className="shop-products-grid">
-                {filteredProducts.map((prod) => (
-                  <div
-                    key={prod.id}
-                    className="product-card-item"
-                    onClick={() => navigate(`/product/${prod.id}`, { state: { fromFlashSale: false } })}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <div className="product-image-box">
-                      <img
-                        src={prod.image}
-                        alt={prod.name}
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = NO_IMAGE_PLACEHOLDER;
-                        }}
-                      />
-
-                      {prod.badge && <span className="product-badge">{prod.badge}</span>}
-                      {prod.discount > 0 && (
-                        <span className="product-discount-tag">-{prod.discount}%</span>
-                      )}
-
-                      <button
-                        type="button"
-                        className={`product-wishlist-toggle ${
-                          wishlist.some((item) => String(item) === String(prod.id)) ? "active" : ""
-                        }`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleWishlist(prod.id);
-                        }}
-                      >
-                        <Heart
-                          size={16}
-                          fill={wishlist.some((item) => String(item) === String(prod.id)) ? "#e54b4b" : "none"}
+                {filteredProducts.map((prod) => {
+                  const isOutOfStock = (prod.stockQuantity !== undefined ? Number(prod.stockQuantity) : 0) <= 0;
+                  return (
+                    <div
+                      key={prod.id}
+                      className={`product-card-item ${isOutOfStock ? "is-out-of-stock" : ""}`}
+                      onClick={() => navigate(`/product/${prod.id}`, { state: { fromFlashSale: false } })}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <div className="product-image-box">
+                        <img
+                          src={prod.image}
+                          alt={prod.name}
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = NO_IMAGE_PLACEHOLDER;
+                          }}
                         />
-                      </button>
-                    </div>
 
-                    <div className="product-details-box">
-                      <span className="product-category">
-                        {prod.brand ? `${prod.brand} · ${prod.category}` : prod.category}
-                      </span>
-                      <h3 className="product-title">{prod.name}</h3>
-                      {prod.stockQuantity <= 0 && (
-                        <span className="product-out-of-stock">Out of stock</span>
-                      )}
-
-                      <div className="product-rating-row">
-                        <div className="stars-row">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              size={14}
-                              fill={i < Math.floor(prod.rating) ? "#FFC107" : "none"}
-                              stroke={i < Math.floor(prod.rating) ? "#FFC107" : "#E5E7EB"}
-                            />
-                          ))}
-                        </div>
-                        <span className="rating-text">{prod.rating} ({prod.reviews})</span>
-                      </div>
-
-                      <div className="product-footer-row">
-                        <div className="price-box">
-                          <span className="sale-price">${prod.price}</span>
-                          {prod.originalPrice > prod.price && (
-                            <span className="original-price">${prod.originalPrice}</span>
-                          )}
-                        </div>
+                        {isOutOfStock ? (
+                          <span className="card-stock-badge unavailable">
+                            {language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable"}
+                          </span>
+                        ) : (
+                          <>
+                            {prod.badge && <span className="product-badge">{prod.badge}</span>}
+                            {prod.discount > 0 && (
+                              <span className="product-discount-tag">-{prod.discount}%</span>
+                            )}
+                          </>
+                        )}
 
                         <button
                           type="button"
-                          className="add-cart-btn"
-                          disabled={prod.stockQuantity <= 0}
-                          onClick={(e) => { e.stopPropagation(); addToCart(prod); }}
+                          className={`product-wishlist-toggle ${wishlist.some((item) => String(item) === String(prod.id)) ? "active" : ""
+                            }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleWishlist(prod.id);
+                          }}
                         >
-                          {prod.stockQuantity <= 0
-                            ? (language === "km" ? "អស់ពីស្តុក" : "Out of Stock")
-                            : (language === "km" ? "ដាក់ក្នុងកន្ត្រក" : "Add To Cart")}
+                          <Heart
+                            size={16}
+                            fill={wishlist.some((item) => String(item) === String(prod.id)) ? "#e54b4b" : "none"}
+                          />
                         </button>
                       </div>
+
+                      <div className="product-details-box">
+                        <span className="product-category">
+                          {prod.brand ? `${prod.brand} · ${prod.category}` : prod.category}
+                        </span>
+                        <h3 className="product-title">{prod.name}</h3>
+                        {isOutOfStock && (
+                          <span className="product-out-of-stock">
+                            {language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable"}
+                          </span>
+                        )}
+
+                        <div className="product-rating-row">
+                          <div className="stars-row">
+                            {[...Array(5)].map((_, i) => (
+                              <Star
+                                key={i}
+                                size={14}
+                                fill={i < Math.floor(prod.rating) ? "#FFC107" : "none"}
+                                stroke={i < Math.floor(prod.rating) ? "#FFC107" : "#E5E7EB"}
+                              />
+                            ))}
+                          </div>
+                          <span className="rating-text">{prod.rating} ({prod.reviews})</span>
+                        </div>
+
+                        <div className="product-footer-row">
+                          <div className="price-box">
+                            <span className="sale-price">${prod.price}</span>
+                            {prod.originalPrice > prod.price && (
+                              <span className="original-price">${prod.originalPrice}</span>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            className={`add-cart-btn ${isOutOfStock ? "disabled" : ""}`}
+                            disabled={isOutOfStock}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isOutOfStock) addToCart(prod);
+                            }}
+                          >
+                            {isOutOfStock
+                              ? (language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable")
+                              : (language === "km" ? "ដាក់ក្នុងកន្ត្រក" : "Add To Cart")}
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 

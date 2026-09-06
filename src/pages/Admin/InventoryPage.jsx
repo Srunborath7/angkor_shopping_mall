@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
     FaSearch,
     FaSlidersH,
@@ -13,7 +13,9 @@ import {
     FaMinus,
     FaCheck,
     FaArrowUp,
-    FaSpinner
+    FaSpinner,
+    FaTimes,
+    FaBan
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -28,7 +30,7 @@ import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx
 import "./style/InventoryPage.css";
 
 function InventoryPage() {
-    const { can } = usePermissions();
+    const { can, isAdmin } = usePermissions();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]);
     const [search, setSearch] = useState("");
@@ -261,6 +263,90 @@ function InventoryPage() {
         return matchesSearch && matchesCategory && matchesStock;
     });
 
+    const [selectedIds, setSelectedIds] = useState([]);
+    const visibleIds = useMemo(() => filteredProducts.map(p => p.id), [filteredProducts]);
+    const isAllSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+    const isSomeSelected = visibleIds.some(id => selectedIds.includes(id)) && !isAllSelected;
+
+    const handleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
+        } else {
+            setSelectedIds(Array.from(new Set([...selectedIds, ...visibleIds])));
+        }
+    };
+
+    const handleSelectRow = (id, e) => {
+        e.stopPropagation();
+        setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+    };
+
+    const handleBulkSetStock = (qty) => {
+        if (selectedIds.length === 0) return;
+        const actionLabel = qty === 0 ? "Mark Out of Stock (0)" : `Set Stock to ${qty}`;
+        Swal.fire({
+            title: `${actionLabel} for ${selectedIds.length} items?`,
+            text: `This will update the stock quantity of all selected products to ${qty}.`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: `Yes, update (${selectedIds.length})`,
+            confirmButtonColor: qty === 0 ? "#ef4444" : "#10b981",
+            cancelButtonText: "Cancel"
+        }).then(async (res) => {
+            if (res.isConfirmed) {
+                try {
+                    setLoading(true);
+                    await Promise.all(selectedIds.map(id => {
+                        const fd = new FormData();
+                        fd.append("stock_quantity", qty);
+                        return updateProductApi(id, fd).catch(e => console.error(e));
+                    }));
+                    Swal.fire("Updated!", `Stock updated for ${selectedIds.length} products.`, "success");
+                    setSelectedIds([]);
+                    fetchData();
+                } catch (err) {
+                    Swal.fire("Error", "Failed to update stock for some products.", "error");
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+    };
+
+    const handleBulkAddStock = (amount) => {
+        if (selectedIds.length === 0) return;
+        Swal.fire({
+            title: `Add +${amount} stock to ${selectedIds.length} items?`,
+            text: `Increase inventory count by ${amount} units for selected items.`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: `Yes, add +${amount}`,
+            confirmButtonColor: "#10b981",
+            cancelButtonText: "Cancel"
+        }).then(async (res) => {
+            if (res.isConfirmed) {
+                try {
+                    setLoading(true);
+                    await Promise.all(selectedIds.map(id => {
+                        const prod = products.find(p => p.id === id);
+                        const current = Number(prod?.stock_quantity || 0);
+                        const next = current + amount;
+                        const fd = new FormData();
+                        fd.append("stock_quantity", next);
+                        return updateProductApi(id, fd).catch(e => console.error(e));
+                    }));
+                    Swal.fire("Restocked!", `Added +${amount} units to ${selectedIds.length} products.`, "success");
+                    setSelectedIds([]);
+                    fetchData();
+                } catch (err) {
+                    Swal.fire("Error", "Failed to restock some products.", "error");
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+    };
+
     if (!can("inventory", "view")) {
         return <AccessDeniedView moduleName="Inventory & Warehouses" />;
     }
@@ -408,14 +494,83 @@ function InventoryPage() {
                     </div>
                 </div>
 
+                {isAdmin && selectedIds.length > 0 && (
+                    <div className="admin-bulk-actions-banner">
+                        <div className="bulk-banner-left">
+                            <span className="bulk-select-badge">{selectedIds.length}</span>
+                            <span className="bulk-select-label">
+                                <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? "product" : "products"} selected
+                            </span>
+                            <button type="button" className="bulk-banner-text-btn" onClick={() => setSelectedIds([])}>
+                                Deselect all
+                            </button>
+                            {products.length > filteredProducts.length && (
+                                <button
+                                    type="button"
+                                    className="bulk-banner-text-btn"
+                                    onClick={() => setSelectedIds(products.map(p => p.id))}
+                                >
+                                    Select all {products.length} in database
+                                </button>
+                            )}
+                        </div>
+                        <div className="bulk-banner-actions">
+                            <button
+                                type="button"
+                                className="bulk-action-secondary-btn"
+                                onClick={() => handleBulkAddStock(10)}
+                                disabled={loading}
+                            >
+                                <FaPlus /> Add +10 Stock
+                            </button>
+                            <button
+                                type="button"
+                                className="bulk-action-secondary-btn"
+                                onClick={() => handleBulkAddStock(50)}
+                                disabled={loading}
+                            >
+                                <FaPlus /> Add +50 Stock
+                            </button>
+                            <button
+                                type="button"
+                                className="bulk-delete-btn"
+                                onClick={() => handleBulkSetStock(0)}
+                                disabled={loading}
+                            >
+                                <FaBan /> Mark Out of Stock (0)
+                            </button>
+                            <button
+                                type="button"
+                                className="bulk-cancel-btn"
+                                onClick={() => setSelectedIds([])}
+                                title="Cancel selection"
+                            >
+                                <FaTimes />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* Desktop and Tablet Expandable Table */}
                 {loading ? (
-                    <TableSkeleton rows={6} cols={8} hasImage={true} />
+                    <TableSkeleton rows={6} cols={isAdmin ? 8 : 7} hasImage={true} />
                 ) : (
                     <div className="inventory-table-wrapper">
                         <table className="inventory-table">
                             <thead>
                                 <tr>
+                                    {isAdmin && (
+                                        <th className="admin-th-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                className="admin-master-checkbox"
+                                                checked={isAllSelected}
+                                                ref={el => { if (el) el.indeterminate = isSomeSelected; }}
+                                                onChange={handleSelectAll}
+                                                title="Select all visible products"
+                                            />
+                                        </th>
+                                    )}
                                     <th width="40"></th>
                                     <th>Image</th>
                                     <th>Product Name</th>
@@ -447,7 +602,18 @@ function InventoryPage() {
 
                                     return (
                                         <React.Fragment key={p.id}>
-                                            <tr className={isExpanded ? "parent-row active" : "parent-row"}>
+                                            <tr className={(isExpanded ? "parent-row active " : "parent-row ") + (isAdmin && selectedIds.includes(p.id) ? "admin-row-selected" : "")}>
+                                                {isAdmin && (
+                                                    <td className="admin-td-checkbox" onClick={e => e.stopPropagation()}>
+                                                        <input
+                                                            type="checkbox"
+                                                            className="admin-row-checkbox"
+                                                            checked={selectedIds.includes(p.id)}
+                                                            onChange={e => handleSelectRow(p.id, e)}
+                                                            title="Select this product"
+                                                        />
+                                                    </td>
+                                                )}
                                                 <td>
                                                     <button className="expand-row-btn" onClick={() => toggleExpand(p.id)}>
                                                         {rowLoading[p.id] ? (
@@ -500,22 +666,12 @@ function InventoryPage() {
                                                     </strong>
                                                 </td>
                                                 <td>
-                                                    {/* Hide adjust controls if details are loaded and it actually has variants */}
-                                                    {hasVariants ? (
-                                                        <span className="variants-notice-badge" onClick={() => toggleExpand(p.id)}>
-                                                            Manage via Variants ({details.variants.length})
-                                                        </span>
-                                                    ) : can("inventory", "adjust") ? (
+                                                    {!hasVariants || !isExpanded ? (
                                                         <div className="quick-adjust-control">
                                                             <button
                                                                 type="button"
                                                                 className="adjust-btn minus"
-                                                                onClick={() => {
-                                                                    if (editingStock[editKey] === undefined) {
-                                                                        editingStock[editKey] = p.stock_quantity;
-                                                                    }
-                                                                    handleDecrement(editKey);
-                                                                }}
+                                                                onClick={() => handleDecrement(editKey)}
                                                             >
                                                                 <FaMinus />
                                                             </button>
@@ -529,21 +685,16 @@ function InventoryPage() {
                                                             <button
                                                                 type="button"
                                                                 className="adjust-btn plus"
-                                                                onClick={() => {
-                                                                    if (editingStock[editKey] === undefined) {
-                                                                        editingStock[editKey] = p.stock_quantity;
-                                                                    }
-                                                                    handleIncrement(editKey);
-                                                                }}
+                                                                onClick={() => handleIncrement(editKey)}
                                                             >
                                                                 <FaPlus />
                                                             </button>
                                                             <button
                                                                 type="button"
-                                                                className="save-adjust-btn"
+                                                                className={`save-stock-btn ${savingStock[editKey] ? 'saving' : ''}`}
                                                                 onClick={() => handleSaveStock("product", p.id)}
-                                                                disabled={savingStock[editKey] || Number(currentEditValue) === Number(p.stock_quantity)}
-                                                                title="Save quantity"
+                                                                title="Save changes"
+                                                                disabled={savingStock[editKey]}
                                                             >
                                                                 {savingStock[editKey] ? <FaSpinner className="row-spinner" /> : <FaCheck />}
                                                             </button>
@@ -557,7 +708,7 @@ function InventoryPage() {
                                             {/* Sub-table for variants */}
                                             {isExpanded && (
                                                 <tr className="variant-sub-row">
-                                                    <td colSpan="7">
+                                                    <td colSpan={isAdmin ? 8 : 7}>
                                                         <div className="variants-panel">
                                                             {rowLoading[p.id] ? (
                                                                 <div className="panel-loading">
@@ -687,7 +838,7 @@ function InventoryPage() {
 
                                 {filteredProducts.length === 0 && (
                                     <tr>
-                                        <td colSpan="7" className="no-data">No catalog products found.</td>
+                                        <td colSpan={isAdmin ? 8 : 7} className="no-data">No catalog products found.</td>
                                     </tr>
                                 )}
                             </tbody>

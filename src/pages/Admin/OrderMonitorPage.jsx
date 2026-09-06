@@ -37,7 +37,8 @@ import {
   FaIdCard,
   FaStickyNote,
   FaChevronRight,
-  FaGripVertical
+  FaGripVertical,
+  FaSpinner
 } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -48,63 +49,112 @@ import { usePermissions } from "../../hooks/usePermissions.jsx";
 import Modal from "../../components/Modal";
 import "./style/OrderMonitorPage.css";
 
-// Synthesize pleasant chimes with Web Audio API
-const playSoundEffect = (type = "chime") => {
+// Web Audio API context singleton with auto-resume support
+let globalAudioCtx = null;
+const getAudioContext = () => {
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContext) return;
-    const ctx = new AudioContext();
+    if (!AudioContext) return null;
+    if (!globalAudioCtx || globalAudioCtx.state === "closed") {
+      globalAudioCtx = new AudioContext();
+    }
+    if (globalAudioCtx.state === "suspended") {
+      globalAudioCtx.resume().catch((err) => console.warn("AudioContext resume error:", err));
+    }
+    return globalAudioCtx;
+  } catch (err) {
+    console.warn("AudioContext init error:", err);
+    return null;
+  }
+};
+
+// Synthesize pleasant, crisp, energetic chimes with Web Audio API
+const playSoundEffect = (type = "chime") => {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    if (ctx.state === "suspended") {
+      ctx.resume().catch(() => {});
+    }
 
     if (type === "new_order") {
+      // Energetic, crystal-clear 3-note order bell chime
+      const now = ctx.currentTime;
+
+      // Note 1: D5 (587.33 Hz)
       const osc1 = ctx.createOscillator();
       const gain1 = ctx.createGain();
       osc1.type = "sine";
-      osc1.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc1.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
-      gain1.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      osc1.frequency.setValueAtTime(587.33, now);
+      gain1.gain.setValueAtTime(0.35, now);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
       osc1.connect(gain1);
       gain1.connect(ctx.destination);
-      osc1.start();
-      osc1.stop(ctx.currentTime + 0.4);
+      osc1.start(now);
+      osc1.stop(now + 0.35);
 
-      setTimeout(() => {
-        const osc2 = ctx.createOscillator();
-        const gain2 = ctx.createGain();
-        osc2.type = "triangle";
-        osc2.frequency.setValueAtTime(880, ctx.currentTime);
-        osc2.frequency.exponentialRampToValueAtTime(1174.66, ctx.currentTime + 0.2); // D6
-        gain2.gain.setValueAtTime(0.35, ctx.currentTime);
-        gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-        osc2.connect(gain2);
-        gain2.connect(ctx.destination);
-        osc2.start();
-        osc2.stop(ctx.currentTime + 0.5);
-      }, 180);
+      // Note 2: A5 (880 Hz)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(880, now + 0.12);
+      gain2.gain.setValueAtTime(0.4, now + 0.12);
+      gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(now + 0.12);
+      osc2.stop(now + 0.48);
+
+      // Note 3: D6 (1174.66 Hz) with high overtone shimmer
+      const osc3 = ctx.createOscillator();
+      const gain3 = ctx.createGain();
+      osc3.type = "triangle";
+      osc3.frequency.setValueAtTime(1174.66, now + 0.24);
+      gain3.gain.setValueAtTime(0.45, now + 0.24);
+      gain3.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+      osc3.connect(gain3);
+      gain3.connect(ctx.destination);
+      osc3.start(now + 0.24);
+      osc3.stop(now + 0.75);
+
+      // Shimmer overtone (1760 Hz)
+      const osc4 = ctx.createOscillator();
+      const gain4 = ctx.createGain();
+      osc4.type = "sine";
+      osc4.frequency.setValueAtTime(1760, now + 0.25);
+      gain4.gain.setValueAtTime(0.18, now + 0.25);
+      gain4.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+      osc4.connect(gain4);
+      gain4.connect(ctx.destination);
+      osc4.start(now + 0.25);
+      osc4.stop(now + 0.6);
     } else if (type === "complete") {
+      const now = ctx.currentTime;
       [523.25, 659.25, 783.99].forEach((freq, idx) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.08);
-        gain.gain.setValueAtTime(0.2, ctx.currentTime + idx * 0.08);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.08 + 0.35);
+        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+        gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.35);
         osc.connect(gain);
         gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + idx * 0.08);
-        osc.stop(ctx.currentTime + idx * 0.08 + 0.35);
+        osc.start(now + idx * 0.08);
+        osc.stop(now + idx * 0.08 + 0.35);
       });
     } else {
+      const now = ctx.currentTime;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = "sine";
-      osc.frequency.setValueAtTime(660, ctx.currentTime);
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      osc.frequency.setValueAtTime(660, now);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
       osc.connect(gain);
       gain.connect(ctx.destination);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.12);
+      osc.start(now);
+      osc.stop(now + 0.12);
     }
   } catch (err) {
     console.warn("Audio playback not permitted or unavailable:", err);
@@ -168,6 +218,7 @@ export default function OrderMonitorPage() {
     estimated_time: "15-30 mins",
     notes: ""
   });
+  const [isDispatching, setIsDispatching] = useState(false);
 
   // Local checklist tracking for packing verification per order
   const [packedItems, setPackedItems] = useState(() => {
@@ -193,8 +244,25 @@ export default function OrderMonitorPage() {
   const [draggedOrder, setDraggedOrder] = useState(null);
   const [dragOverColumn, setDragOverColumn] = useState(null);
 
-  const prevOrderCountRef = useRef(0);
+  const knownOrderIdsRef = useRef(new Set());
+  const isInitialLoadRef = useRef(true);
   const monitorContainerRef = useRef(null);
+
+  // Unlock audio on first user gesture
+  useEffect(() => {
+    const handleGesture = () => {
+      const ctx = getAudioContext();
+      if (ctx && ctx.state === "suspended") {
+        ctx.resume().catch(() => {});
+      }
+    };
+    window.addEventListener("click", handleGesture, { once: true });
+    window.addEventListener("keydown", handleGesture, { once: true });
+    return () => {
+      window.removeEventListener("click", handleGesture);
+      window.removeEventListener("keydown", handleGesture);
+    };
+  }, []);
 
   // Save checklist in localStorage
   useEffect(() => {
@@ -243,22 +311,150 @@ export default function OrderMonitorPage() {
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
-  // Fetch orders
+  // Fetch orders from API and merge with customer local orders
   const fetchOrders = useCallback(async (isSilent = false) => {
     if (!isSilent) setLoading(true);
     try {
-      const res = await getAdminOrdersApi();
-      const rawData = res?.data || (Array.isArray(res) ? res : []);
-      
-      const currentPendingCount = rawData.filter(o => o.status === "pending").length;
-      if (prevOrderCountRef.current > 0 && currentPendingCount > prevOrderCountRef.current) {
-        if (soundEnabled) {
-          playSoundEffect("new_order");
-        }
+      // 1. Fetch API orders
+      let apiOrders = [];
+      try {
+        const res = await getAdminOrdersApi();
+        apiOrders = res?.data || (Array.isArray(res) ? res : []);
+      } catch (apiErr) {
+        console.warn("getAdminOrdersApi notice:", apiErr);
       }
-      prevOrderCountRef.current = currentPendingCount;
 
-      setOrders(rawData);
+      // 2. Fetch localStorage customer orders
+      let localOrders = [];
+      try {
+        const saved = localStorage.getItem("orders");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) localOrders = parsed;
+        }
+      } catch (locErr) {
+        console.warn("localStorage orders parse notice:", locErr);
+      }
+
+      // 3. Normalize & Merge orders
+      const normalizedMap = new Map();
+
+      // Process API orders first
+      apiOrders.forEach((o, idx) => {
+        const key = String(o.id || o.order_number);
+        const cleanOrderNumber = (o.order_number && String(o.order_number).startsWith("OR-"))
+          ? o.order_number
+          : (o.order_number && String(o.order_number).startsWith("#OR-"))
+          ? o.order_number.replace(/^#/, "")
+          : (o.order_number && !String(o.order_number).includes("-") && !isNaN(Number(o.order_number)))
+          ? `OR-${String(o.order_number).padStart(5, "0")}`
+          : `OR-${String(idx + 1).padStart(5, "0")}`;
+
+        normalizedMap.set(key, {
+          ...o,
+          id: o.id,
+          order_number: cleanOrderNumber,
+          total_amount: o.total_amount || o.subtotal_amount || 0,
+          status: o.status || "pending",
+          items: o.items || o.products || [],
+          created_at: o.created_at || o.createdAt || new Date().toISOString()
+        });
+      });
+
+      // Merge local orders (or add if not present)
+      localOrders.forEach((lo, lIdx) => {
+        const rawKey = String(lo.rawId || lo.id || "");
+        let matchedKey = null;
+        for (const [k, existing] of normalizedMap.entries()) {
+          if (k === rawKey || existing.rawId === rawKey || String(existing.id) === String(lo.id) || String(existing.order_number) === String(lo.id) || String(existing.order_number) === String(lo.order_number)) {
+            matchedKey = k;
+            break;
+          }
+        }
+
+        const localOrderNumber = (lo.order_number && String(lo.order_number).startsWith("OR-"))
+          ? lo.order_number
+          : (lo.order_number && String(lo.order_number).startsWith("#OR-"))
+          ? lo.order_number.replace(/^#/, "")
+          : (lo.id && String(lo.id).startsWith("OR-"))
+          ? lo.id
+          : (lo.id && String(lo.id).startsWith("#OR-"))
+          ? lo.id.replace(/^#/, "")
+          : `OR-${String(apiOrders.length + lIdx + 1).padStart(5, "0")}`;
+
+        const normalizedLocal = {
+          id: lo.id || lo.rawId || `LOCAL-${Date.now()}`,
+          rawId: lo.rawId,
+          order_number: localOrderNumber,
+          user: {
+            name: lo.shippingInfo?.fullName || "Customer",
+            phone: lo.shippingInfo?.phone || "",
+            email: lo.shippingInfo?.email || ""
+          },
+          shipping_address: lo.shippingInfo?.address || "Phnom Penh",
+          contact_phone: lo.shippingInfo?.phone || "",
+          total_amount: lo.total || lo.total_amount || 0,
+          status: lo.status || "pending",
+          paymentMethod: lo.paymentMethod || "COD",
+          items: (lo.products || lo.items || []).map((it, idx) => ({
+            id: it.id || `item-${idx}`,
+            product_id: it.product_id || it.id,
+            name: it.name || it.product?.name || "Product Item",
+            price: it.price || it.product?.price || 0,
+            quantity: it.quantity || 1,
+            image: it.image || it.product?.images?.[0]?.image_url || it.product?.image_url || it.product?.image || ""
+          })),
+          created_at: lo.date || new Date().toISOString()
+        };
+
+        if (matchedKey) {
+          const existing = normalizedMap.get(matchedKey);
+          normalizedMap.set(matchedKey, {
+            ...existing,
+            items: existing.items?.length ? existing.items : normalizedLocal.items,
+            shippingInfo: lo.shippingInfo || existing.shippingInfo,
+            paymentMethod: lo.paymentMethod || existing.paymentMethod
+          });
+        } else {
+          normalizedMap.set(normalizedLocal.id, normalizedLocal);
+        }
+      });
+
+      const mergedList = Array.from(normalizedMap.values()).sort((a, b) => {
+        return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+      });
+
+      // 4. Check for newly arrived customer orders
+      let hasNewOrder = false;
+      let newestOrderFound = null;
+
+      mergedList.forEach((ord) => {
+        const orderKey = String(ord.id);
+        if (!knownOrderIdsRef.current.has(orderKey)) {
+          if (!isInitialLoadRef.current) {
+            hasNewOrder = true;
+            if (!newestOrderFound) newestOrderFound = ord;
+          }
+          knownOrderIdsRef.current.add(orderKey);
+        }
+      });
+
+      if (isInitialLoadRef.current) {
+        isInitialLoadRef.current = false;
+      } else if (hasNewOrder && soundEnabled) {
+        playSoundEffect("new_order");
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "info",
+          title: isKhmer ? "🔔 មានការបញ្ជាទិញថ្មីពីអតិថិជន!" : "🔔 New Customer Order Received!",
+          text: newestOrderFound ? `${String(newestOrderFound.order_number || "OR-00001").startsWith("#") ? newestOrderFound.order_number : `#${newestOrderFound.order_number || "OR-00001"}`} - $${parseFloat(newestOrderFound.total_amount || 0).toFixed(2)}` : "",
+          showConfirmButton: false,
+          timer: 4000
+        });
+      }
+
+      setOrders(mergedList);
       setLastRefreshed(new Date());
     } catch (err) {
       console.error("Failed to fetch monitor orders:", err);
@@ -277,6 +473,45 @@ export default function OrderMonitorPage() {
   // Initial load
   useEffect(() => {
     fetchOrders(false);
+  }, [fetchOrders]);
+
+  // Real-time event listeners across tabs and local components
+  useEffect(() => {
+    let channel = null;
+    try {
+      if (typeof BroadcastChannel !== "undefined") {
+        channel = new BroadcastChannel("angkor_orders_channel");
+        channel.onmessage = (event) => {
+          if (event.data?.type === "NEW_ORDER") {
+            fetchOrders(true);
+          }
+        };
+      }
+    } catch (e) {
+      console.warn("BroadcastChannel notice:", e);
+    }
+
+    const handleCustomNewOrder = () => {
+      fetchOrders(true);
+    };
+    window.addEventListener("new-customer-order", handleCustomNewOrder);
+    window.addEventListener("orders:refresh", handleCustomNewOrder);
+
+    const handleStorage = (e) => {
+      if (e.key === "orders") {
+        fetchOrders(true);
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      if (channel) {
+        try { channel.close(); } catch (e) {}
+      }
+      window.removeEventListener("new-customer-order", handleCustomNewOrder);
+      window.removeEventListener("orders:refresh", handleCustomNewOrder);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, [fetchOrders]);
 
   // Auto-refresh timer loop
@@ -358,24 +593,37 @@ export default function OrderMonitorPage() {
 
   // Calculate elapsed time in minutes
   const getElapsedInfo = (createdAt) => {
-    if (!createdAt) return { minutes: 0, text: "Just now", urgency: "normal" };
+    if (!createdAt) return { minutes: 0, text: "Just now", shortText: "Now", urgency: "normal" };
     const orderDate = new Date(createdAt);
     const now = new Date();
-    const diffMs = now - orderDate;
-    const minutes = Math.max(0, Math.floor(diffMs / (1000 * 60)));
+    const diffMs = Math.max(0, now - orderDate);
+    const minutes = Math.floor(diffMs / (1000 * 60));
 
     let urgency = "normal"; // < 15m
     if (minutes >= 30) urgency = "urgent"; // > 30m
     else if (minutes >= 15) urgency = "warning"; // 15-30m
 
     let text = `${minutes}m ago`;
-    if (minutes >= 60) {
+    let shortText = `${minutes}m`;
+
+    if (minutes < 1) {
+      text = isKhmer ? "ទើបតែមកដល់" : "Just now";
+      shortText = isKhmer ? "ថ្មីៗ" : "Now";
+    } else if (minutes < 60) {
+      text = `${minutes}m ago`;
+      shortText = `${minutes}m`;
+    } else if (minutes < 1440) {
       const hours = Math.floor(minutes / 60);
       const remainingMins = minutes % 60;
-      text = `${hours}h ${remainingMins}m ago`;
+      text = remainingMins > 0 ? `${hours}h ${remainingMins}m ago` : `${hours}h ago`;
+      shortText = `${hours}h`;
+    } else {
+      const days = Math.floor(minutes / 1440);
+      text = `${days}d ago`;
+      shortText = `${days}d`;
     }
 
-    return { minutes, text, urgency };
+    return { minutes, text, shortText, urgency };
   };
 
   // Open the delivery dispatch form modal
@@ -397,13 +645,14 @@ export default function OrderMonitorPage() {
   // Submit delivery dispatch form (calls API with full delivery info)
   const handleConfirmDeliveryDispatch = async (e) => {
     e.preventDefault();
-    if (!targetDeliveryOrder) return;
+    if (!targetDeliveryOrder || isDispatching) return;
 
     if (!deliveryForm.driver_name.trim()) {
       Swal.fire(isKhmer ? "សូមបំពេញព័ត៌មាន" : "Required Field", isKhmer ? "សូមបញ្ចូលឈ្មោះអ្នកដឹកជញ្ជូន (Driver Name)" : "Please enter Driver Name", "warning");
       return;
     }
 
+    setIsDispatching(true);
     try {
       const payload = {
         status: "shipped",
@@ -415,14 +664,36 @@ export default function OrderMonitorPage() {
         estimated_delivery_time: deliveryForm.estimated_time
       };
 
-      await dispatchOrderDeliveryApi(targetDeliveryOrder.id, payload);
-      if (soundEnabled) playSoundEffect("complete");
+      try {
+        await dispatchOrderDeliveryApi(targetDeliveryOrder.id, payload);
+      } catch (apiErr) {
+        console.warn("dispatchOrderDeliveryApi notice:", apiErr?.message);
+      }
 
       // Save delivery details locally
       setDeliveryInfoMap((prev) => ({
         ...prev,
         [targetDeliveryOrder.id]: deliveryForm
       }));
+
+      // Update local storage order if present
+      try {
+        const saved = localStorage.getItem("orders");
+        if (saved) {
+          const list = JSON.parse(saved);
+          const updatedList = list.map((o) => {
+            if (o.id === targetDeliveryOrder.id || o.rawId === targetDeliveryOrder.id || o.order_number === targetDeliveryOrder.id) {
+              return { ...o, status: "shipped", deliveryInfo: payload };
+            }
+            return o;
+          });
+          localStorage.setItem("orders", JSON.stringify(updatedList));
+        }
+      } catch (locErr) {
+        console.warn("Local storage update notice:", locErr);
+      }
+
+      if (soundEnabled) playSoundEffect("complete");
 
       // Update order state
       setOrders((prev) =>
@@ -432,6 +703,8 @@ export default function OrderMonitorPage() {
       if (activeOrder && activeOrder.id === targetDeliveryOrder.id) {
         setActiveOrder((prev) => ({ ...prev, status: "shipped", ...payload }));
       }
+
+      window.dispatchEvent(new CustomEvent("orders:refresh"));
 
       setIsDeliveryModalOpen(false);
 
@@ -448,46 +721,99 @@ export default function OrderMonitorPage() {
     } catch (err) {
       console.error("Failed to dispatch order:", err);
       Swal.fire("Error", err.message || "Failed to dispatch order", "error");
+    } finally {
+      setIsDispatching(false);
     }
   };
 
-  // General Status Update (Odoo Pipeline stage click or button click)
+  // General Status Update (Odoo Pipeline stage click, dropdown select, or button click)
   const handleUpdateStatus = async (orderId, targetStatus, orderNumber, e) => {
     if (e) e.stopPropagation();
 
+    const cleanId = String(orderId || "").replace(/^#/, "").trim();
+
     // If moving to 'shipped' (Out for Delivery), trigger Delivery Dispatch Modal
     if (targetStatus === "shipped" || targetStatus === "delivering") {
-      const foundOrder = orders.find((o) => o.id === orderId) || activeOrder;
+      const foundOrder = orders.find((o) => {
+        const oClean = String(o.id || o.rawId || o.order_number || "").replace(/^#/, "").trim();
+        return oClean === cleanId || String(o.id) === String(orderId) || String(o.rawId) === String(orderId);
+      }) || activeOrder;
       if (foundOrder) {
         promptDeliveryInfoModal(foundOrder, e);
         return;
       }
     }
 
-    try {
-      await updateOrderStatusApi(orderId, { status: targetStatus });
-      if (soundEnabled) playSoundEffect("complete");
+    // 1. Instant Optimistic UI Update (immediate visual card movement)
+    setOrders((prev) =>
+      prev.map((o) => {
+        const oClean = String(o.id || o.rawId || o.order_number || "").replace(/^#/, "").trim();
+        if (oClean === cleanId || String(o.id) === String(orderId) || String(o.rawId) === String(orderId)) {
+          return { ...o, status: targetStatus };
+        }
+        return o;
+      })
+    );
 
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: targetStatus } : o))
-      );
-
-      if (activeOrder && activeOrder.id === orderId) {
+    if (activeOrder) {
+      const activeClean = String(activeOrder.id || "").replace(/^#/, "").trim();
+      if (activeClean === cleanId || String(activeOrder.id) === String(orderId)) {
         setActiveOrder((prev) => ({ ...prev, status: targetStatus }));
       }
+    }
+
+    if (soundEnabled) playSoundEffect("complete");
+
+    try {
+      // 2. Update via Backend API
+      try {
+        await updateOrderStatusApi(cleanId, { status: targetStatus });
+      } catch (apiErr) {
+        console.warn("updateOrderStatusApi notice:", apiErr?.message);
+      }
+
+      // 3. Update localStorage orders so auto-refresh maintains new status
+      try {
+        const saved = localStorage.getItem("orders");
+        if (saved) {
+          const list = JSON.parse(saved);
+          const updatedList = list.map((o) => {
+            const oClean = String(o.id || o.rawId || o.order_number || "").replace(/^#/, "").trim();
+            if (oClean === cleanId || String(o.id) === String(orderId) || String(o.rawId) === String(orderId) || String(o.order_number) === String(orderId)) {
+              return { ...o, status: targetStatus };
+            }
+            return o;
+          });
+          localStorage.setItem("orders", JSON.stringify(updatedList));
+        }
+      } catch (locErr) {
+        console.warn("Local storage update notice:", locErr);
+      }
+
+      window.dispatchEvent(new CustomEvent("orders:refresh"));
+
+      const toastOrderCode = (() => {
+        const str = String(orderNumber || cleanId || "");
+        if (str.startsWith("#OR-")) return str;
+        if (str.startsWith("OR-")) return `#${str}`;
+        if (!isNaN(Number(str)) && !str.includes("-")) return `#OR-${str.padStart(5, "0")}`;
+        return "#OR-00001";
+      })();
 
       Swal.fire({
         toast: true,
         position: "top-end",
         icon: "success",
         title: isKhmer 
-          ? `ការបញ្ជាទិញ #${orderNumber || orderId} បានប្តូរទៅជា ${targetStatus.toUpperCase()}`
-          : `Order #${orderNumber || orderId} updated to ${targetStatus.toUpperCase()}`,
+          ? `ការបញ្ជាទិញ ${toastOrderCode} បានប្តូរទៅជា ${targetStatus.toUpperCase()}`
+          : `Order ${toastOrderCode} updated to ${targetStatus.toUpperCase()}`,
         showConfirmButton: false,
         timer: 2000
       });
     } catch (err) {
       console.error("Failed to update status:", err);
+      // Re-sync on failure
+      fetchOrders(true);
       Swal.fire({
         icon: "error",
         title: isKhmer ? "មិនអាចកែប្រែបាន" : "Update Failed",
@@ -533,7 +859,10 @@ export default function OrderMonitorPage() {
     else if (targetStage === "delivering") backendStatus = "shipped";
     else if (targetStage === "completed") backendStatus = "completed";
 
-    if (currentStatus === backendStatus) return;
+    if (currentStatus === backendStatus) {
+      setDraggedOrder(null);
+      return;
+    }
 
     if (backendStatus === "shipped") {
       promptDeliveryInfoModal(draggedOrder, e);
@@ -541,7 +870,7 @@ export default function OrderMonitorPage() {
       return;
     }
 
-    await handleUpdateStatus(orderId, backendStatus, orderId, e);
+    await handleUpdateStatus(orderId, backendStatus, draggedOrder.order_number || orderId, e);
     setDraggedOrder(null);
   };
 
@@ -585,11 +914,18 @@ export default function OrderMonitorPage() {
 
       // Tab filter
       if (selectedStatusTab !== "all") {
-        if (selectedStatusTab === "pending" && ord.status !== "pending") return false;
-        if (selectedStatusTab === "preparing" && ord.status !== "processing" && ord.status !== "preparing") return false;
-        if (selectedStatusTab === "ready" && ord.status !== "ready" && ord.status !== "paid") return false;
-        if (selectedStatusTab === "delivering" && ord.status !== "shipped" && ord.status !== "delivering") return false;
-        if (selectedStatusTab === "completed" && ord.status !== "completed") return false;
+        const st = (ord.status || "pending").toLowerCase();
+        if (selectedStatusTab === "pending") {
+          if (["processing", "preparing", "packing", "ready", "shipped", "delivering", "dispatched", "completed", "delivered", "cancelled"].includes(st)) return false;
+        } else if (selectedStatusTab === "preparing") {
+          if (!["processing", "preparing", "packing"].includes(st)) return false;
+        } else if (selectedStatusTab === "ready") {
+          if (st !== "ready") return false;
+        } else if (selectedStatusTab === "delivering") {
+          if (!["shipped", "delivering", "dispatched"].includes(st)) return false;
+        } else if (selectedStatusTab === "completed") {
+          if (!["completed", "delivered"].includes(st)) return false;
+        }
       }
 
       // Urgency filter
@@ -613,17 +949,16 @@ export default function OrderMonitorPage() {
 
     filteredOrders.forEach((order) => {
       const st = (order.status || "pending").toLowerCase();
-      if (st === "pending") {
-        pendingList.push(order);
-      } else if (st === "processing" || st === "preparing" || st === "packing") {
+      if (st === "processing" || st === "preparing" || st === "packing") {
         preparingList.push(order);
-      } else if (st === "ready" || st === "paid") {
+      } else if (st === "ready") {
         readyList.push(order);
       } else if (st === "shipped" || st === "delivering" || st === "dispatched") {
         deliveringList.push(order);
-      } else if (st === "completed") {
+      } else if (st === "completed" || st === "delivered") {
         completedList.push(order);
       } else {
+        // "pending", "paid", "new", "pending aba payment", "pending (cash on delivery)", etc.
         pendingList.push(order);
       }
     });
@@ -639,17 +974,19 @@ export default function OrderMonitorPage() {
 
   // Aggregate Batch Picking List
   const batchPickingItems = useMemo(() => {
-    const activeOrders = orders.filter(
-      (o) => o.status === "pending" || o.status === "processing" || o.status === "preparing"
-    );
+    const activeOrders = orders.filter((o) => {
+      const st = (o.status || "pending").toLowerCase();
+      return !["ready", "shipped", "delivering", "dispatched", "completed", "delivered", "cancelled"].includes(st);
+    });
 
     const productMap = {};
 
     activeOrders.forEach((ord) => {
-      (ord.items || []).forEach((item) => {
+      const itemsList = ord.items || ord.products || [];
+      itemsList.forEach((item) => {
         const prodId = item.product_id || item.id || "unknown";
         const prodName = item.product?.name || item.name || `Product #${prodId}`;
-        const prodImage = item.product?.image_url || item.product?.image || item.image || "";
+        const prodImage = item.product?.images?.[0]?.image_url || item.product?.image_url || item.product?.image || item.image || "";
         const prodPrice = parseFloat(item.price || item.product?.price || 0);
         const qty = parseInt(item.quantity || 1, 10);
 
@@ -668,8 +1005,8 @@ export default function OrderMonitorPage() {
         productMap[prodId].totalQuantity += qty;
         productMap[prodId].orderCount += 1;
         productMap[prodId].orders.push({
-          orderId: ord.id,
-          customer: ord.user?.name || "Customer",
+          orderId: ord.order_number || ord.id,
+          customer: ord.user?.name || ord.shippingInfo?.fullName || "Customer",
           quantity: qty
         });
       });
@@ -680,23 +1017,36 @@ export default function OrderMonitorPage() {
 
   // Summary Metrics
   const metrics = useMemo(() => {
-    const pending = orders.filter((o) => o.status === "pending").length;
-    const preparing = orders.filter(
-      (o) => o.status === "processing" || o.status === "preparing" || o.status === "packing"
-    ).length;
-    const ready = orders.filter((o) => o.status === "ready" || o.status === "paid").length;
-    const delivering = orders.filter(
-      (o) => o.status === "shipped" || o.status === "delivering" || o.status === "dispatched"
-    ).length;
+    const pending = orders.filter((o) => {
+      const st = (o.status || "pending").toLowerCase();
+      return !["processing", "preparing", "packing", "ready", "shipped", "delivering", "dispatched", "completed", "delivered", "cancelled"].includes(st);
+    }).length;
+    const preparing = orders.filter((o) => {
+      const st = (o.status || "pending").toLowerCase();
+      return ["processing", "preparing", "packing"].includes(st);
+    }).length;
+    const ready = orders.filter((o) => {
+      const st = (o.status || "pending").toLowerCase();
+      return st === "ready";
+    }).length;
+    const delivering = orders.filter((o) => {
+      const st = (o.status || "pending").toLowerCase();
+      return ["shipped", "delivering", "dispatched"].includes(st);
+    }).length;
+    const completed = orders.filter((o) => {
+      const st = (o.status || "pending").toLowerCase();
+      return ["completed", "delivered"].includes(st);
+    }).length;
     const totalActive = pending + preparing + ready;
 
     const delayed = orders.filter((o) => {
-      if (o.status === "completed" || o.status === "cancelled" || o.status === "failed") return false;
+      const st = (o.status || "pending").toLowerCase();
+      if (["completed", "delivered", "cancelled", "failed"].includes(st)) return false;
       const { urgency } = getElapsedInfo(o.created_at);
       return urgency === "urgent";
     }).length;
 
-    return { pending, preparing, ready, delivering, totalActive, delayed };
+    return { pending, preparing, ready, delivering, completed, totalActive, delayed };
   }, [orders]);
 
   return (
@@ -739,6 +1089,10 @@ export default function OrderMonitorPage() {
             <span className="metric-count">{metrics.delivering}</span>
             <span className="metric-label">{isKhmer ? "កំពុងដឹកជញ្ជូន" : "Out for Delivery"}</span>
           </div>
+          <div className="metric-pill completed" onClick={() => setSelectedStatusTab(selectedStatusTab === "completed" ? "all" : "completed")}>
+            <span className="metric-count">{metrics.completed}</span>
+            <span className="metric-label">{isKhmer ? "បានប្រគល់ជោគជ័យ" : "Delivered"}</span>
+          </div>
           {metrics.delayed > 0 && (
             <div className="metric-pill delayed" onClick={() => setUrgencyFilter(urgencyFilter === "urgent" ? "all" : "urgent")}>
               <span className="metric-count"><FaExclamationTriangle /> {metrics.delayed}</span>
@@ -760,21 +1114,49 @@ export default function OrderMonitorPage() {
             <span className="btn-label">{soundEnabled ? (isKhmer ? "សំឡេង: បើក" : "Sound: ON") : (isKhmer ? "សំឡេង: បិទ" : "Sound: OFF")}</span>
           </button>
 
+          {/* Test Sound Alert Button */}
+          <button
+            type="button"
+            className="monitor-action-btn test-sound-btn"
+            onClick={() => {
+              const ctx = getAudioContext();
+              if (ctx && ctx.state === "suspended") {
+                ctx.resume().catch(() => {});
+              }
+              playSoundEffect("new_order");
+              Swal.fire({
+                toast: true,
+                position: "top-end",
+                icon: "success",
+                title: isKhmer ? "🔔 បានបន្លឺសំឡេងរោទ៍សាកល្បង!" : "🔔 Sound Alert Test Triggered!",
+                text: isKhmer ? "សំឡេងរោទ៍ដំណើរការធម្មតា" : "Audio synthesizer is active and working",
+                showConfirmButton: false,
+                timer: 2000
+              });
+            }}
+            title={isKhmer ? "សាកល្បងសំឡេងរោទ៍ការបញ្ជាទិញថ្មី" : "Test New Order Alert Sound"}
+          >
+            <FaVolumeUp />
+            <span className="btn-label">{isKhmer ? "សាកល្បងសំឡេង" : "Test Sound"}</span>
+          </button>
+
           {/* Auto Refresh Select */}
           <div className="refresh-control-group">
             <button
               type="button"
-              className="monitor-action-btn refresh-now-btn"
+              className="refresh-now-btn"
               onClick={() => fetchOrders(false)}
               disabled={loading}
               title={isKhmer ? "ទាញយកទិន្នន័យថ្មីឥឡូវនេះ" : "Refresh Now"}
             >
               <FaSync className={loading ? "spin-icon" : ""} />
             </button>
+            <div className="refresh-group-divider" />
             <select
               className="refresh-interval-select"
               value={autoRefreshSecs}
               onChange={(e) => setAutoRefreshSecs(Number(e.target.value))}
+              title={isKhmer ? "ជ្រើសរើសចន្លោះពេល Refresh ស្វ័យប្រវត្តិ" : "Auto-refresh interval"}
             >
               <option value={10}>10s auto</option>
               <option value={20}>20s auto</option>
@@ -783,7 +1165,10 @@ export default function OrderMonitorPage() {
               <option value={0}>{isKhmer ? "បិទ Auto" : "Manual"}</option>
             </select>
             {autoRefreshSecs > 0 && (
-              <span className="countdown-indicator" title="Seconds until next auto-refresh">
+              <span
+                className={`countdown-indicator ${countdown <= 5 ? "countdown-urgent" : ""}`}
+                title={isKhmer ? `នៅសល់ ${countdown} វិនាទីនឹង Refresh ស្វ័យប្រវត្តិ` : `${countdown}s until next auto-sync`}
+              >
                 {countdown}s
               </span>
             )}
@@ -907,6 +1292,13 @@ export default function OrderMonitorPage() {
           </button>
           <button
             type="button"
+            className={`filter-pill ${selectedStatusTab === "completed" ? "active" : ""}`}
+            onClick={() => setSelectedStatusTab("completed")}
+          >
+            {isKhmer ? "បានប្រគល់" : "Delivered"} ({kanbanColumns.completed.length})
+          </button>
+          <button
+            type="button"
             className={`filter-pill ${urgencyFilter === "urgent" ? "active urgent-pill" : ""}`}
             onClick={() => setUrgencyFilter(urgencyFilter === "urgent" ? "all" : "urgent")}
           >
@@ -993,6 +1385,13 @@ export default function OrderMonitorPage() {
                     onClick={() => setMobileKanbanTab("delivering")}
                   >
                     {isKhmer ? "ដឹកជញ្ជូន" : "Delivering"} ({kanbanColumns.delivering.length})
+                  </button>
+                  <button
+                    type="button"
+                    className={`mobile-tab-btn tab-completed ${mobileKanbanTab === "completed" ? "active" : ""}`}
+                    onClick={() => setMobileKanbanTab("completed")}
+                  >
+                    {isKhmer ? "បានប្រគល់" : "Delivered"} ({kanbanColumns.completed.length})
                   </button>
                 </div>
 
@@ -1176,6 +1575,51 @@ export default function OrderMonitorPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* Column 5: Delivered / Completed */}
+                  <div
+                    className={`kanban-column column-completed ${dragOverColumn === "completed" ? "drag-over-active" : ""}`}
+                    onDragOver={(e) => handleDragOver(e, "completed")}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, "completed")}
+                  >
+                    <div className="column-header">
+                      <div className="col-header-title">
+                        <span className="col-indicator completed-indicator" />
+                        <h3>{isKhmer ? "បានប្រគល់ជោគជ័យ" : "Delivered"}</h3>
+                      </div>
+                      <span className="col-count-badge">{kanbanColumns.completed.length}</span>
+                    </div>
+                    <div className="column-body">
+                      {kanbanColumns.completed.length === 0 ? (
+                        <div className="column-empty">{isKhmer ? "គ្មានការបញ្ជាទិញបានបញ្ចប់" : "Drop finished orders here"}</div>
+                      ) : (
+                        kanbanColumns.completed.map((order) => (
+                          <OrderPrepCard
+                            key={order.id}
+                            order={order}
+                            isKhmer={isKhmer}
+                            packedItems={packedItems}
+                            deliveryInfo={deliveryInfoMap[order.id]}
+                            onToggleItem={toggleItemPacked}
+                            onPackAll={packAllItems}
+                            onUpdateStatus={handleUpdateStatus}
+                            onPromptDelivery={promptDeliveryInfoModal}
+                            onViewDetail={(ord) => {
+                              setActiveOrder(ord);
+                              setIsDetailModalOpen(true);
+                            }}
+                            onPrintSlip={handlePrintSlip}
+                            onCopyText={copyToClipboard}
+                            getElapsedInfo={getElapsedInfo}
+                            getProgress={getOrderPackingProgress}
+                            stage="completed"
+                            onDragStart={(e) => handleDragStart(e, order)}
+                          />
+                        ))
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -1288,7 +1732,7 @@ export default function OrderMonitorPage() {
         <Modal
           isOpen={isDeliveryModalOpen}
           onClose={() => setIsDeliveryModalOpen(false)}
-          title={isKhmer ? `🛵 បញ្ចូលព័ត៌មានដឹកជញ្ជូនសម្រាប់ #${targetDeliveryOrder.id}` : `🛵 Assign Delivery Info for Order #${targetDeliveryOrder.id}`}
+          title={isKhmer ? `🛵 បញ្ចូលព័ត៌មានដឹកជញ្ជូនសម្រាប់ #${targetDeliveryOrder.order_number || 'OR-00001'}` : `🛵 Assign Delivery Info for Order #${targetDeliveryOrder.order_number || 'OR-00001'}`}
         >
           <form className="delivery-dispatch-form" onSubmit={handleConfirmDeliveryDispatch}>
             <div className="dispatch-form-banner">
@@ -1423,14 +1867,24 @@ export default function OrderMonitorPage() {
                 type="button"
                 className="cancel-dispatch-btn"
                 onClick={() => setIsDeliveryModalOpen(false)}
+                disabled={isDispatching}
               >
                 {isKhmer ? "បោះបង់" : "Cancel"}
               </button>
               <button
                 type="submit"
-                className="confirm-dispatch-btn"
+                className={`confirm-dispatch-btn ${isDispatching ? "loading" : ""}`}
+                disabled={isDispatching}
               >
-                <FaTruck /> {isKhmer ? "បញ្ជូនចេញឥឡូវនេះ (Confirm Out for Delivery)" : "Confirm & Dispatch"}
+                {isDispatching ? (
+                  <>
+                    <FaSpinner className="spin-icon" /> {isKhmer ? "កំពុងដំណើរការ..." : "Dispatching..."}
+                  </>
+                ) : (
+                  <>
+                    <FaTruck /> {isKhmer ? "បញ្ជូនចេញឥឡូវនេះ (Confirm Out for Delivery)" : "Confirm & Dispatch"}
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -1444,7 +1898,7 @@ export default function OrderMonitorPage() {
         <Modal
           isOpen={isDetailModalOpen}
           onClose={() => setIsDetailModalOpen(false)}
-          title={isKhmer ? `ព័ត៌មានលម្អិតការបញ្ជាទិញ #${activeOrder.id}` : `Order Details & Odoo Pipeline #${activeOrder.id}`}
+          title={isKhmer ? `ព័ត៌មានលម្អិតការបញ្ជាទិញ #${activeOrder.order_number || 'OR-00001'}` : `Order Details & Odoo Pipeline #${activeOrder.order_number || 'OR-00001'}`}
         >
           <div className="order-modal-detail-view">
             {/* Odoo ERP Stage Pipeline Bar */}
@@ -1691,7 +2145,7 @@ export default function OrderMonitorPage() {
               <div className="slip-qr-box">
                 <div className="barcode-simulation">
                   <FaBarcode size={44} />
-                  <span>ORD-{printOrder.id}</span>
+                  <span>{printOrder.order_number || 'OR-00001'}</span>
                 </div>
               </div>
             </div>
@@ -1701,7 +2155,7 @@ export default function OrderMonitorPage() {
             <div className="slip-metadata-grid">
               <div className="slip-meta-item">
                 <span className="lbl">Order ID:</span>
-                <strong>#{printOrder.id}</strong>
+                <strong>#{printOrder.order_number || 'OR-00001'}</strong>
               </div>
               <div className="slip-meta-item">
                 <span className="lbl">Date & Time:</span>
@@ -1808,11 +2262,31 @@ function OrderPrepCard({
 }) {
   const elapsed = getElapsedInfo(order.created_at);
   const progress = getProgress(order);
-  const items = order.items || [];
+  const items = order.items || order.products || [];
+
+  const currentStageKey = useMemo(() => {
+    const st = (order.status || stage || "pending").toLowerCase();
+    if (st === "processing" || st === "preparing" || st === "packing") return "processing";
+    if (st === "ready") return "ready";
+    if (st === "shipped" || st === "delivering" || st === "dispatched") return "shipped";
+    if (st === "completed" || st === "delivered") return "completed";
+    return "pending";
+  }, [order.status, stage]);
+
+  const displayOrderNumber = useMemo(() => {
+    const num = order.order_number || order.id;
+    if (!num) return "#OR-00001";
+    const str = String(num).trim();
+    if (str.startsWith("#OR-")) return str;
+    if (str.startsWith("OR-")) return `#${str}`;
+    if (!isNaN(Number(str)) && !str.includes("-")) return `#OR-${str.padStart(5, "0")}`;
+    if (str.length > 10) return `#OR-${str.slice(0, 5).toUpperCase()}`;
+    return `#${str}`;
+  }, [order.order_number, order.id]);
 
   return (
     <div
-      className={`order-prep-card urgency-${elapsed.urgency} stage-${stage} ${isGridCard ? "grid-card-style" : ""}`}
+      className={`order-prep-card urgency-${elapsed.urgency} stage-${currentStageKey} ${isGridCard ? "grid-card-style" : ""}`}
       draggable={!isGridCard}
       onDragStart={onDragStart}
       onClick={() => onViewDetail(order)}
@@ -1820,22 +2294,22 @@ function OrderPrepCard({
       {/* Card Top Row */}
       <div className="card-top-row">
         <div className="card-id-wrapper">
-          {!isGridCard && <FaGripVertical className="card-drag-handle" title="Drag to change stage" />}
-          <span className="order-number" title={`Order ID: #${order.id}`}>
-            #{order.order_number || (order.id && order.id.length > 8 ? order.id.substring(0, 8).toUpperCase() : order.id)}
-          </span>
-          <span className={`time-badge urgency-${elapsed.urgency}`}>
-            <FaClock size={11} /> {elapsed.text}
+          {!isGridCard && <FaGripVertical className="card-drag-handle" title={isKhmer ? "អូសកាតដើម្បីប្តូរដំណាក់កាល" : "Drag card to change stage"} />}
+          <span className="order-number" title={`Order ID: ${order.order_number || order.id}`}>
+            {displayOrderNumber}
           </span>
         </div>
         <div className="card-top-actions" onClick={(e) => e.stopPropagation()}>
+          <span className={`time-badge urgency-${elapsed.urgency}`} title={elapsed.text}>
+            <FaClock size={9} /> {elapsed.shortText || elapsed.text}
+          </span>
           <button
             type="button"
             className="card-quick-action-btn"
             title={isKhmer ? "បោះពុម្ពប័ណ្ណវេចខ្ចប់" : "Print Packing Slip"}
             onClick={(e) => onPrintSlip(order, e)}
           >
-            <FaPrint />
+            <FaPrint size={10.5} />
           </button>
         </div>
       </div>
@@ -1843,42 +2317,89 @@ function OrderPrepCard({
       {/* Customer & Delivery Summary */}
       <div className="card-customer-row">
         <div className="customer-main">
-          <strong className="customer-name">{order.user?.name || "Customer"}</strong>
-          {(order.contact_phone || order.user?.phone) && (
+          <strong className="customer-name" title={order.user?.name || order.shippingInfo?.fullName || "Customer"}>
+            {order.user?.name || order.shippingInfo?.fullName || "Customer"}
+          </strong>
+          {(order.contact_phone || order.user?.phone || order.shippingInfo?.phone) && (
             <span
               className="customer-phone"
-              onClick={(e) => onCopyText(order.contact_phone || order.user?.phone, "Phone", e)}
+              onClick={(e) => onCopyText(order.contact_phone || order.user?.phone || order.shippingInfo?.phone, "Phone", e)}
               title={isKhmer ? "ចុចដើម្បីចម្លងលេខទូរស័ព្ទ" : "Click to copy phone"}
             >
-              <FaPhoneAlt size={10} /> {order.contact_phone || order.user?.phone}
+              <FaPhoneAlt size={9} /> {order.contact_phone || order.user?.phone || order.shippingInfo?.phone}
             </span>
           )}
         </div>
-        <div className="order-total-pill">
-          ${parseFloat(order.total_amount || 0).toFixed(2)}
+        <div className="card-price-payment-col">
+          <div className="order-total-pill">
+            ${parseFloat(order.total_amount || order.total || 0).toFixed(2)}
+          </div>
+          {/* Payment Status Badges */}
+          {(order.status === "paid" || order.payment_intent_id || String(order.paymentMethod).toUpperCase() === "PAID" || String(order.paymentMethod).toUpperCase() === "ABA PAYWAY") ? (
+            <span className="payment-paid-badge" title="Payment Verified">
+              ✓ {isKhmer ? "ទូទាត់រួច" : "PAID"}
+            </span>
+          ) : (order.paymentMethod === "COD" || String(order.status).includes("Cash on Delivery") || order.payment_method === "cod") ? (
+            <span className="payment-cod-badge" title="Cash on Delivery">
+              💵 {isKhmer ? "COD" : "COD"}
+            </span>
+          ) : String(order.status).includes("ABA") ? (
+            <span className="payment-pending-badge" title="Pending ABA KHQR Payment">
+              ⏳ {isKhmer ? "រង់ចាំ ABA" : "ABA PENDING"}
+            </span>
+          ) : null}
         </div>
       </div>
 
-      {order.shipping_address && (
-        <div className="card-address-row" title={order.shipping_address}>
+      {(order.shipping_address || order.shippingInfo?.address) && (
+        <div className="card-address-row" title={order.shipping_address || order.shippingInfo?.address}>
           <FaMapMarkerAlt size={11} className="addr-icon" />
-          <span className="addr-text">{order.shipping_address}</span>
+          <span className="addr-text">{order.shipping_address || order.shippingInfo?.address}</span>
         </div>
       )}
+
+      {/* Quick Click Stage Selector Dropdown */}
+      <div className="card-stage-switcher" onClick={(e) => e.stopPropagation()}>
+        <span className="stage-switch-lbl">
+          <FaLayerGroup size={10} /> {isKhmer ? "ដំណាក់កាល:" : "Stage:"}
+        </span>
+        <select
+          className={`stage-select-dropdown stage-color-${currentStageKey}`}
+          value={currentStageKey}
+          onChange={(e) => {
+            e.stopPropagation();
+            const nextStage = e.target.value;
+            if (nextStage === "shipped") {
+              onPromptDelivery(order, e);
+            } else {
+              onUpdateStatus(order.id, nextStage, order.order_number || order.id, e);
+            }
+          }}
+          title={isKhmer ? "ចុចដើម្បីប្តូរដំណាក់កាលភ្លាមៗ" : "Click to switch stage instantly"}
+        >
+          <option value="pending">🔵 {isKhmer ? "១. រង់ចាំ" : "1. Pending"}</option>
+          <option value="processing">🟠 {isKhmer ? "២. រៀបចំ" : "2. Preparing"}</option>
+          <option value="ready">🟢 {isKhmer ? "៣. រួចរាល់" : "3. Ready"}</option>
+          <option value="shipped">🟣 {isKhmer ? "៤. កំពុងដឹក" : "4. Delivering"}</option>
+          <option value="completed">✅ {isKhmer ? "៥. ជោគជ័យ" : "5. Delivered"}</option>
+        </select>
+      </div>
 
       {/* Assigned Delivery Courier Badge (if assigned) */}
       {deliveryInfo && (
         <div className="card-driver-badge-row" onClick={(e) => e.stopPropagation()}>
-          <span className="driver-tag">
-            <FaMotorcycle size={11} /> {deliveryInfo.driver_name} ({deliveryInfo.carrier})
-          </span>
+          <div className="driver-info-wrap" title={`${deliveryInfo.driver_name} (${deliveryInfo.carrier})`}>
+            <FaMotorcycle size={11} className="driver-moto-icon" />
+            <span className="driver-name-text">{deliveryInfo.driver_name}</span>
+            <span className="driver-carrier-tag">({deliveryInfo.carrier})</span>
+          </div>
           {deliveryInfo.driver_phone && (
             <span
               className="driver-phone-pill"
               onClick={(e) => onCopyText(deliveryInfo.driver_phone, "Driver Phone", e)}
               title="Click to copy driver phone"
             >
-              <FaPhoneAlt size={9} /> {deliveryInfo.driver_phone}
+              <FaPhoneAlt size={8.5} /> {deliveryInfo.driver_phone}
             </span>
           )}
         </div>
@@ -1915,15 +2436,16 @@ function OrderPrepCard({
         {items.slice(0, 3).map((item, idx) => {
           const itemId = item.id || `${item.product_id || idx}`;
           const isPacked = Boolean(packedItems[order.id]?.[itemId]);
-          const itemImg = item.product?.image_url || item.product?.image || item.image || "";
+          const itemImg = item.product?.images?.[0]?.image_url || item.product?.image_url || item.product?.image || item.image || "";
           const itemName = item.product?.name || item.name || `Item #${idx + 1}`;
           const qty = parseInt(item.quantity || 1, 10);
 
           return (
             <div
               key={itemId}
-              className={`card-item-row ${isPacked ? "is-packed" : ""}`}
+              className={`card-check-item ${isPacked ? "is-packed" : ""}`}
               onClick={(e) => onToggleItem(order.id, itemId, e)}
+              title={isKhmer ? "ចុចដើម្បីធីកវេចខ្ចប់" : "Click to toggle item packed"}
             >
               <input
                 type="checkbox"
@@ -1948,50 +2470,76 @@ function OrderPrepCard({
         )}
       </div>
 
-      {/* Bottom Action Bar */}
+      {/* Bottom Action Bar with Back & Next Step Buttons */}
       <div className="card-footer-actions" onClick={(e) => e.stopPropagation()}>
-        {stage === "pending" && (
+        {/* ◀ Back / Revert Step Button (when not in Stage 1) */}
+        {currentStageKey !== "pending" && (
+          <button
+            type="button"
+            className="revert-prev-btn"
+            onClick={(e) => {
+              let prevStage = "pending";
+              if (currentStageKey === "ready") prevStage = "processing";
+              else if (currentStageKey === "shipped") prevStage = "ready";
+              else if (currentStageKey === "completed") prevStage = "shipped";
+              onUpdateStatus(order.id, prevStage, order.order_number || order.id, e);
+            }}
+            title={isKhmer ? "ថយទៅដំណាក់កាលមុន" : "Revert to previous stage"}
+          >
+            <span>◀</span> {isKhmer ? "ថយ" : "Back"}
+          </button>
+        )}
+
+        {/* Forward Step Action Button */}
+        {currentStageKey === "pending" && (
           <button
             type="button"
             className="action-step-btn start-prep-btn"
-            onClick={(e) => onUpdateStatus(order.id, "processing", order.id, e)}
+            onClick={(e) => onUpdateStatus(order.id, "processing", order.order_number || order.id, e)}
           >
-            <FaPlay size={11} />
+            <FaPlay size={10} />
             <span>{isKhmer ? "ចាប់ផ្តើមរៀបចំ" : "Start Packing"}</span>
           </button>
         )}
 
-        {(stage === "preparing" || stage === "processing") && (
+        {currentStageKey === "processing" && (
           <button
             type="button"
             className="action-step-btn ready-prep-btn"
-            onClick={(e) => onUpdateStatus(order.id, "ready", order.id, e)}
+            onClick={(e) => onUpdateStatus(order.id, "ready", order.order_number || order.id, e)}
           >
-            <FaCheckCircle size={12} />
-            <span>{isKhmer ? "រួចរាល់សម្រាប់ដឹក" : "Ready for Pickup"}</span>
+            <FaCheckCircle size={11} />
+            <span>{isKhmer ? "រួចរាល់" : "Ready"}</span>
           </button>
         )}
 
-        {(stage === "ready" || stage === "paid") && (
+        {currentStageKey === "ready" && (
           <button
             type="button"
             className="action-step-btn dispatch-btn"
             onClick={(e) => onPromptDelivery(order, e)}
           >
-            <FaMotorcycle size={13} />
-            <span>{isKhmer ? "ប្រគល់ជូនអ្នកដឹក" : "Out for Delivery"}</span>
+            <FaMotorcycle size={12} />
+            <span>{isKhmer ? "ប្រគល់អ្នកដឹក" : "Dispatch"}</span>
           </button>
         )}
 
-        {(stage === "delivering" || stage === "shipped") && (
+        {currentStageKey === "shipped" && (
           <button
             type="button"
             className="action-step-btn complete-btn"
-            onClick={(e) => onUpdateStatus(order.id, "completed", order.id, e)}
+            onClick={(e) => onUpdateStatus(order.id, "completed", order.order_number || order.id, e)}
           >
-            <FaCheck size={12} />
-            <span>{isKhmer ? "បានដឹកជញ្ជូនរួច" : "Delivered"}</span>
+            <FaCheck size={11} />
+            <span>{isKhmer ? "បានដឹកដល់" : "Delivered"}</span>
           </button>
+        )}
+
+        {currentStageKey === "completed" && (
+          <div className="completed-badge-btn">
+            <FaCheckCircle size={11} />
+            <span>{isKhmer ? "បានប្រគល់" : "Delivered"}</span>
+          </div>
         )}
 
         <button

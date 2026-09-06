@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
     FaPlus,
     FaSearch,
@@ -13,7 +13,9 @@ import {
     FaSlidersH,
     FaKey,
     FaEye,
-    FaEyeSlash
+    FaEyeSlash,
+    FaCheckCircle,
+    FaTimes
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import {
@@ -29,7 +31,7 @@ import { usePermissions, AccessDeniedView } from "../../hooks/usePermissions.jsx
 import "./style/CustomersPage.css";
 
 function CustomersPage() {
-    const { can } = usePermissions();
+    const { can, isAdmin } = usePermissions();
     const [customers, setCustomers] = useState([]);
     const [search, setSearch] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
@@ -210,6 +212,83 @@ function CustomersPage() {
         if (statusFilter === "inactive") return matchesSearch && !item.is_active;
         return matchesSearch;
     });
+
+    // Multi-select state & handlers
+    const [selectedIds, setSelectedIds] = useState([]);
+    const visibleIds = useMemo(() => filtered.map(c => c.id), [filtered]);
+    const isAllSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+    const isSomeSelected = visibleIds.some(id => selectedIds.includes(id)) && !isAllSelected;
+
+    const handleSelectAll = () => {
+        if (isAllSelected) {
+            setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
+        } else {
+            const allMerged = new Set([...selectedIds, ...visibleIds]);
+            setSelectedIds(Array.from(allMerged));
+        }
+    };
+
+    const handleSelectRow = (id, e) => {
+        e.stopPropagation();
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+    };
+
+    const handleBulkDelete = () => {
+        if (selectedIds.length === 0) return;
+        const count = selectedIds.length;
+        Swal.fire({
+            title: `Delete ${count} Customers?`,
+            text: "This action will permanently delete all selected customer accounts.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#ef4444",
+            cancelButtonColor: "#64748b",
+            confirmButtonText: `Yes, delete ${count} accounts`
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    setLoading(true);
+                    await Promise.all(selectedIds.map(id => deleteCustomersApi(id)));
+                    setSelectedIds([]);
+                    Swal.fire("Deleted!", `${count} customer accounts deleted.`, "success");
+                    fetchCustomers();
+                } catch (error) {
+                    Swal.fire("Error", error.message || "Failed to delete customers", "error");
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+    };
+
+    const handleBulkStatusChange = (newStatus) => {
+        if (selectedIds.length === 0) return;
+        const count = selectedIds.length;
+        Swal.fire({
+            title: `Set ${count} customers to ${newStatus ? "Active" : "Inactive"}?`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#10b981",
+            cancelButtonColor: "#64748b",
+            confirmButtonText: "Confirm"
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    setLoading(true);
+                    await Promise.all(selectedIds.map(id => updateCustomersApi(id, { is_active: newStatus })));
+                    setSelectedIds([]);
+                    Swal.fire("Updated!", `${count} customers updated.`, "success");
+                    fetchCustomers();
+                } catch (error) {
+                    Swal.fire("Error", error.message || "Failed to update customers", "error");
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+    };
 
     const totalCount = customers.length;
     const onlineCount = customers.filter(c => c.is_online).length;
@@ -393,14 +472,85 @@ function CustomersPage() {
                     </div>
                 </div>
 
+                {isAdmin && selectedIds.length > 0 && (
+                    <div className="admin-bulk-actions-banner">
+                        <div className="bulk-banner-left">
+                            <span className="bulk-select-badge">{selectedIds.length}</span>
+                            <span className="bulk-select-label">
+                                <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? "customer" : "customers"} selected
+                            </span>
+                            <button type="button" className="bulk-banner-text-btn" onClick={() => setSelectedIds([])}>
+                                Deselect all
+                            </button>
+                            {customers.length > filtered.length && (
+                                <button
+                                    type="button"
+                                    className="bulk-banner-text-btn"
+                                    onClick={() => setSelectedIds(customers.map(c => c.id))}
+                                >
+                                    Select all {customers.length} in database
+                                </button>
+                            )}
+                        </div>
+                        <div className="bulk-banner-actions">
+                            <button
+                                type="button"
+                                className="bulk-action-secondary-btn"
+                                onClick={() => handleBulkStatusChange(true)}
+                                disabled={loading}
+                            >
+                                <FaCheckCircle /> Set Active
+                            </button>
+                            <button
+                                type="button"
+                                className="bulk-action-secondary-btn"
+                                onClick={() => handleBulkStatusChange(false)}
+                                disabled={loading}
+                            >
+                                <FaTimes /> Set Inactive
+                            </button>
+                            {can("customers", "delete") && (
+                                <button
+                                    type="button"
+                                    className="bulk-delete-btn"
+                                    onClick={handleBulkDelete}
+                                    disabled={loading}
+                                >
+                                    <FaTrash /> Delete Selected ({selectedIds.length})
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                className="bulk-cancel-btn"
+                                onClick={() => setSelectedIds([])}
+                                title="Cancel selection"
+                            >
+                                <FaTimes />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {loading && customers.length === 0 ? (
-                    <TableSkeleton rows={5} cols={7} hasAvatar={true} />
+                    <TableSkeleton rows={5} cols={isAdmin ? 8 : 7} hasAvatar={true} />
                 ) : (
                     <div className="product-table-wrapper">
                         {/* Table view (Desktop/iPad) */}
                         <table className="desktop-table">
                             <thead>
                                 <tr>
+                                    {isAdmin && (
+                                        <th className="admin-th-checkbox">
+                                            <input
+                                                type="checkbox"
+                                                className="admin-master-checkbox"
+                                                checked={isAllSelected}
+                                                ref={el => { if (el) el.indeterminate = isSomeSelected; }}
+                                                onChange={handleSelectAll}
+                                                title="Select all visible customers"
+                                            />
+                                        </th>
+                                    )}
                                     {visibleColumns.hash && <th>#</th>}
                                     {visibleColumns.customer && <th>Customer</th>}
                                     {visibleColumns.email && <th>Email</th>}
@@ -412,40 +562,43 @@ function CustomersPage() {
                             </thead>
                             <tbody>
                                 {filtered.map((item, index) => (
-                                    <tr key={item.id}>
+                                    <tr key={item.id} className={isAdmin && selectedIds.includes(item.id) ? "admin-row-selected" : ""}>
+                                        {isAdmin && (
+                                            <td className="admin-td-checkbox" onClick={e => e.stopPropagation()}>
+                                                <input
+                                                    type="checkbox"
+                                                    className="admin-row-checkbox"
+                                                    checked={selectedIds.includes(item.id)}
+                                                    onChange={e => handleSelectRow(item.id, e)}
+                                                    title="Select this customer"
+                                                />
+                                            </td>
+                                        )}
                                         {visibleColumns.hash && <td>{index + 1}</td>}
                                         {visibleColumns.customer && (
                                              <td>
-                                                <div className="customer-name">
-                                                    <div className="customer-icon" style={{ position: "relative" }}>
+                                                <div className="customer-name-wrapper">
+                                                    <div className="customer-avatar-box">
                                                         <FaUser />
                                                         <span 
                                                             className={`presence-dot-bubble ${item.is_online ? "online" : "offline"}`} 
                                                             title={item.is_online ? "Active Now (Online)" : "Offline"}
                                                         />
                                                     </div>
-                                                    <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                                    <div>
                                                         <strong>{item.name}</strong>
-                                                        {item.is_online && (
-                                                            <span className="online-mini-chip">🟢 Online</span>
-                                                        )}
+                                                        <small>{item.email}</small>
                                                     </div>
                                                 </div>
-                                            </td>
+                                             </td>
                                         )}
                                         {visibleColumns.email && <td>{item.email}</td>}
                                         {visibleColumns.phone && <td>{item.phone || "-"}</td>}
                                         {visibleColumns.status && (
                                             <td>
-                                                <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-start" }}>
-                                                    <span className={`status-badge ${item.is_active ? "active" : "inactive"}`}>
-                                                        {item.is_active ? "Active" : "Inactive"}
-                                                    </span>
-                                                    <span className={`presence-pill ${item.is_online ? "online" : "offline"}`}>
-                                                        <span className="presence-indicator-dot" />
-                                                        {item.is_online ? "Online" : "Offline"}
-                                                    </span>
-                                                </div>
+                                                <span className={`status-badge ${item.is_active ? "active" : "inactive"}`}>
+                                                    {item.is_active ? "Active" : "Inactive"}
+                                                </span>
                                             </td>
                                         )}
                                         {visibleColumns.role && (
@@ -457,18 +610,14 @@ function CustomersPage() {
                                         )}
                                         {visibleColumns.actions && (
                                             <td>
-                                                <div className="table-row-actions">
-                                                    <button 
-                                                        className="password-btn" 
-                                                        onClick={() => openPasswordModal(item)} 
-                                                        title="Change Password"
-                                                    >
+                                                <div className="table-actions">
+                                                    <button className="password-btn" onClick={() => openPasswordModal(item)} title="Change Password">
                                                         <FaKey />
                                                     </button>
-                                                    <button className="edit-btn" onClick={() => openEditModal(item)} title="Edit">
+                                                    <button className="edit-btn" onClick={() => openEditModal(item)} title="Edit Customer">
                                                         <FaEdit />
                                                     </button>
-                                                    <button className="delete-btn" onClick={() => deleteCustomer(item.id)} title="Delete">
+                                                    <button className="delete-btn" onClick={() => deleteCustomer(item.id)} title="Delete Customer">
                                                         <FaTrash />
                                                     </button>
                                                 </div>
@@ -478,7 +627,7 @@ function CustomersPage() {
                                 ))}
                                 {filtered.length === 0 && (
                                     <tr>
-                                        <td colSpan="7" className="no-data">No customers found</td>
+                                        <td colSpan={isAdmin ? 8 : 7} className="no-data">No customers found</td>
                                     </tr>
                                 )}
                             </tbody>
@@ -487,9 +636,18 @@ function CustomersPage() {
                         {/* Kanban cards view (Mobile) */}
                         <div className="mobile-cards-container">
                             {filtered.map((item) => (
-                                <div className="kanban-card product-card-item" key={item.id}>
+                                <div className={`kanban-card product-card-item ${isAdmin && selectedIds.includes(item.id) ? "admin-row-selected" : ""}`} key={item.id}>
                                     <div className="kanban-card-header">
-                                        <div className="product-preview-info">
+                                        <div className="product-preview-info" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                            {isAdmin && (
+                                                <input
+                                                    type="checkbox"
+                                                    className="admin-row-checkbox"
+                                                    checked={selectedIds.includes(item.id)}
+                                                    onChange={e => handleSelectRow(item.id, e)}
+                                                    title="Select this customer"
+                                                />
+                                            )}
                                             <div className="mobile-product-icon-placeholder" style={{ position: "relative" }}>
                                                 <FaUser />
                                                 <span 

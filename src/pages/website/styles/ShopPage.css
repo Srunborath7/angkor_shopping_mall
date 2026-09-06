@@ -79,6 +79,10 @@
   color: var(--text-dark);
 }
 
+.sidebar-title h5 {
+  margin-top: 10px;
+}
+
 .sidebar-header-actions {
   display: flex;
   align-items: center;
@@ -458,8 +462,13 @@
 }
 
 @keyframes shop-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Empty State / No products found */
@@ -626,6 +635,7 @@
 }
 
 @media (max-width: 576px) {
+
   /* 2 in a row on mobile */
   .shop-products-grid {
     grid-template-columns: repeat(2, 1fr);

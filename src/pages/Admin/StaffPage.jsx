@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   FaUserTie,
   FaUserCheck,
@@ -17,7 +17,9 @@ import {
   FaChevronRight,
   FaArrowUp,
   FaSyncAlt,
-  FaIdBadge
+  FaIdBadge,
+  FaTimes,
+  FaBan
 } from "react-icons/fa";
 import Swal from "sweetalert2";
 import Modal from "../../components/Modal";
@@ -32,14 +34,24 @@ import {
   RolesApi,
   adminChangeUserPasswordApi
 } from "../../services/customerService";
+import { getRolesApi } from "../../services/authService";
 import "./style/StaffPage.css";
 
+const DEFAULT_STAFF_ROLES = [
+  { id: 1, name: "admin", description: "Full administrative & system access" },
+  { id: 2, name: "manager", description: "Store, staff & order manager" },
+  { id: 3, name: "cashier", description: "Point of Sale & checkout operator" },
+  { id: 4, name: "inventory", description: "Warehouse & stock clerk" },
+  { id: 5, name: "staff", description: "General support & associate" }
+];
+
 function StaffPage() {
-  const { can } = usePermissions();
+  const { can, isAdmin } = usePermissions();
   const { isKhmer } = useTranslation();
 
   const [staffList, setStaffList] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [rolesLoading, setRolesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -67,19 +79,78 @@ function StaffPage() {
     confirmPassword: ""
   });
 
+  // Filter out non-staff roles (like 'customer')
+  const staffRoles = useMemo(() => {
+    const list = roles.filter(r => {
+      const name = String(r.name || "").trim().toLowerCase();
+      return name !== "customer" && name !== "customers" && name !== "user";
+    });
+    return list.length > 0 ? list : DEFAULT_STAFF_ROLES;
+  }, [roles]);
+
+  // Fetch Roles directly from /api/roles with fallback
+  const fetchRoles = async () => {
+    try {
+      setRolesLoading(true);
+      let list = [];
+
+      try {
+        const res = await RolesApi();
+        const raw =
+          res?.data?.roles ||
+          res?.data?.data ||
+          res?.data ||
+          res?.roles ||
+          (Array.isArray(res) ? res : []);
+        if (Array.isArray(raw) && raw.length > 0) {
+          list = raw;
+        }
+      } catch (err) {
+        console.warn("RolesApi primary call failed, trying getRolesApi:", err);
+      }
+
+      if (list.length === 0) {
+        try {
+          const altRes = await getRolesApi();
+          const altRaw =
+            altRes?.data?.roles ||
+            altRes?.data?.data ||
+            altRes?.data ||
+            (Array.isArray(altRes) ? altRes : []);
+          if (Array.isArray(altRaw) && altRaw.length > 0) {
+            list = altRaw;
+          }
+        } catch (altErr) {
+          console.warn("getRolesApi alternative call failed:", altErr);
+        }
+      }
+
+      if (list.length > 0) {
+        setRoles(list);
+      } else {
+        setRoles(DEFAULT_STAFF_ROLES);
+      }
+    } catch (e) {
+      console.warn("Error in fetchRoles:", e);
+      setRoles(DEFAULT_STAFF_ROLES);
+    } finally {
+      setRolesLoading(false);
+    }
+  };
+
   const fetchStaffData = async () => {
     try {
       setLoading(true);
-      const [staffRes, rolesRes] = await Promise.all([
+      const [staffResult] = await Promise.allSettled([
         StaffApi(),
-        RolesApi()
+        fetchRoles()
       ]);
 
-      const staffArray = staffRes?.data?.users || staffRes?.data || [];
-      const rolesArray = rolesRes?.data?.roles || rolesRes?.data || [];
-
-      setStaffList(Array.isArray(staffArray) ? staffArray : []);
-      setRoles(Array.isArray(rolesArray) ? rolesArray : []);
+      if (staffResult.status === "fulfilled" && staffResult.value) {
+        const res = staffResult.value;
+        const staffArray = res?.data?.users || res?.data || (Array.isArray(res) ? res : []);
+        setStaffList(Array.isArray(staffArray) ? staffArray : []);
+      }
     } catch (err) {
       console.warn("Failed to load staff list:", err);
       toastError("Failed to load staff data.");
@@ -90,6 +161,7 @@ function StaffPage() {
 
   useEffect(() => {
     fetchStaffData();
+    fetchRoles();
     const interval = setInterval(() => {
       if (!document.hidden) {
         fetchStaffData();
@@ -107,7 +179,8 @@ function StaffPage() {
   };
 
   const handleOpenCreate = () => {
-    const defaultRole = roles.find(r => r.name !== "customer")?.id || "";
+    fetchRoles();
+    const defaultRole = staffRoles[0]?.id || "";
     setForm({
       name: "",
       email: "",
@@ -125,9 +198,25 @@ function StaffPage() {
       return toastError("Please fill in Name, Email and Password.");
     }
 
+    const assignedRoleId = form.role_id || staffRoles[0]?.id;
+    if (!assignedRoleId) {
+      return toastError("Please assign a valid role for this staff member.");
+    }
+
+    const selectedRoleObj = staffRoles.find(r => String(r.id) === String(assignedRoleId));
+
     try {
       setLoading(true);
-      await createStaffApi(form);
+      await createStaffApi({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        password: form.password,
+        role_id: assignedRoleId,
+        role: selectedRoleObj?.name || undefined,
+        user_role: selectedRoleObj?.name || undefined,
+        is_active: form.is_active
+      });
       Swal.fire("Created!", "Staff member created successfully.", "success");
       setIsCreateModalOpen(false);
       fetchStaffData();
@@ -139,13 +228,20 @@ function StaffPage() {
   };
 
   const handleOpenEdit = (staff) => {
+    fetchRoles();
     setSelectedStaff(staff);
+    let matchedRoleId = staff.roles?.[0]?.id || staff.role_id || staff.role?.id;
+    if (!matchedRoleId && (staff.role || staff.roles?.[0]?.name)) {
+      const targetName = String(staff.roles?.[0]?.name || staff.role).toLowerCase();
+      const found = staffRoles.find(r => String(r.name).toLowerCase() === targetName);
+      if (found) matchedRoleId = found.id;
+    }
     setForm({
       name: staff.name || "",
       email: staff.email || "",
       phone: staff.phone || "",
       password: "",
-      role_id: staff.roles?.[0]?.id || staff.role_id || "",
+      role_id: matchedRoleId || staffRoles[0]?.id || "",
       is_active: staff.is_active !== undefined ? staff.is_active : true
     });
     setIsEditModalOpen(true);
@@ -155,9 +251,20 @@ function StaffPage() {
     e.preventDefault();
     if (!selectedStaff?.id) return;
 
+    const assignedRoleId = form.role_id || staffRoles[0]?.id;
+    const selectedRoleObj = staffRoles.find(r => String(r.id) === String(assignedRoleId));
+
     try {
       setLoading(true);
-      await updateStaffApi(selectedStaff.id, form);
+      await updateStaffApi(selectedStaff.id, {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        role_id: assignedRoleId,
+        role: selectedRoleObj?.name || undefined,
+        user_role: selectedRoleObj?.name || undefined,
+        is_active: form.is_active
+      });
       Swal.fire("Updated!", "Staff info updated successfully.", "success");
       setIsEditModalOpen(false);
       fetchStaffData();
@@ -245,7 +352,9 @@ function StaffPage() {
 
     const matchesRole =
       roleFilter === "all" ||
-      (item.roles || []).some(r => String(r.id) === String(roleFilter) || r.name === roleFilter);
+      (item.roles || []).some(r => String(r.id) === String(roleFilter) || String(r.name).toLowerCase() === String(roleFilter).toLowerCase()) ||
+      String(item.role_id) === String(roleFilter) ||
+      String(item.role).toLowerCase() === String(roleFilter).toLowerCase();
 
     if (statusFilter === "online") return matchesSearch && matchesRole && item.is_online;
     if (statusFilter === "active") return matchesSearch && matchesRole && item.is_active;
@@ -253,6 +362,79 @@ function StaffPage() {
 
     return matchesSearch && matchesRole;
   });
+
+  const [selectedIds, setSelectedIds] = useState([]);
+  const visibleIds = useMemo(() => filteredStaff.map(s => s.id), [filteredStaff]);
+  const isAllSelected = visibleIds.length > 0 && visibleIds.every(id => selectedIds.includes(id));
+  const isSomeSelected = visibleIds.some(id => selectedIds.includes(id)) && !isAllSelected;
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(prev => prev.filter(id => !visibleIds.includes(id)));
+    } else {
+      setSelectedIds(Array.from(new Set([...selectedIds, ...visibleIds])));
+    }
+  };
+
+  const handleSelectRow = (id, e) => {
+    e.stopPropagation();
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedIds.length === 0) return;
+    Swal.fire({
+      title: `Delete ${selectedIds.length} staff members?`,
+      text: "These staff accounts will be permanently removed.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: `Yes, delete (${selectedIds.length})`,
+      confirmButtonColor: "#dc2626",
+      cancelButtonText: "Cancel"
+    }).then(async (res) => {
+      if (res.isConfirmed) {
+        try {
+          setLoading(true);
+          await Promise.all(selectedIds.map(id => deleteStaffApi(id).catch(e => console.error(e))));
+          Swal.fire("Deleted!", `${selectedIds.length} staff accounts removed.`, "success");
+          setSelectedIds([]);
+          fetchStaffData();
+        } catch (err) {
+          toastError("Failed to delete some staff accounts.");
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+  };
+
+  const handleBulkStatusChange = (isActive) => {
+    if (selectedIds.length === 0) return;
+    const label = isActive ? "Active" : "Inactive";
+    Swal.fire({
+      title: `Set ${selectedIds.length} staff to ${label}?`,
+      text: `Change account status for selected staff members to ${label.toLowerCase()}.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: `Yes, set to ${label}`,
+      confirmButtonColor: isActive ? "#10b981" : "#d97706",
+      cancelButtonText: "Cancel"
+    }).then(async (res) => {
+      if (res.isConfirmed) {
+        try {
+          setLoading(true);
+          await Promise.all(selectedIds.map(id => updateStaffApi(id, { is_active: isActive }).catch(e => console.error(e))));
+          Swal.fire("Updated!", `Status updated for ${selectedIds.length} staff members.`, "success");
+          setSelectedIds([]);
+          fetchStaffData();
+        } catch (err) {
+          toastError("Failed to update status for some staff accounts.");
+        } finally {
+          setLoading(false);
+        }
+      }
+    });
+  };
 
   // KPI Calculations
   const totalStaffCount = staffList.length;
@@ -418,9 +600,9 @@ function StaffPage() {
               onChange={(e) => setRoleFilter(e.target.value)}
             >
               <option value="all">{isKhmer ? "គ្រប់តួនាទីទាំងអស់ (All Roles)" : "All Roles"}</option>
-              {roles.filter(r => r.name !== "customer").map((r) => (
+              {staffRoles.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.name.toUpperCase()}
+                  {String(r.name).toUpperCase()}
                 </option>
               ))}
             </select>
@@ -439,16 +621,87 @@ function StaffPage() {
           </div>
         </div>
 
+        {isAdmin && selectedIds.length > 0 && (
+          <div className="admin-bulk-actions-banner">
+            <div className="bulk-banner-left">
+              <span className="bulk-select-badge">{selectedIds.length}</span>
+              <span className="bulk-select-label">
+                <strong>{selectedIds.length}</strong> {selectedIds.length === 1 ? "staff member" : "staff members"} selected
+              </span>
+              <button type="button" className="bulk-banner-text-btn" onClick={() => setSelectedIds([])}>
+                Deselect all
+              </button>
+              {staffList.length > filteredStaff.length && (
+                <button
+                  type="button"
+                  className="bulk-banner-text-btn"
+                  onClick={() => setSelectedIds(staffList.map(s => s.id))}
+                >
+                  Select all {staffList.length} in database
+                </button>
+              )}
+            </div>
+            <div className="bulk-banner-actions">
+              <button
+                type="button"
+                className="bulk-action-secondary-btn"
+                onClick={() => handleBulkStatusChange(true)}
+                disabled={loading}
+              >
+                <FaCheckCircle /> Set Active
+              </button>
+              <button
+                type="button"
+                className="bulk-action-secondary-btn"
+                onClick={() => handleBulkStatusChange(false)}
+                disabled={loading}
+              >
+                <FaBan /> Set Inactive
+              </button>
+              {can("staff", "delete") && (
+                <button
+                  type="button"
+                  className="bulk-delete-btn"
+                  onClick={handleBulkDelete}
+                  disabled={loading}
+                >
+                  <FaTrash /> Delete Selected ({selectedIds.length})
+                </button>
+              )}
+              <button
+                type="button"
+                className="bulk-cancel-btn"
+                onClick={() => setSelectedIds([])}
+                title="Cancel selection"
+              >
+                <FaTimes />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Desktop Table View */}
         {loading && staffList.length === 0 ? (
           <div style={{ padding: 20 }}>
-            <TableSkeleton rows={5} cols={6} hasAvatar={true} />
+            <TableSkeleton rows={5} cols={isAdmin ? 8 : 7} hasAvatar={true} />
           </div>
         ) : (
           <div className="staff-table-wrapper">
             <table className="staff-table">
               <thead>
                 <tr>
+                  {isAdmin && (
+                    <th className="admin-th-checkbox">
+                      <input
+                        type="checkbox"
+                        className="admin-master-checkbox"
+                        checked={isAllSelected}
+                        ref={el => { if (el) el.indeterminate = isSomeSelected; }}
+                        onChange={handleSelectAll}
+                        title="Select all visible staff"
+                      />
+                    </th>
+                  )}
                   <th>#</th>
                   <th>{isKhmer ? "ព័ត៌មានបុគ្គលិក" : "Staff Member"}</th>
                   <th>{isKhmer ? "អ៊ីមែល & ទូរស័ព្ទ" : "Contact"}</th>
@@ -460,9 +713,25 @@ function StaffPage() {
               </thead>
               <tbody>
                 {filteredStaff.map((staff, index) => {
-                  const roleName = staff.roles?.[0]?.name || staff.role || "Staff";
+                  const roleName =
+                    staff.roles?.[0]?.name ||
+                    staff.role?.name ||
+                    (typeof staff.role === "string" ? staff.role : "") ||
+                    staffRoles.find(r => String(r.id) === String(staff.role_id))?.name ||
+                    "Staff";
                   return (
-                    <tr key={staff.id}>
+                    <tr key={staff.id} className={isAdmin && selectedIds.includes(staff.id) ? "admin-row-selected" : ""}>
+                      {isAdmin && (
+                        <td className="admin-td-checkbox" onClick={e => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            className="admin-row-checkbox"
+                            checked={selectedIds.includes(staff.id)}
+                            onChange={e => handleSelectRow(staff.id, e)}
+                            title="Select this staff member"
+                          />
+                        </td>
+                      )}
                       <td><strong>{index + 1}</strong></td>
                       <td>
                         <div className="staff-profile-cell">
@@ -542,7 +811,7 @@ function StaffPage() {
                 })}
                 {filteredStaff.length === 0 && (
                   <tr>
-                    <td colSpan="7" style={{ textAlign: "center", padding: "40px 20px", color: "#64748b" }}>
+                    <td colSpan={isAdmin ? 8 : 7} style={{ textAlign: "center", padding: "40px 20px", color: "#64748b" }}>
                       {isKhmer ? "រកមិនឃើញព័ត៌មានបុគ្គលិកនោះទេ" : "No staff members found matching your search or filters."}
                     </td>
                   </tr>
@@ -555,11 +824,25 @@ function StaffPage() {
         {/* Mobile Kanban Cards */}
         <div className="staff-mobile-cards">
           {filteredStaff.map((staff) => {
-            const roleName = staff.roles?.[0]?.name || staff.role || "Staff";
+            const roleName =
+              staff.roles?.[0]?.name ||
+              staff.role?.name ||
+              (typeof staff.role === "string" ? staff.role : "") ||
+              staffRoles.find(r => String(r.id) === String(staff.role_id))?.name ||
+              "Staff";
             return (
-              <div key={staff.id} className="staff-kanban-card">
+              <div key={staff.id} className={`staff-kanban-card ${isAdmin && selectedIds.includes(staff.id) ? "admin-row-selected" : ""}`}>
                 <div className="staff-card-header-row">
-                  <div className="staff-profile-cell">
+                  <div className="staff-profile-cell" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    {isAdmin && (
+                      <input
+                        type="checkbox"
+                        className="admin-row-checkbox"
+                        checked={selectedIds.includes(staff.id)}
+                        onChange={e => handleSelectRow(staff.id, e)}
+                        title="Select this staff member"
+                      />
+                    )}
                     <div className="staff-avatar-box">
                       <FaUserTie />
                       <span
@@ -658,17 +941,24 @@ function StaffPage() {
             </div>
 
             <div className="form-group">
-              <label>Assign Role *</label>
+              <label>{isKhmer ? "កំណត់តួនាទី *" : "Assign Role *"}</label>
               <select
                 required
                 value={form.role_id}
                 onChange={(e) => setForm({ ...form, role_id: e.target.value })}
               >
-                {roles.filter(r => r.name !== "customer").map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name.toUpperCase()} {r.description ? `(${r.description})` : ""}
-                  </option>
-                ))}
+                {rolesLoading && staffRoles.length === 0 ? (
+                  <option value="" disabled>Loading roles from API...</option>
+                ) : (
+                  <>
+                    <option value="">-- Choose Role --</option>
+                    {staffRoles.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {String(r.name).toUpperCase()} {r.description ? `(${r.description})` : ""}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
             </div>
 
@@ -725,16 +1015,24 @@ function StaffPage() {
             </div>
 
             <div className="form-group">
-              <label>Role</label>
+              <label>{isKhmer ? "កំណត់តួនាទី *" : "Assign Role *"}</label>
               <select
+                required
                 value={form.role_id}
                 onChange={(e) => setForm({ ...form, role_id: e.target.value })}
               >
-                {roles.filter(r => r.name !== "customer").map((r) => (
-                  <option key={r.id} value={r.id}>
-                    {r.name.toUpperCase()}
-                  </option>
-                ))}
+                {rolesLoading && staffRoles.length === 0 ? (
+                  <option value="" disabled>Loading roles from API...</option>
+                ) : (
+                  <>
+                    <option value="">-- Choose Role --</option>
+                    {staffRoles.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {String(r.name).toUpperCase()} {r.description ? `(${r.description})` : ""}
+                      </option>
+                    ))}
+                  </>
+                )}
               </select>
             </div>
 

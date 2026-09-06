@@ -417,6 +417,23 @@ body.dark-theme .supplier-toolbar .supplier-search-input::placeholder {
     color: #111827;
 }
 
+[data-theme="dark"] .supplier-title {
+    color: white
+}
+
+[data-theme="dark"] .testimonial-card {
+    background-color: #0f172a;
+    border-color: #1e293b;
+}
+
+[data-theme="dark"] .contact-cell .contact-item {
+    color: white;
+}
+
+[data-theme="dark"] .contact-item {
+    color: white;
+}
+
 .supplier-details-cell .supplier-sub {
     font-size: 12px;
     color: #6b7280;

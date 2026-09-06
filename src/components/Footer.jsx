@@ -201,12 +201,6 @@ function Footer() {
                   <span className="pay-chip-type">Cash on Delivery</span>
                 </div>
               )}
-              {store.cardEnabled && (
-                <div className="pay-chip card">
-                  <span className="pay-chip-brand">VISA / MC</span>
-                  <span className="pay-chip-type">Debit / Credit</span>
-                </div>
-              )}
             </div>
 
             <div className="exchange-rate-pill">

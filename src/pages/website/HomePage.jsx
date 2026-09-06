@@ -33,7 +33,7 @@ import { useTranslation } from "../../context/LanguageContext";
 import { productsPagedApi, getBestSellersApi } from "../../services/productsService";
 import { categoriesApi } from "../../services/categoriesService";
 import { addToCartApi } from "../../services/cartService";
-import { getFlashSalesApi } from "../../services/flashSaleService";
+import { getFlashSalesApi, isFlashSaleActive } from "../../services/flashSaleService";
 import { getPublishedTestimonialsApi, submitTestimonialApi } from "../../services/testimonialService";
 import Modal from "../../components/Modal";
 import { ProductCardSkeleton, CircularShoppingLoader } from "../../components/loading/LoadingSkeleton";
@@ -138,6 +138,14 @@ function normalizeProduct(raw, index = 0) {
   const rank = raw.rank || (index + 1);
   const totalSales = Number(raw.total_sales ?? raw.units_sold ?? Math.max(15, 130 - index * 11));
 
+  const variantStock = Array.isArray(raw.variants) && raw.variants.length > 0
+    ? raw.variants.reduce((acc, v) => acc + Number(v.stock_quantity ?? v.stockQuantity ?? 0), 0)
+    : null;
+  const rawStock = raw.stock_quantity !== undefined ? raw.stock_quantity : raw.stockQuantity;
+  const stockQuantity = variantStock !== null
+    ? variantStock
+    : (rawStock !== undefined && rawStock !== null ? Number(rawStock) : 0);
+
   return {
     id: raw.id,
     name: raw.name ?? "Untitled Product",
@@ -147,7 +155,7 @@ function normalizeProduct(raw, index = 0) {
     price,
     originalPrice: Number(typeof originalPrice === "number" ? originalPrice.toFixed(2) : originalPrice),
     discount: discount || 15,
-    stockQuantity: raw.stock_quantity ?? 0,
+    stockQuantity,
     image: raw.image_url || primaryImage?.image_url || variantImage?.image_url || NO_IMAGE_PLACEHOLDER,
     rating: rating,
     reviews: reviewsCount,
@@ -198,11 +206,14 @@ function HomePage() {
       // flashSaleService already normalizes: image from product join, category as string
       const res = await getFlashSalesApi();
       if (Array.isArray(res)) {
-        const activeOnly = res.filter((item) => item.status === "active");
-        setFlashSales(activeOnly.length > 0 ? activeOnly : res);
+        const activeOnly = res.filter(isFlashSaleActive);
+        setFlashSales(activeOnly);
+      } else {
+        setFlashSales([]);
       }
     } catch (err) {
       console.warn("Failed to fetch flash sales API:", err);
+      setFlashSales([]);
     }
   };
 
@@ -361,25 +372,54 @@ function HomePage() {
     return sourceProducts;
   }, [sourceProducts, activeTrendingTab]);
 
-  // Countdown timer for Flash Sale
+  // Real Countdown timer for Flash Sale
   const [timeLeft, setTimeLeft] = useState({
-    hours: 3,
-    minutes: 42,
-    seconds: 18
+    hours: 0,
+    minutes: 0,
+    seconds: 0
   });
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        clearInterval(timer);
-        return prev;
+    if (!flashSales || flashSales.length === 0) {
+      setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+      return;
+    }
+
+    const calcTime = () => {
+      const now = Date.now();
+      let minEnd = null;
+
+      flashSales.forEach((item) => {
+        let end = null;
+        if (item.endTime || item.end_time) {
+          end = new Date(item.endTime || item.end_time).getTime();
+        } else if (item.created_at || item.createdAt) {
+          end = new Date(item.created_at || item.createdAt).getTime() + (item.durationHours || 24) * 3600 * 1000;
+        }
+
+        if (end && !isNaN(end) && end > now) {
+          if (!minEnd || end < minEnd) minEnd = end;
+        }
       });
-    }, 1000);
+
+      if (!minEnd) {
+        // Auto-expired: refresh to synchronize with active status
+        loadFlashSales();
+        return;
+      }
+
+      const diff = Math.max(0, minEnd - now);
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setTimeLeft({ hours, minutes, seconds });
+    };
+
+    calcTime();
+    const timer = setInterval(calcTime, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [flashSales]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -409,6 +449,13 @@ function HomePage() {
   };
 
   const addToCart = async (product) => {
+    if (product?.stockQuantity !== undefined && Number(product.stockQuantity) <= 0) {
+      toast.error(language === "km" ? "សូមអភ័យទោស ទំនិញនេះអស់ពីស្តុកហើយ" : "Sorry! This item is currently out of stock.", {
+        style: { borderRadius: "10px", background: "#ef4444", color: "#fff" }
+      });
+      return;
+    }
+
     const saved = localStorage.getItem("cartItems");
     const currentCart = saved ? JSON.parse(saved) : [];
 
@@ -624,51 +671,50 @@ function HomePage() {
         </div>
       </section>
 
-      {/* Flash Sale / Live API Showcase Section */}
-      <section className="home-section flash-sale-section">
-        <div className="flash-sale-header">
-          <div className="header-left">
-            <div className="flash-title-row">
-              <Flame size={26} className="clock-flash-icon" />
-              <h2>{t("home.flashDeals", "Flash Sale Deals")}</h2>
-              <span className="live-api-badge"><Sparkles size={12} /> Live API</span>
+      {/* Flash Sale / Live API Showcase Section - Only show when active Flash Sales exist in Admin */}
+      {flashSales && flashSales.length > 0 && (
+        <section className="home-section flash-sale-section">
+          <div className="flash-sale-header">
+            <div className="header-left">
+              <div className="flash-title-row">
+                <Flame size={26} className="clock-flash-icon" />
+                <h2>{t("home.flashDeals", "Flash Sale Deals")}</h2>
+                <span className="live-api-badge"><Sparkles size={12} /> Live API</span>
+              </div>
+              <p>{language === "km" ? "ការបញ្ចុះតម្លៃពិសេសមានកំណត់ ធ្វើបច្ចុប្បន្នភាពផ្ទាល់ពីស្តុក" : "Limited-time discounts updated directly from our inventory"}</p>
             </div>
-            <p>{language === "km" ? "ការបញ្ចុះតម្លៃពិសេសមានកំណត់ ធ្វើបច្ចុប្បន្នភាពផ្ទាល់ពីស្តុក" : "Limited-time discounts updated directly from our inventory"}</p>
+
+            <div className="countdown-timer">
+              <div className="time-segment">
+                <span className="time-value">{String(timeLeft.hours).padStart(2, "0")}</span>
+                <span className="time-label">h</span>
+              </div>
+              <span className="time-colon">:</span>
+              <div className="time-segment">
+                <span className="time-value">{String(timeLeft.minutes).padStart(2, "0")}</span>
+                <span className="time-label">m</span>
+              </div>
+              <span className="time-colon">:</span>
+              <div className="time-segment">
+                <span className="time-value">{String(timeLeft.seconds).padStart(2, "0")}</span>
+                <span className="time-label">s</span>
+              </div>
+            </div>
           </div>
 
-          <div className="countdown-timer">
-            <div className="time-segment">
-              <span className="time-value">{String(timeLeft.hours).padStart(2, "0")}</span>
-              <span className="time-label">h</span>
-            </div>
-            <span className="time-colon">:</span>
-            <div className="time-segment">
-              <span className="time-value">{String(timeLeft.minutes).padStart(2, "0")}</span>
-              <span className="time-label">m</span>
-            </div>
-            <span className="time-colon">:</span>
-            <div className="time-segment">
-              <span className="time-value">{String(timeLeft.seconds).padStart(2, "0")}</span>
-              <span className="time-label">s</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Flash Sale Product Grid */}
-        {loading ? (
-          <ProductCardSkeleton count={4} gridClassName="products-grid" />
-        ) : (
+          {/* Flash Sale Product Grid */}
           <div className="products-grid">
-            {(flashSales.length > 0 ? flashSales : products.slice(0, 4)).map((prod, idx) => {
+            {flashSales.map((prod, idx) => {
               const claimedPct = prod.claimedPct || (65 + ((idx * 7) % 30));
-              const itemsLeft = Math.max(1, prod.stockLimit || (10 - idx * 2));
+              const itemsLeft = prod.stockLimit !== undefined ? prod.stockLimit : (prod.stockQuantity !== undefined ? prod.stockQuantity : Math.max(1, 10 - idx * 2));
+              const isOutOfStock = itemsLeft <= 0 || (prod.stockQuantity !== undefined && Number(prod.stockQuantity) <= 0);
               const prodRating = prod.rating || 4.8;
               const prodReviews = prod.reviews || (50 + idx * 25);
 
               return (
                 <div
                   key={prod.id || idx}
-                  className="product-card-item"
+                  className={`product-card-item ${isOutOfStock ? "is-out-of-stock" : ""}`}
                   onClick={() =>
                     navigate(`/product/${prod.product_id || prod.id}`, {
                       state: { fromFlashSale: true, flashSale: prod, flashPrice: prod.price }
@@ -678,8 +724,16 @@ function HomePage() {
                   <div className="product-image-box">
                     <img src={prod.image} alt={prod.name} loading="lazy" />
 
-                    <span className="product-badge" style={{ background: "#ef4444" }}>{prod.badge || "Flash Deal"}</span>
-                    {prod.discount > 0 && <span className="product-discount-tag">-{prod.discount}%</span>}
+                    {isOutOfStock ? (
+                      <span className="card-stock-badge unavailable">
+                        {language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable"}
+                      </span>
+                    ) : (
+                      <>
+                        <span className="product-badge" style={{ background: "#ef4444" }}>{prod.badge || "Flash Deal"}</span>
+                        {prod.discount > 0 && <span className="product-discount-tag">-{prod.discount}%</span>}
+                      </>
+                    )}
 
                     <button
                       type="button"
@@ -719,6 +773,12 @@ function HomePage() {
                     <span className="product-category">{typeof prod.category === "string" ? prod.category : (prod.category?.name ?? "")}</span>
                     <h3 className="product-title" title={prod.name}>{typeof prod.name === "string" ? prod.name : String(prod.name ?? "")}</h3>
 
+                    {isOutOfStock && (
+                      <span className="product-stock-tag unavailable">
+                        {language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable"}
+                      </span>
+                    )}
+
                     <div className="product-rating-row">
                       <div className="stars-row">
                         {[...Array(5)].map((_, i) => (
@@ -736,7 +796,7 @@ function HomePage() {
                     <div className="flash-stock-bar-box">
                       <div className="flash-stock-label">
                         <span>🔥 {claimedPct}% Sold</span>
-                        <span>Only {itemsLeft} left</span>
+                        <span>{isOutOfStock ? (language === "km" ? "អស់ពីស្តុក" : "0 left") : `Only ${itemsLeft} left`}</span>
                       </div>
                       <div className="flash-stock-track">
                         <div className="flash-stock-fill" style={{ width: `${claimedPct}%` }}></div>
@@ -756,10 +816,17 @@ function HomePage() {
 
                       <button
                         type="button"
-                        className="add-cart-btn"
-                        onClick={(e) => { e.stopPropagation(); addToCart(prod); }}
+                        className={`add-cart-btn ${isOutOfStock ? "disabled" : ""}`}
+                        disabled={isOutOfStock}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isOutOfStock) addToCart(prod);
+                        }}
                       >
-                        <ShoppingBag size={15} /> Add To Cart
+                        <ShoppingBag size={15} />
+                        {isOutOfStock
+                          ? (language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable")
+                          : (language === "km" ? "ដាក់ក្នុងកន្ត្រក" : "Add To Cart")}
                       </button>
                     </div>
                   </div>
@@ -767,8 +834,8 @@ function HomePage() {
               );
             })}
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
       {/* Trending & Best Sellers Section */}
       <section className="home-section trending-products-section" style={{ marginTop: "2rem" }}>
@@ -821,83 +888,107 @@ function HomePage() {
           <ProductCardSkeleton count={8} />
         ) : (
           <div className="products-grid">
-            {filteredTrendingProducts.map((prod) => (
-              <div
-                key={prod.id}
-                className="product-card-item"
-                onClick={() =>
-                  navigate(`/product/${prod.id}`, {
-                    state: { fromFlashSale: false }
-                  })
-                }
-              >
-                <div className="product-image-box">
-                  <img src={prod.image} alt={prod.name} loading="lazy" />
+            {filteredTrendingProducts.map((prod) => {
+              const isOutOfStock = prod.stockQuantity !== undefined && Number(prod.stockQuantity) <= 0;
+              return (
+                <div
+                  key={prod.id}
+                  className={`product-card-item ${isOutOfStock ? "is-out-of-stock" : ""}`}
+                  onClick={() =>
+                    navigate(`/product/${prod.id}`, {
+                      state: { fromFlashSale: false }
+                    })
+                  }
+                >
+                  <div className="product-image-box">
+                    <img src={prod.image} alt={prod.name} loading="lazy" />
 
-                  {prod.rank && prod.rank <= 10 ? (
-                    <span className={`best-seller-rank-tag rank-${prod.rank <= 3 ? prod.rank : "other"}`}>
-                      {prod.rank_badge || `#${prod.rank} Best Seller`}
-                    </span>
-                  ) : (
-                    prod.badge && <span className="product-badge">{prod.badge}</span>
-                  )}
-                  {prod.discount > 0 && <span className="product-discount-tag">-{prod.discount}%</span>}
-
-                  <button
-                    type="button"
-                    className={`product-wishlist-toggle ${wishlist.includes(prod.id) ? "active" : ""}`}
-                    onClick={(e) => { e.stopPropagation(); toggleWishlist(prod.id); }}
-                    title="Toggle Wishlist"
-                  >
-                    <Heart size={16} fill={wishlist.includes(prod.id) ? "#e54b4b" : "none"} />
-                  </button>
-                </div>
-
-                <div className="product-details-box">
-                  <span className="product-category">{typeof prod.category === "string" ? prod.category : (prod.category?.name ?? "")}</span>
-                  <h3 className="product-title" title={prod.name}>{typeof prod.name === "string" ? prod.name : String(prod.name ?? "")}</h3>
-
-                  <div className="product-rating-row" style={{ flexWrap: "wrap", gap: "4px" }}>
-                    <div className="stars-row">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          size={14}
-                          fill={i < Math.floor(prod.rating) ? "#FFC107" : "none"}
-                          stroke={i < Math.floor(prod.rating) ? "#FFC107" : "#E5E7EB"}
-                        />
-                      ))}
-                    </div>
-                    <span className="rating-text">{prod.rating} ({prod.reviews})</span>
-                    {(prod.units_sold || prod.totalSales) && (
-                      <span className="sales-track-pill">
-                        🔥 {prod.units_sold || prod.totalSales} sold
+                    {isOutOfStock ? (
+                      <span className="card-stock-badge unavailable">
+                        {language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable"}
                       </span>
+                    ) : (
+                      <>
+                        {prod.rank && prod.rank <= 10 ? (
+                          <span className={`best-seller-rank-tag rank-${prod.rank <= 3 ? prod.rank : "other"}`}>
+                            {prod.rank_badge || `#${prod.rank} Best Seller`}
+                          </span>
+                        ) : (
+                          prod.badge && <span className="product-badge">{prod.badge}</span>
+                        )}
+                        {prod.discount > 0 && <span className="product-discount-tag">-{prod.discount}%</span>}
+                      </>
                     )}
-                  </div>
-
-                  <div className="product-footer-row">
-                    <div className="price-box">
-                      <span className="sale-price">${prod.price}</span>
-                      {prod.originalPrice > prod.price && (
-                        <span className="original-price">${prod.originalPrice}</span>
-                      )}
-                      <span style={{ display: "block", fontSize: "10.5px", fontWeight: "600", color: "#64748b" }}>
-                        {Math.round(Number(prod.price) * KHR_RATE).toLocaleString()} ៛
-                      </span>
-                    </div>
 
                     <button
                       type="button"
-                      className="add-cart-btn"
-                      onClick={(e) => { e.stopPropagation(); addToCart(prod); }}
+                      className={`product-wishlist-toggle ${wishlist.includes(prod.id) ? "active" : ""}`}
+                      onClick={(e) => { e.stopPropagation(); toggleWishlist(prod.id); }}
+                      title="Toggle Wishlist"
                     >
-                      <ShoppingBag size={15} /> Add To Cart
+                      <Heart size={16} fill={wishlist.includes(prod.id) ? "#e54b4b" : "none"} />
                     </button>
                   </div>
+
+                  <div className="product-details-box">
+                    <span className="product-category">{typeof prod.category === "string" ? prod.category : (prod.category?.name ?? "")}</span>
+                    <h3 className="product-title" title={prod.name}>{typeof prod.name === "string" ? prod.name : String(prod.name ?? "")}</h3>
+
+                    {isOutOfStock && (
+                      <span className="product-stock-tag unavailable">
+                        {language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable"}
+                      </span>
+                    )}
+
+                    <div className="product-rating-row" style={{ flexWrap: "wrap", gap: "4px" }}>
+                      <div className="stars-row">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            size={14}
+                            fill={i < Math.floor(prod.rating) ? "#FFC107" : "none"}
+                            stroke={i < Math.floor(prod.rating) ? "#FFC107" : "#E5E7EB"}
+                          />
+                        ))}
+                      </div>
+                      <span className="rating-text">{prod.rating} ({prod.reviews})</span>
+                      {(prod.units_sold || prod.totalSales) && (
+                        <span className="sales-track-pill">
+                          🔥 {prod.units_sold || prod.totalSales} sold
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="product-footer-row">
+                      <div className="price-box">
+                        <span className="sale-price">${prod.price}</span>
+                        {prod.originalPrice > prod.price && (
+                          <span className="original-price">${prod.originalPrice}</span>
+                        )}
+                        <span style={{ display: "block", fontSize: "10.5px", fontWeight: "600", color: "#64748b" }}>
+                          {Math.round(Number(prod.price) * KHR_RATE).toLocaleString()} ៛
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        className={`add-cart-btn ${isOutOfStock ? "disabled" : ""}`}
+                        disabled={isOutOfStock}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isOutOfStock) addToCart(prod);
+                        }}
+                      >
+                        <ShoppingBag size={15} />
+                        {isOutOfStock
+                          ? (language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable")
+                          : (language === "km" ? "ដាក់ក្នុងកន្ត្រក" : "Add To Cart")}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -1134,9 +1225,9 @@ function HomePage() {
         <div className="banner-glow-circle"></div>
         <div className="banner-content">
           <div className="promo-badge-pill">
-            <Tag size={14} /> PROMO CODE: <strong>ANGKOR30</strong>
+            <Tag size={14} /> PROMO CODE: <strong>ANGKOR30</strong> (5% OFF)
           </div>
-          <h2>{language === "km" ? "ទទួលបានការបញ្ចុះតម្លៃ ៣០% បន្ថែម" : "Get 30% Off Your Next Order"}</h2>
+          <h2>{language === "km" ? "ទទួលបានការបញ្ចុះតម្លៃ ៥% បន្ថែម" : "Get 5% Off Your Next Order"}</h2>
           <p>{language === "km" ? "ចុះឈ្មោះថ្ងៃនេះដើម្បីទទួលបានតម្លៃពិសេសសម្រាប់សមាជិក ការដឹកជញ្ជូនរហ័ស និងពិន្ទុរង្វាន់។" : "Sign up today and unlock member-only prices, priority express delivery, and reward points."}</p>
           
           <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap", marginTop: "12px" }}>
@@ -1146,7 +1237,7 @@ function HomePage() {
               style={{ background: "#ffffff", color: "#166534", border: "none", borderRadius: "12px", padding: "10px 18px", fontSize: "13px", fontWeight: "800", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "6px" }}
               onClick={() => {
                 navigator.clipboard.writeText("ANGKOR30");
-                toast.success("Voucher ANGKOR30 copied! 30% discount ready at checkout.", {
+                toast.success("Voucher ANGKOR30 copied! 5% discount ready at checkout.", {
                   icon: "🎉",
                   style: { borderRadius: "10px", background: "#166534", color: "#fff" }
                 });

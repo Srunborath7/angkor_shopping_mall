@@ -34,7 +34,7 @@ import {
   getSimilarRecommendationsApi,
   trackInteractionApi
 } from "../../services/recommendationService";
-import { getFlashSalesApi } from "../../services/flashSaleService";
+import { getFlashSalesApi, isFlashSaleActive } from "../../services/flashSaleService";
 import { addToCartApi } from "../../services/cartService";
 import { ProductDetailSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./styles/ProductDetailPage.css";
@@ -514,23 +514,28 @@ function ProductDetailPage() {
   // Auto-fetch active flash sale details for product if not passed in location state
   useEffect(() => {
     const fetchFlashSale = async () => {
-      if (passedFlashSale) {
+      if (passedFlashSale && isFlashSaleActive(passedFlashSale)) {
         setActiveFlashSale(passedFlashSale);
         return;
       }
       try {
         const res = await getFlashSalesApi();
-        const salesList = res?.data?.data || res?.data || (Array.isArray(res) ? res : []);
+        const salesList = Array.isArray(res) ? res : (res?.data?.data || res?.data || []);
         if (Array.isArray(salesList)) {
           const matched = salesList.find(
-            (s) => String(s.product_id || s.productId || s.product?.id) === String(id) && s.status === 'active'
+            (s) => String(s.product_id || s.productId || s.product?.id) === String(id) && isFlashSaleActive(s)
           );
           if (matched) {
             setActiveFlashSale(matched);
+          } else {
+            setActiveFlashSale(null);
           }
+        } else {
+          setActiveFlashSale(null);
         }
       } catch (err) {
         console.warn('Failed to check active flash sales for product:', err);
+        setActiveFlashSale(null);
       }
     };
     if (id) fetchFlashSale();
