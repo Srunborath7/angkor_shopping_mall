@@ -350,15 +350,48 @@ function ProductPage() {
     const handleSaveGeneral = async (e) => {
         e.preventDefault();
 
+        if (!name || !name.trim()) {
+            Swal.fire({
+                title: "Validation Error",
+                text: "Please enter a product name",
+                icon: "warning"
+            });
+            return;
+        }
+
+        if (price === "" || isNaN(Number(price))) {
+            Swal.fire({
+                title: "Validation Error",
+                text: "Please enter a valid product price",
+                icon: "warning"
+            });
+            return;
+        }
+
+        if (!categoryId) {
+            Swal.fire({
+                title: "Validation Error",
+                text: "Please select a category for the product",
+                icon: "warning"
+            });
+            return;
+        }
+
         const formData = new FormData();
-        formData.append("name", name);
-        formData.append("description", description);
+        formData.append("name", name.trim());
+        if (description) formData.append("description", description.trim());
         formData.append("price", Number(price));
-        formData.append("stock_quantity", Number(stockQuantity));
-        formData.append("category_id", categoryId);
-        formData.append("brand_id", brandId);
-        formData.append("is_active", isActive);
-        formData.append("promo_code", promoCode.trim().toUpperCase());
+        formData.append("stock_quantity", stockQuantity !== "" ? Number(stockQuantity) : 0);
+        if (categoryId && categoryId.trim() !== "") {
+            formData.append("category_id", categoryId.trim());
+        }
+        if (brandId && brandId.trim() !== "") {
+            formData.append("brand_id", brandId.trim());
+        }
+        formData.append("is_active", Boolean(isActive));
+        if (promoCode && promoCode.trim() !== "") {
+            formData.append("promo_code", promoCode.trim().toUpperCase());
+        }
         formData.append("promo_discount", promoDiscount !== "" ? Number(promoDiscount) : 0);
         if (imageFile) {
             formData.append("image", imageFile);
@@ -1378,13 +1411,12 @@ function ProductPage() {
                                         </select>
                                     </div>
                                     <div className="form-group">
-                                        <label>Brand</label>
+                                        <label>Brand <span style={{ fontSize: "11px", color: "#6b7280", fontWeight: "normal" }}>(Optional)</span></label>
                                         <select
                                             value={brandId}
                                             onChange={e => setBrandId(e.target.value)}
-                                            required
                                         >
-                                            <option value="" disabled>Select Brand</option>
+                                            <option value="">Select Brand (Optional)</option>
                                             {brands.map(br => (
                                                 <option key={br.id} value={br.id}>{br.name}</option>
                                             ))}
