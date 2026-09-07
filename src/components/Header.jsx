@@ -170,7 +170,7 @@ function Header() {
     };
   }, [isLoggedIn]);
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click or touch
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (notifRef.current && !notifRef.current.contains(event.target)) {
@@ -178,7 +178,11 @@ function Header() {
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
   }, []);
 
   // Listen to custom window events for synchronized count updates
@@ -206,6 +210,23 @@ function Header() {
       window.removeEventListener("open-cart", handleOpenCart);
     };
   }, []);
+
+  // Lock body scroll when mobile drawer is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileMenuOpen]);
+
+  // Automatically close mobile menu when navigating to another page
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const handleLogout = () => {
     dispatch(clearAuth());
@@ -290,17 +311,38 @@ function Header() {
                     <div className="user-notif-title">
                       <MessageSquare size={16} />
                       <span>{t("nav.support", "Support Messages")}</span>
+                      {userUnreadRepliesCount > 0 && (
+                        <span className="user-notif-pill">{userUnreadRepliesCount}</span>
+                      )}
                     </div>
-                    {userUnreadRepliesCount > 0 && (
-                      <span className="user-notif-pill">{userUnreadRepliesCount}</span>
-                    )}
+                    <button
+                      type="button"
+                      className="user-notif-close-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setUserNotifOpen(false);
+                      }}
+                      title="Close"
+                      aria-label="Close notifications"
+                    >
+                      <X size={15} />
+                    </button>
                   </div>
 
                   <div className="user-notif-list">
                     {userReplies.length === 0 ? (
                       <div className="user-notif-empty">
-                        <Headphones size={26} className="text-muted" />
-                        <span>{language === "km" ? "មិនទាន់មានសារសាកសួរនៅឡើយទេ។" : "No support messages yet. Need help? Message admin anytime!"}</span>
+                        <div className="user-notif-empty-icon">
+                          <Headphones size={22} />
+                        </div>
+                        <strong className="user-notif-empty-title">
+                          {language === "km" ? "មិនទាន់មានសារទេ" : "No Support Messages"}
+                        </strong>
+                        <p className="user-notif-empty-desc">
+                          {language === "km"
+                            ? "មិនទាន់មានសារឆ្លើយតបពី Admin នៅឡើយទេ។ ត្រូវការជំនួយ? សូមផ្ញើសារបានគ្រប់ពេល!"
+                            : "No replies yet. Have questions or need assistance? Message admin anytime!"}
+                        </p>
                       </div>
                     ) : (
                       userReplies.map((item) => (
@@ -348,7 +390,7 @@ function Header() {
             </div>
 
             <div
-              className="icon-wrapper"
+              className="icon-wrapper header-wishlist-trigger"
               onClick={() => navigate("/wishlist")}
               title="View My Wishlist"
               style={{ cursor: "pointer" }}
@@ -358,7 +400,7 @@ function Header() {
             </div>
 
             <div
-              className="icon-wrapper"
+              className="icon-wrapper header-cart-trigger"
               onClick={() => setIsCartOpen(true)}
               title="View Shopping Cart"
             >
@@ -434,190 +476,253 @@ function Header() {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle Mobile Navigation Menu"
             >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
             </button>
           </div>
         </div>
+      </header>
 
-        {/* Mobile Backdrop & Drawer */}
-        {mobileMenuOpen && (
-          <>
-            <div
-              className="mobile-nav-backdrop"
-              onClick={() => setMobileMenuOpen(false)}
-            />
+      {/* Mobile Backdrop & Modern Slide-In Drawer (outside header to avoid stacking context constraint) */}
+      {mobileMenuOpen && (
+        <>
+          <div
+            className="mobile-nav-backdrop"
+            onClick={() => setMobileMenuOpen(false)}
+          />
             <div className="mobile-nav-panel">
-              {/* User Account Brief Card inside Mobile Drawer */}
-              {isLoggedIn && (
-                <div className="mobile-user-card">
-                  <div className="avatar-circle" style={{ position: "relative" }}>
-                    {user?.name ? user.name[0].toUpperCase() : <User size={16} />}
-                    <span className="presence-dot-bubble online" title="Active Online" />
-                  </div>
-                  <div className="mobile-user-info">
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span className="info-name">{user?.name || "Member User"}</span>
-                      <span className="online-mini-chip">🟢 Online</span>
-                    </div>
-                    <span className="info-email">{user?.email || ""}</span>
-                    <span className="info-role-badge">{displayRoleName.toUpperCase()}</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Mobile Language & Settings Strip */}
-              <div className="mobile-lang-strip">
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span className="mobile-lang-title">
-                    <Globe size={15} /> {t("header.switchLang", "Language")}
-                  </span>
-                  <button
-                    type="button"
-                    className="btn-quick-settings"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setIsSettingsOpen(true);
-                    }}
-                    style={{ display: "inline-flex", alignItems: "center", gap: "4px", fontSize: "11px", color: "#1c7e48", fontWeight: 700, background: "none", border: "none", cursor: "pointer" }}
-                  >
-                    <Settings size={12} /> {language === "km" ? "ការកំណត់" : "Settings"}
-                  </button>
-                </div>
-                <div className="mobile-lang-btn-group">
-                  <button
-                    type="button"
-                    className={`lang-option-pill ${language === "km" ? "active" : ""}`}
-                    onClick={() => setLanguage("km")}
-                  >
-                    🇰🇭 ខ្មែរ (KM)
-                  </button>
-                  <button
-                    type="button"
-                    className={`lang-option-pill ${language === "en" ? "active" : ""}`}
-                    onClick={() => setLanguage("en")}
-                  >
-                    🇺🇸 English (EN)
-                  </button>
-                </div>
-              </div>
-
-              <div className="mobile-nav-links-list">
+              {/* Drawer Top Header with Brand & Close Button */}
+              <div className="mobile-drawer-header">
                 <div
-                  className={`mobile-nav-item ${currentPath === "/" ? "active" : ""}`}
+                  className="mobile-drawer-brand"
                   onClick={() => {
                     setMobileMenuOpen(false);
                     navigate("/");
                   }}
                 >
-                  <div className="nav-item-left">
-                    <Home size={18} />
-                    <span>{t("nav.home", "Home")}</span>
-                  </div>
-                  <ChevronRight size={16} className="arrow-dim" />
+                  <span className="home-logo-icon">
+                    <img src={logo} alt="Angkor Shopping Mall Logo" />
+                  </span>
+                  <span className="home-logo-text">
+                    <span className="brand-word-angkor">Angkor</span>{" "}
+                    <span className="brand-word-mall">Mall</span>
+                  </span>
                 </div>
-
-                <div
-                  className={`mobile-nav-item ${currentPath === "/shop" ? "active" : ""}`}
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    navigate("/shop");
-                  }}
+                <button
+                  type="button"
+                  className="mobile-drawer-close-btn"
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-label="Close menu"
                 >
-                  <div className="nav-item-left">
-                    <ShoppingBag size={18} />
-                    <span>{t("nav.shop", "Shop Catalog")}</span>
-                  </div>
-                  <ChevronRight size={16} className="arrow-dim" />
-                </div>
-
-                <div
-                  className={`mobile-nav-item ai-badge-mobile ${currentPath === "/recommendations" ? "active" : ""}`}
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    navigate("/recommendations");
-                  }}
-                >
-                  <div className="nav-item-left">
-                    <Sparkles size={18} className="text-green-icon" />
-                    <span>{t("nav.aiRecommendations", "AI Recommendations")}</span>
-                  </div>
-                  <ChevronRight size={16} className="arrow-dim" />
-                </div>
-
-                <div
-                  className={`mobile-nav-item ${currentPath === "/orders" ? "active" : ""}`}
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    navigate("/orders");
-                  }}
-                >
-                  <div className="nav-item-left">
-                    <ShoppingBag size={18} />
-                    <span>{t("nav.orders", "My Orders")}</span>
-                  </div>
-                  <ChevronRight size={16} className="arrow-dim" />
-                </div>
-
-                {/* Website Settings Item in Mobile Drawer */}
-                <div
-                  className="mobile-nav-item"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setIsSettingsOpen(true);
-                  }}
-                >
-                  <div className="nav-item-left">
-                    <Settings size={18} />
-                    <span>{language === "km" ? "ការកំណត់គេហទំព័រ (Settings)" : "Website Settings"}</span>
-                  </div>
-                  <ChevronRight size={16} className="arrow-dim" />
-                </div>
-
-                {canAccessAdmin && (
-                  <div
-                    className="mobile-nav-item admin-link"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      navigate("/admin/dashboard");
-                    }}
-                  >
-                    <div className="nav-item-left">
-                      <LayoutDashboard size={18} />
-                      <span>{t("nav.dashboard", "Admin Dashboard")}</span>
-                    </div>
-                    <ChevronRight size={16} />
-                  </div>
-                )}
+                  <X size={20} />
+                </button>
               </div>
 
-              {/* Bottom Actions inside Mobile Drawer */}
-              <div className="mobile-drawer-footer">
+              {/* Drawer Scrollable Content */}
+              <div className="mobile-drawer-scrollable">
+                {/* User Account Brief Card inside Mobile Drawer */}
                 {isLoggedIn ? (
-                  <button
-                    className="mobile-logout-btn"
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      handleLogout();
-                    }}
-                  >
-                    <LogOut size={16} /> {t("nav.logout", "Logout Account")}
-                  </button>
+                  <div className="mobile-user-card">
+                    <div className="avatar-circle" style={{ position: "relative" }}>
+                      {user?.name ? user.name[0].toUpperCase() : <User size={16} />}
+                      <span className="presence-dot-bubble online" title="Active Online" />
+                    </div>
+                    <div className="mobile-user-info">
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span className="info-name">{user?.name || "Member User"}</span>
+                        <span className="online-mini-chip">🟢 Online</span>
+                      </div>
+                      <span className="info-email">{user?.email || ""}</span>
+                      <span className="info-role-badge">{displayRoleName.toUpperCase()}</span>
+                    </div>
+                  </div>
                 ) : (
-                  <button
-                    className="mobile-login-btn"
+                  <div
+                    className="mobile-guest-card"
                     onClick={() => {
                       setMobileMenuOpen(false);
                       navigate("/auth/login");
                     }}
                   >
-                    <User size={16} /> {t("nav.login", "Sign In / Register")}
-                  </button>
+                    <div className="guest-icon-box">
+                      <User size={20} />
+                    </div>
+                    <div className="guest-info">
+                      <strong>{language === "km" ? "សូមស្វាគមន៍មកកាន់ Angkor Mall" : "Welcome to Angkor Mall"}</strong>
+                      <span>{language === "km" ? "ចុចទីនេះដើម្បីចូលគណនី / ចុះឈ្មោះ" : "Sign In / Register an account"}</span>
+                    </div>
+                  </div>
                 )}
+
+                {/* Mobile Language & Settings Strip */}
+                <div className="mobile-lang-strip">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span className="mobile-lang-title">
+                      <Globe size={15} /> {t("header.switchLang", "Language")}
+                    </span>
+                    <button
+                      type="button"
+                      className="btn-quick-settings"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        setIsSettingsOpen(true);
+                      }}
+                    >
+                      <Settings size={12} /> {language === "km" ? "ការកំណត់" : "Settings"}
+                    </button>
+                  </div>
+                  <div className="mobile-lang-btn-group">
+                    <button
+                      type="button"
+                      className={`lang-option-pill ${language === "km" ? "active" : ""}`}
+                      onClick={() => setLanguage("km")}
+                    >
+                      🇰🇭 ខ្មែរ (KM)
+                    </button>
+                    <button
+                      type="button"
+                      className={`lang-option-pill ${language === "en" ? "active" : ""}`}
+                      onClick={() => setLanguage("en")}
+                    >
+                      🇺🇸 English (EN)
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mobile-nav-links-list">
+                  <div
+                    className={`mobile-nav-item ${currentPath === "/" ? "active" : ""}`}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate("/");
+                    }}
+                  >
+                    <div className="nav-item-left">
+                      <Home size={18} />
+                      <span>{t("nav.home", "Home")}</span>
+                    </div>
+                    <ChevronRight size={16} className="arrow-dim" />
+                  </div>
+
+                  <div
+                    className={`mobile-nav-item ${currentPath === "/shop" ? "active" : ""}`}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate("/shop");
+                    }}
+                  >
+                    <div className="nav-item-left">
+                      <ShoppingBag size={18} />
+                      <span>{t("nav.shop", "Shop Catalog")}</span>
+                    </div>
+                    <ChevronRight size={16} className="arrow-dim" />
+                  </div>
+
+                  <div
+                    className={`mobile-nav-item ai-badge-mobile ${currentPath === "/recommendations" ? "active" : ""}`}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate("/recommendations");
+                    }}
+                  >
+                    <div className="nav-item-left">
+                      <Sparkles size={18} className="text-green-icon" />
+                      <span>{t("nav.aiRecommendations", "AI Recommendations")}</span>
+                    </div>
+                    <ChevronRight size={16} className="arrow-dim" />
+                  </div>
+
+                  <div
+                    className={`mobile-nav-item ${currentPath === "/orders" ? "active" : ""}`}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate("/orders");
+                    }}
+                  >
+                    <div className="nav-item-left">
+                      <Grid size={18} />
+                      <span>{t("nav.orders", "My Orders")}</span>
+                    </div>
+                    <ChevronRight size={16} className="arrow-dim" />
+                  </div>
+
+                  <div
+                    className={`mobile-nav-item ${currentPath === "/wishlist" ? "active" : ""}`}
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate("/wishlist");
+                    }}
+                  >
+                    <div className="nav-item-left">
+                      <Heart size={18} />
+                      <span>{t("nav.wishlist", "My Wishlist")}</span>
+                    </div>
+                    {wishlistCount > 0 ? (
+                      <span className="badge-active-pill">{wishlistCount}</span>
+                    ) : (
+                      <ChevronRight size={16} className="arrow-dim" />
+                    )}
+                  </div>
+
+                  {/* Website Settings Item in Mobile Drawer */}
+                  <div
+                    className="mobile-nav-item"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setIsSettingsOpen(true);
+                    }}
+                  >
+                    <div className="nav-item-left">
+                      <Settings size={18} />
+                      <span>{language === "km" ? "ការកំណត់គេហទំព័រ (Settings)" : "Website Settings"}</span>
+                    </div>
+                    <ChevronRight size={16} className="arrow-dim" />
+                  </div>
+
+                  {canAccessAdmin && (
+                    <div
+                      className="mobile-nav-item admin-link"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        navigate("/admin/dashboard");
+                      }}
+                    >
+                      <div className="nav-item-left">
+                        <LayoutDashboard size={18} />
+                        <span>{t("nav.dashboard", "Admin Dashboard")}</span>
+                      </div>
+                      <ChevronRight size={16} />
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom Actions inside Mobile Drawer */}
+                <div className="mobile-drawer-footer">
+                  {isLoggedIn ? (
+                    <button
+                      className="mobile-logout-btn"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        handleLogout();
+                      }}
+                    >
+                      <LogOut size={16} /> {t("nav.logout", "Logout Account")}
+                    </button>
+                  ) : (
+                    <button
+                      className="mobile-login-btn"
+                      onClick={() => {
+                        setMobileMenuOpen(false);
+                        navigate("/auth/login");
+                      }}
+                    >
+                      <User size={16} /> {t("nav.login", "Sign In / Register")}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </>
         )}
-      </header>
 
       {/* Render shared Cart slide-out Drawer */}
       <CartDrawer isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />

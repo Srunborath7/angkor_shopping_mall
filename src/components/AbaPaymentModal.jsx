@@ -10,7 +10,12 @@ import {
   Clock,
   Sparkles,
   ShieldCheck,
-  RefreshCw
+  RefreshCw,
+  CreditCard,
+  QrCode,
+  ExternalLink,
+  AlertCircle,
+  Zap
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import toast from "react-hot-toast";
@@ -20,6 +25,75 @@ import {
   simulateAbaPayApi
 } from "../services/abaPaymentService";
 import "./AbaPaymentModal.css";
+
+// Official ABA PayWay Sandbox Test Cards from Developer Suite
+// https://developer.payway.com.kh/resources-3305682f0
+export const ABA_TEST_CARDS = [
+  {
+    id: "mc-success",
+    brand: "MasterCard",
+    type: "MasterCard",
+    cardNumber: "5156 8399 3770 6777",
+    rawNumber: "5156839937706777",
+    exp: "01/30",
+    cvv: "993",
+    status: "Success",
+    threeDs: "No",
+    threeDsDesc: "Direct Instant Approval (No 3DS)",
+    bgGradient: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+    accentColor: "#f59e0b",
+    isApproved: true,
+    note: "Recommended for instant test approval. Enrolled in no 3DS."
+  },
+  {
+    id: "visa-success",
+    brand: "Visa Card",
+    type: "Visa Card",
+    cardNumber: "4286 0900 0000 0206",
+    rawNumber: "4286090000000206",
+    exp: "04/30",
+    cvv: "777",
+    status: "Success",
+    threeDs: "Yes",
+    threeDsDesc: "3DS Enrolled (Requires OTP)",
+    bgGradient: "linear-gradient(135deg, #0369a1 0%, #0c4a6e 100%)",
+    accentColor: "#38bdf8",
+    isApproved: true,
+    note: "Official test card for 3D Secure verified checkout."
+  },
+  {
+    id: "mc-declined",
+    brand: "MasterCard",
+    type: "MasterCard",
+    cardNumber: "5156 8302 7256 1029",
+    rawNumber: "5156830272561029",
+    exp: "04/30",
+    cvv: "777",
+    status: "Declined",
+    threeDs: "Yes",
+    threeDsDesc: "Declined (3DS Authentication)",
+    bgGradient: "linear-gradient(135deg, #881337 0%, #4c0519 100%)",
+    accentColor: "#f43f5e",
+    isApproved: false,
+    note: "Simulates card declined during 3DS security check."
+  },
+  {
+    id: "visa-declined",
+    brand: "Visa Card",
+    type: "Visa Card",
+    cardNumber: "4156 8399 3770 6777",
+    rawNumber: "4156839937706777",
+    exp: "01/30",
+    cvv: "993",
+    status: "Declined",
+    threeDs: "No",
+    threeDsDesc: "Declined by Issuer (No 3DS)",
+    bgGradient: "linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%)",
+    accentColor: "#ef4444",
+    isApproved: false,
+    note: "Simulates immediate rejection by card issuing bank."
+  }
+];
 
 // Official Bakong KHQR Red Octagonal / Star Emblem in pure vector data URI
 const BAKONG_EMBLEM_DATA_URI =
@@ -53,6 +127,14 @@ export default function AbaPaymentModal({
   const [paidTxn, setPaidTxn] = useState(null);
   const [isSimulating, setIsSimulating] = useState(false);
   const [isExpired, setIsExpired] = useState(false);
+
+  // Tab state: "khqr" or "cards"
+  const [activeTab, setActiveTab] = useState("khqr");
+  const [selectedCardId, setSelectedCardId] = useState("mc-success");
+  const [cardCopiedField, setCardCopiedField] = useState(null);
+
+  const selectedCard =
+    ABA_TEST_CARDS.find((c) => c.id === selectedCardId) || ABA_TEST_CARDS[0];
 
   const qrCanvasRef = useRef(null);
   const pollIntervalRef = useRef(null);
@@ -286,6 +368,68 @@ export default function AbaPaymentModal({
     }
   };
 
+  // Copy individual card field
+  const handleCopyCardField = (field, value) => {
+    navigator.clipboard.writeText(value);
+    setCardCopiedField(field);
+    toast.success(`${field} copied: ${value}`);
+    setTimeout(() => setCardCopiedField(null), 2000);
+  };
+
+  // Copy all details for the selected card
+  const handleCopyAllCard = (card) => {
+    const text = `Card Type: ${card.type}\nCard Number: ${card.cardNumber}\nExpiry: ${card.exp}\nCVV: ${card.cvv}\n3DS Enrolled: ${card.threeDs}\nExpected Status: ${card.status}`;
+    navigator.clipboard.writeText(text);
+    toast.success(`${card.brand} test credentials copied!`);
+  };
+
+  // Test Pay with this Card (Approved vs Declined simulation)
+  const handlePayWithTestCard = async (card) => {
+    if (!card.isApproved) {
+      toast.error(
+        `❌ Card Declined: ${card.brand} rejected by Sandbox Issuer (Error 51: Insufficient test funds or 3DS authentication blocked)`,
+        { duration: 5000, icon: "⚠️" }
+      );
+      return;
+    }
+
+    setIsSimulating(true);
+    try {
+      const res = await simulateAbaPayApi({
+        tran_id: qrData?.tranId,
+        md5: qrData?.md5,
+        orderId: orderId,
+        payment_option: "cards",
+        card_type: card.brand,
+        card_number: card.rawNumber
+      });
+
+      const result = res?.data?.data || res?.data || res;
+      setIsPaid(true);
+      setPaidTxn({
+        ...result,
+        paymentMethod: `${card.brand} (PayWay Sandbox Card)`
+      });
+
+      confetti({
+        particleCount: 100,
+        spread: 80,
+        origin: { y: 0.6 }
+      });
+
+      toast.success(`💳 Payment Approved with Sandbox ${card.brand}!`);
+      if (onSuccess) {
+        setTimeout(() => {
+          onSuccess(result?.orderId || orderId);
+        }, 2500);
+      }
+    } catch (err) {
+      toast.error(err.message || "Card payment simulation failed");
+    } finally {
+      setIsSimulating(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   const displayAmount =
@@ -308,6 +452,29 @@ export default function AbaPaymentModal({
           <X size={18} />
         </button>
 
+        {/* --- Top Navigation Tabs: KHQR vs Sandbox Test Cards --- */}
+        {!isPaid && !isExpired && (
+          <div className="aba-modal-nav-tabs">
+            <button
+              type="button"
+              className={`aba-nav-tab ${activeTab === "khqr" ? "active" : ""}`}
+              onClick={() => setActiveTab("khqr")}
+            >
+              <QrCode size={15} />
+              <span>ABA' KHQR</span>
+            </button>
+            <button
+              type="button"
+              className={`aba-nav-tab ${activeTab === "cards" ? "active" : ""}`}
+              onClick={() => setActiveTab("cards")}
+            >
+              <CreditCard size={15} />
+              <span>Test Cards</span>
+              <span className="aba-sandbox-badge">SANDBOX</span>
+            </button>
+          </div>
+        )}
+
         {/* --- SUCCESS VIEW --- */}
         {isPaid ? (
           <div className="aba-success-view">
@@ -326,7 +493,7 @@ export default function AbaPaymentModal({
               </div>
               <div className="aba-receipt-row">
                 <span>Payment Method:</span>
-                <strong>ABA Bank KHQR (Bakong)</strong>
+                <strong>{paidTxn?.paymentMethod || "ABA Bank KHQR (Bakong)"}</strong>
               </div>
               <div className="aba-receipt-row">
                 <span>Account Name:</span>
@@ -397,6 +564,215 @@ export default function AbaPaymentModal({
               >
                 Close
               </button>
+            </div>
+          </div>
+        ) : activeTab === "cards" ? (
+          /* --- SANDBOX TEST CARDS VIEW --- */
+          <div className="aba-test-cards-body">
+            {/* Top Info Banner with Developer Suite Link */}
+            <div className="aba-test-cards-banner">
+              <div className="aba-test-cards-banner-title">
+                <ShieldCheck size={16} />
+                <span>ABA PayWay Sandbox Cards</span>
+              </div>
+              <a
+                href="https://developer.payway.com.kh/resources-3305682f0"
+                target="_blank"
+                rel="noreferrer"
+                className="aba-test-cards-banner-link"
+                title="View in PayWay Developer Suite"
+              >
+                <span>Developer Docs</span>
+                <ExternalLink size={12} />
+              </a>
+            </div>
+
+            {/* 4 Card Selector Buttons */}
+            <div className="aba-cards-chips-row">
+              {ABA_TEST_CARDS.map((card) => (
+                <button
+                  key={card.id}
+                  type="button"
+                  className={`aba-card-chip-btn ${selectedCardId === card.id ? "active" : ""}`}
+                  onClick={() => setSelectedCardId(card.id)}
+                >
+                  <div className="aba-card-chip-header">
+                    <span className="aba-card-chip-name">{card.brand}</span>
+                    <span className={`aba-card-chip-pill ${card.isApproved ? "success" : "declined"}`}>
+                      {card.status}
+                    </span>
+                  </div>
+                  <span className="aba-card-chip-sub">
+                    {card.threeDs === "Yes" ? "3DS Enrolled" : "No 3DS"} • {card.cardNumber.slice(-4)}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Realistic Virtual Credit Card Graphic */}
+            <div className="aba-virtual-card-wrapper">
+              <div
+                className="aba-virtual-card"
+                style={{ background: selectedCard.bgGradient }}
+              >
+                <div className="aba-card-top-row">
+                  <div className="aba-card-chip-graphic" />
+                  <div className="aba-card-brand-badge">
+                    {selectedCard.brand === "MasterCard" ? (
+                      <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <svg width="32" height="20" viewBox="0 0 32 20" fill="none">
+                          <circle cx="10" cy="10" r="10" fill="#EB001B" />
+                          <circle cx="22" cy="10" r="10" fill="#F79E1B" fillOpacity="0.85" />
+                        </svg>
+                        <span style={{ fontSize: "12px", fontWeight: 800 }}>Mastercard</span>
+                      </span>
+                    ) : (
+                      <span style={{ fontStyle: "italic", fontWeight: 900, letterSpacing: "1px", fontSize: "16px" }}>
+                        VISA
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="aba-card-number-wrap">
+                  <span className="aba-card-number-text">{selectedCard.cardNumber}</span>
+                  <button
+                    type="button"
+                    className="aba-card-copy-icon-btn"
+                    onClick={() => handleCopyCardField("Card Number", selectedCard.rawNumber)}
+                    title="Copy Card Number"
+                  >
+                    {cardCopiedField === "Card Number" ? <Check size={14} color="#4ade80" /> : <Copy size={14} />}
+                  </button>
+                </div>
+
+                <div className="aba-card-meta-row">
+                  <div className="aba-card-meta-col">
+                    <span className="aba-card-meta-label">Cardholder</span>
+                    <span className="aba-card-meta-value">VALUED CUSTOMER</span>
+                  </div>
+
+                  <div className="aba-card-meta-col">
+                    <span className="aba-card-meta-label">Expires</span>
+                    <span className="aba-card-meta-value">
+                      {selectedCard.exp}
+                      <button
+                        type="button"
+                        className="aba-card-copy-mini"
+                        onClick={() => handleCopyCardField("Expiry", selectedCard.exp)}
+                        title="Copy Expiry"
+                      >
+                        {cardCopiedField === "Expiry" ? <Check size={11} color="#4ade80" /> : <Copy size={11} />}
+                      </button>
+                    </span>
+                  </div>
+
+                  <div className="aba-card-meta-col">
+                    <span className="aba-card-meta-label">CVV</span>
+                    <span className="aba-card-meta-value">
+                      {selectedCard.cvv}
+                      <button
+                        type="button"
+                        className="aba-card-copy-mini"
+                        onClick={() => handleCopyCardField("CVV", selectedCard.cvv)}
+                        title="Copy CVV"
+                      >
+                        {cardCopiedField === "CVV" ? <Check size={11} color="#4ade80" /> : <Copy size={11} />}
+                      </button>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Note regarding selected card behavior */}
+            <div
+              style={{
+                fontSize: "12px",
+                color: selectedCard.isApproved ? "#15803d" : "#b91c1c",
+                background: selectedCard.isApproved ? "#f0fdf4" : "#fef2f2",
+                padding: "9px 12px",
+                borderRadius: "8px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                border: `1px solid ${selectedCard.isApproved ? "#bbf7d0" : "#fecaca"}`
+              }}
+            >
+              {selectedCard.isApproved ? <CheckCircle2 size={15} /> : <AlertCircle size={15} />}
+              <span>
+                <strong>{selectedCard.status} ({selectedCard.threeDsDesc}):</strong> {selectedCard.note}
+              </span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="aba-card-actions-group">
+              <button
+                type="button"
+                className={`aba-card-action-btn ${selectedCard.isApproved ? "primary" : "danger"}`}
+                onClick={() => handlePayWithTestCard(selectedCard)}
+                disabled={isSimulating}
+              >
+                {isSimulating ? (
+                  <>
+                    <RefreshCw size={15} className="animate-spin" />
+                    <span>Processing Sandbox Card...</span>
+                  </>
+                ) : selectedCard.isApproved ? (
+                  <>
+                    <Zap size={15} />
+                    <span>Test Pay with this Card ({displayAmount})</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle size={15} />
+                    <span>Simulate Card Decline Response</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                className="aba-card-action-btn secondary"
+                onClick={() => handleCopyAllCard(selectedCard)}
+              >
+                <Copy size={14} />
+                <span>Copy Full Card Details</span>
+              </button>
+            </div>
+
+            {/* Quick Reference Table for all 4 cards */}
+            <div className="aba-cards-table-card">
+              <div className="aba-cards-table-head">
+                <span>All Sandbox Test Cards (PayWay)</span>
+                <span>Exp / CVV</span>
+              </div>
+              {ABA_TEST_CARDS.map((c) => (
+                <div key={c.id} className="aba-cards-table-item">
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span className={`aba-card-chip-pill ${c.isApproved ? "success" : "declined"}`}>
+                        {c.status}
+                      </span>
+                      <strong className="aba-table-card-num">{c.cardNumber}</strong>
+                    </div>
+                    <span className="aba-table-card-meta">{c.brand} ({c.threeDs === "Yes" ? "3DS" : "No 3DS"})</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#334155" }}>
+                      {c.exp} • {c.cvv}
+                    </span>
+                    <button
+                      type="button"
+                      className="aba-card-copy-mini"
+                      onClick={() => handleCopyCardField("Card Number", c.rawNumber)}
+                      title="Copy Card Number"
+                    >
+                      {cardCopiedField === "Card Number" ? <Check size={12} color="#16a34a" /> : <Copy size={12} />}
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         ) : (
@@ -542,6 +918,17 @@ export default function AbaPaymentModal({
               <span>{isSimulating ? "Simulating..." : "⚡ Fast Demo: Simulate KHQR Scan"}</span>
             </button>
 
+            {/* Switch to Test Cards Hint Button */}
+            <button
+              type="button"
+              className="aba-test-cards-hint-btn"
+              onClick={() => setActiveTab("cards")}
+              title="Switch to ABA PayWay Sandbox Test Cards"
+            >
+              <CreditCard size={14} />
+              <span>Need test cards? View ABA PayWay Sandbox Cards &rarr;</span>
+            </button>
+
             {/* Official ABA Bank Footer Strip */}
             <div className="aba-standee-footer">
               <div className="aba-footer-left">
@@ -571,3 +958,4 @@ export default function AbaPaymentModal({
     </div>
   );
 }
+

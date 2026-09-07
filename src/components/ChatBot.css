@@ -2185,13 +2185,13 @@ body.dark-theme .ticket-card-time,
 /* Mobile Screen Floating FAB Adjustments to Avoid Bottom Nav Overlap */
 @media (max-width: 1024px) {
   .chatbot-trigger-container {
-    bottom: 84px !important;
-    right: 14px !important;
+    bottom: 90px !important;
+    right: 16px !important;
   }
 
   .chatbot-fab-btn {
-    width: 52px !important;
-    height: 52px !important;
+    width: 50px !important;
+    height: 50px !important;
   }
 
   .chatbot-greeting-callout {

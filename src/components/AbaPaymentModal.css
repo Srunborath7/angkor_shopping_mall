@@ -633,3 +633,436 @@
   color: #64748b;
   margin: 0 0 20px 0;
 }
+
+/* ==========================================================================
+   TEST CARDS & NAVIGATION TABS STYLING (ABA PAYWAY SANDBOX)
+   ========================================================================== */
+
+.aba-modal-nav-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 18px 0;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.aba-nav-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 8px 8px 0 0;
+}
+
+.aba-nav-tab:hover {
+  color: #00294B;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.aba-nav-tab.active {
+  color: #00294B;
+  background: #ffffff;
+  border-bottom-color: #ED1C24;
+  box-shadow: 0 -2px 6px rgba(0, 41, 75, 0.04);
+}
+
+.aba-sandbox-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  background: #0284c7;
+  color: #ffffff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* Test Cards Body */
+.aba-test-cards-body {
+  padding: 18px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* Banner */
+.aba-test-cards-banner {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(0, 41, 75, 0.05) 100%);
+  border: 1px solid rgba(2, 132, 199, 0.2);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.aba-test-cards-banner-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0369a1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aba-test-cards-banner-link {
+  font-size: 11px;
+  color: #0284c7;
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: color 0.15s ease;
+}
+
+.aba-test-cards-banner-link:hover {
+  color: #0369a1;
+  text-decoration: underline;
+}
+
+/* Card Selection Chips Row */
+.aba-cards-chips-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.aba-card-chip-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 8px 10px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.aba-card-chip-btn:hover {
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.aba-card-chip-btn.active {
+  border-color: #00294B;
+  background: #f8fafc;
+  box-shadow: 0 4px 12px rgba(0, 41, 75, 0.08);
+}
+
+.aba-card-chip-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.aba-card-chip-name {
+  font-size: 12px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.aba-card-chip-pill {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.aba-card-chip-pill.success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.aba-card-chip-pill.declined {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.aba-card-chip-sub {
+  font-size: 10px;
+  color: #64748b;
+}
+
+/* Realistic Virtual Credit Card Component */
+.aba-virtual-card-wrapper {
+  perspective: 1000px;
+}
+
+.aba-virtual-card {
+  border-radius: 18px;
+  padding: 20px 22px;
+  color: #ffffff;
+  box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.aba-virtual-card::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.aba-card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.aba-card-chip-graphic {
+  width: 38px;
+  height: 28px;
+  background: linear-gradient(135deg, #ffd700 0%, #b8860b 100%);
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.aba-card-chip-graphic::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  border-radius: 3px;
+}
+
+.aba-card-brand-badge {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.aba-card-number-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.aba-card-number-text {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.aba-card-copy-icon-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #ffffff;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.aba-card-copy-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.aba-card-meta-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.aba-card-meta-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.aba-card-meta-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  opacity: 0.75;
+  margin-bottom: 2px;
+}
+
+.aba-card-meta-value {
+  font-size: 12px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.aba-card-copy-mini {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 1px;
+  opacity: 0.8;
+  display: inline-flex;
+}
+
+.aba-card-copy-mini:hover {
+  opacity: 1;
+}
+
+/* Action Buttons for Test Card */
+.aba-card-actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.aba-card-action-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.aba-card-action-btn.primary {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(2, 132, 199, 0.3);
+}
+
+.aba-card-action-btn.primary:hover {
+  background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+  transform: translateY(-1px);
+}
+
+.aba-card-action-btn.danger {
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+  color: #ffffff;
+}
+
+.aba-card-action-btn.danger:hover {
+  background: #9f1239;
+}
+
+.aba-card-action-btn.secondary {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+.aba-card-action-btn.secondary:hover {
+  background: #e2e8f0;
+}
+
+/* Reference Table of All 4 Test Cards */
+.aba-cards-table-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.aba-cards-table-head {
+  background: #f8fafc;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.aba-cards-table-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 11px;
+  transition: background 0.15s ease;
+}
+
+.aba-cards-table-item:last-child {
+  border-bottom: none;
+}
+
+.aba-cards-table-item:hover {
+  background: #f8fafc;
+}
+
+.aba-table-card-num {
+  font-family: monospace;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.aba-table-card-meta {
+  color: #64748b;
+  font-size: 10px;
+}
+
+/* Hint button in Standee mode */
+.aba-test-cards-hint-btn {
+  margin-top: 10px;
+  background: rgba(0, 41, 75, 0.05);
+  border: 1px dashed rgba(0, 41, 75, 0.25);
+  border-radius: 10px;
+  padding: 8px 12px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #00294B;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.aba-test-cards-hint-btn:hover {
+  background: rgba(0, 41, 75, 0.1);
+  border-color: #00294B;
+}
