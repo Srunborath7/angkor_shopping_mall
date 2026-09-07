@@ -177,7 +177,7 @@ function Dashboard() {
     })}`;
   }, [currencyMode]);
 
-  // 1. Filter Orders based on selected Time Filter
+  // 1. Filter Orders based on selected Time Filter (100% dynamic)
   const filteredTimeOrders = useMemo(() => {
     if (!rawOrders || rawOrders.length === 0) return [];
     const now = new Date();
@@ -208,9 +208,43 @@ function Dashboard() {
     });
   }, [rawOrders, timeFilter]);
 
-  // 2. Computed Dynamic Metrics
+  // Previous Period Orders for dynamic comparison (e.g. today vs yesterday, this month vs last month)
+  const previousPeriodOrders = useMemo(() => {
+    if (!rawOrders || rawOrders.length === 0) return [];
+    const now = new Date();
+
+    return rawOrders.filter((ord) => {
+      const orderDate = new Date(ord.created_at || ord.createdAt || ord.date);
+      if (isNaN(orderDate.getTime())) return false;
+
+      if (timeFilter === "today") {
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        return (
+          orderDate.getDate() === yesterday.getDate() &&
+          orderDate.getMonth() === yesterday.getMonth() &&
+          orderDate.getFullYear() === yesterday.getFullYear()
+        );
+      } else if (timeFilter === "this_week") {
+        const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        return orderDate >= fourteenDaysAgo && orderDate < sevenDaysAgo;
+      } else if (timeFilter === "this_month") {
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        return (
+          orderDate.getMonth() === lastMonth.getMonth() &&
+          orderDate.getFullYear() === lastMonth.getFullYear()
+        );
+      } else if (timeFilter === "this_year") {
+        return orderDate.getFullYear() === (now.getFullYear() - 1);
+      }
+      return false;
+    });
+  }, [rawOrders, timeFilter]);
+
+  // 2. Computed Dynamic Metrics (100% real, no static mock numbers)
   const metrics = useMemo(() => {
-    const ordersToUse = filteredTimeOrders.length > 0 ? filteredTimeOrders : rawOrders;
+    const ordersToUse = filteredTimeOrders;
     
     // Total Revenue
     let revSum = 0;
@@ -239,25 +273,116 @@ function Dashboard() {
     });
 
     const totalOrdersCount = ordersToUse.length;
-    const avgOrderVal = totalOrdersCount > 0 ? revSum / totalOrdersCount : 0;
-    const totalCustCount = rawCustomers.length > 0 ? rawCustomers.length : Math.max(ordersToUse.length, 1);
+    const avgOrderVal = totalOrdersCount > 0 ? (revSum / totalOrdersCount) : 0;
+    const totalCustCount = rawCustomers.length;
+
+    // Compare with previous period
+    let prevRevSum = 0;
+    previousPeriodOrders.forEach((ord) => {
+      prevRevSum += Number(ord.total_amount || ord.total || ord.price || 0);
+    });
+    const prevOrdersCount = previousPeriodOrders.length;
+
+    let revenueGrowth = 0;
+    if (prevRevSum > 0) {
+      revenueGrowth = Number((((revSum - prevRevSum) / prevRevSum) * 100).toFixed(1));
+    } else if (revSum > 0) {
+      revenueGrowth = 100;
+    }
+
+    let ordersGrowth = 0;
+    if (prevOrdersCount > 0) {
+      ordersGrowth = Number((((totalOrdersCount - prevOrdersCount) / prevOrdersCount) * 100).toFixed(1));
+    } else if (totalOrdersCount > 0) {
+      ordersGrowth = 100;
+    }
+
+    const completionRate = totalOrdersCount > 0 ? Math.round((completedCount / totalOrdersCount) * 100) : 0;
 
     return {
-      totalRevenue: revSum > 0 ? revSum : 148920,
-      totalOrders: totalOrdersCount > 0 ? totalOrdersCount : 2840,
+      totalRevenue: revSum,
+      totalOrders: totalOrdersCount,
       totalCustomers: totalCustCount,
-      totalProducts: rawProducts.length > 0 ? rawProducts.length : 580,
-      lowStockCount: lowCount > 0 ? lowCount : 12,
+      totalProducts: rawProducts.length,
+      lowStockCount: lowCount,
       completedOrders: completedCount,
       pendingOrders: pendingCount,
-      avgOrderValue: avgOrderVal > 0 ? avgOrderVal : 52.43,
-      conversionRate: 3.42,
-      inventoryValuation: totalStockValuation > 0 ? totalStockValuation : 248000
+      avgOrderValue: avgOrderVal,
+      completionRate,
+      conversionRate: completionRate,
+      inventoryValuation: totalStockValuation,
+      revenueGrowth,
+      ordersGrowth,
+      prevRevSum,
+      prevOrdersCount
     };
-  }, [filteredTimeOrders, rawOrders, rawProducts, rawCustomers]);
+  }, [filteredTimeOrders, rawProducts, rawCustomers, previousPeriodOrders]);
 
-  // 3. Dynamic Monthly Trend Data (Jan - Dec)
+  // 3. Dynamic Timeline Trend Data (Jan - Dec or by Day/Hour based on filter)
   const trendData = useMemo(() => {
+    const now = new Date();
+
+    if (timeFilter === "today") {
+      const slots = [
+        { name: "8 AM", start: 8, end: 9, revenue: 0, profit: 0, orders: 0, target: 0 },
+        { name: "10 AM", start: 10, end: 11, revenue: 0, profit: 0, orders: 0, target: 0 },
+        { name: "12 PM", start: 12, end: 13, revenue: 0, profit: 0, orders: 0, target: 0 },
+        { name: "2 PM", start: 14, end: 15, revenue: 0, profit: 0, orders: 0, target: 0 },
+        { name: "4 PM", start: 16, end: 17, revenue: 0, profit: 0, orders: 0, target: 0 },
+        { name: "6 PM", start: 18, end: 19, revenue: 0, profit: 0, orders: 0, target: 0 },
+        { name: "8 PM", start: 20, end: 21, revenue: 0, profit: 0, orders: 0, target: 0 },
+        { name: "10 PM", start: 22, end: 23, revenue: 0, profit: 0, orders: 0, target: 0 }
+      ];
+
+      filteredTimeOrders.forEach((ord) => {
+        const d = new Date(ord.created_at || ord.createdAt || ord.date);
+        if (!isNaN(d.getTime())) {
+          const h = d.getHours();
+          const slot = slots.find((s) => h >= s.start && h <= s.end);
+          if (slot) {
+            const amt = Number(ord.total_amount || ord.total || 0);
+            slot.revenue += amt;
+            slot.orders += 1;
+            slot.profit = Math.round(slot.revenue * 0.7);
+          }
+        }
+      });
+      return slots;
+    }
+
+    if (timeFilter === "this_week") {
+      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const result = [];
+      for (let i = 6; i >= 0; i--) {
+        const targetDate = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const dayName = days[targetDate.getDay()];
+        const dateKey = targetDate.toISOString().slice(5, 10);
+        result.push({
+          name: `${dayName} ${dateKey}`,
+          dateMatch: targetDate.toDateString(),
+          revenue: 0,
+          profit: 0,
+          orders: 0,
+          target: 0
+        });
+      }
+
+      filteredTimeOrders.forEach((ord) => {
+        const d = new Date(ord.created_at || ord.createdAt || ord.date);
+        if (!isNaN(d.getTime())) {
+          const match = result.find(r => r.dateMatch === d.toDateString());
+          if (match) {
+            const amt = Number(ord.total_amount || ord.total || 0);
+            match.revenue += amt;
+            match.orders += 1;
+            match.profit = Math.round(match.revenue * 0.7);
+          }
+        }
+      });
+      return result;
+    }
+
+    // Default: monthly breakdown (Jan - Dec)
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const monthStats = monthNames.map((name) => ({
       name,
@@ -272,262 +397,221 @@ function Dashboard() {
         const d = new Date(ord.created_at || ord.createdAt || ord.date);
         if (!isNaN(d.getTime())) {
           const mIdx = d.getMonth();
-          const amount = Number(ord.total_amount || ord.total || 0);
-          monthStats[mIdx].revenue += amount;
-          monthStats[mIdx].orders += 1;
+          if (mIdx >= 0 && mIdx < 12) {
+            const amount = Number(ord.total_amount || ord.total || 0);
+            monthStats[mIdx].revenue += amount;
+            monthStats[mIdx].orders += 1;
+          }
         }
       });
 
-      // Calculate profit & targets
       monthStats.forEach((m) => {
         m.profit = Math.round(m.revenue * 0.70);
         m.target = Math.round(m.revenue * 1.15);
       });
-
-      // If all revenue is 0 (new install), provide realistic baseline
-      const totalRev = monthStats.reduce((acc, cur) => acc + cur.revenue, 0);
-      if (totalRev > 0) {
-        return monthStats.filter((_, idx) => idx <= new Date().getMonth());
-      }
     }
 
-    // Default 8-month baseline if no order history
-    return [
-      { name: "Jan", revenue: 18500, profit: 12950, orders: 340, target: 16000 },
-      { name: "Feb", revenue: 24200, profit: 16940, orders: 420, target: 20000 },
-      { name: "Mar", revenue: 21000, profit: 14700, orders: 390, target: 22000 },
-      { name: "Apr", revenue: 32800, profit: 22960, orders: 580, target: 25000 },
-      { name: "May", revenue: 28400, profit: 19880, orders: 510, target: 27000 },
-      { name: "Jun", revenue: 30100, profit: 21070, orders: 540, target: 28000 },
-      { name: "Jul", revenue: 36500, profit: 25550, orders: 630, target: 30000 },
-      { name: "Aug", revenue: 41200, profit: 28840, orders: 710, target: 32000 }
-    ];
-  }, [rawOrders]);
+    const curMonthIdx = now.getMonth();
+    return monthStats.filter((_, idx) => timeFilter === "this_year" || timeFilter === "all" ? true : idx <= curMonthIdx);
+  }, [filteredTimeOrders, rawOrders, timeFilter]);
 
   // 4. Dynamic Category Breakdown (Donut Chart)
   const categoryData = useMemo(() => {
-    if (rawProducts && rawProducts.length > 0) {
-      const catMap = {};
-      rawProducts.forEach((p) => {
-        const catName = p.category?.name || p.category || (typeof p.category_id === "string" ? p.category_id : "General");
-        const price = Number(p.price || 0);
-        const stock = Number(p.stock_quantity ?? p.stock ?? 1);
-        if (!catMap[catName]) {
-          catMap[catName] = { count: 0, amount: 0 };
-        }
-        catMap[catName].count += 1;
-        catMap[catName].amount += price * stock;
-      });
+    if (!rawProducts || rawProducts.length === 0) return [];
 
-      const totalItems = rawProducts.length;
-      const sorted = Object.entries(catMap)
-        .sort((a, b) => b[1].amount - a[1].amount)
-        .slice(0, 6)
-        .map(([name, stat], idx) => ({
-          name,
-          value: Math.max(Math.round((stat.count / totalItems) * 100), 1),
-          amount: stat.amount,
-          color: CATEGORY_CHART_COLORS[idx % CATEGORY_CHART_COLORS.length]
-        }));
+    const catMap = {};
+    rawProducts.forEach((p) => {
+      let catName = p.category?.name || p.category;
+      if (!catName && p.category_id && rawCategories.length > 0) {
+        const found = rawCategories.find(c => String(c.id) === String(p.category_id));
+        if (found?.name) catName = found.name;
+      }
+      catName = catName || "General";
 
-      if (sorted.length > 0) return sorted;
-    }
+      const price = Number(p.price || 0);
+      const stock = Number(p.stock_quantity ?? p.stock ?? 0);
+      if (!catMap[catName]) {
+        catMap[catName] = { count: 0, amount: 0 };
+      }
+      catMap[catName].count += 1;
+      catMap[catName].amount += price * stock;
+    });
 
-    return [
-      { name: "Smartphones & Tablets", value: 42, amount: 62546, color: CATEGORY_CHART_COLORS[0] },
-      { name: "Laptops & Computers", value: 24, amount: 35740, color: CATEGORY_CHART_COLORS[1] },
-      { name: "Audio & Headphones", value: 16, amount: 23827, color: CATEGORY_CHART_COLORS[2] },
-      { name: "Fashion & Bags", value: 10, amount: 14892, color: CATEGORY_CHART_COLORS[3] },
-      { name: "Watches & Wearables", value: 8, amount: 11913, color: CATEGORY_CHART_COLORS[4] }
-    ];
-  }, [rawProducts]);
+    const totalItems = rawProducts.length;
+    return Object.entries(catMap)
+      .sort((a, b) => b[1].count - a[1].count)
+      .slice(0, 6)
+      .map(([name, stat], idx) => ({
+        name,
+        value: totalItems > 0 ? Math.round((stat.count / totalItems) * 100) : 0,
+        amount: stat.amount,
+        count: stat.count,
+        color: CATEGORY_CHART_COLORS[idx % CATEGORY_CHART_COLORS.length]
+      }));
+  }, [rawProducts, rawCategories]);
 
   // 5. Dynamic Payment Method Distribution (Pie Chart)
   const paymentMethodData = useMemo(() => {
     const ordersToUse = filteredTimeOrders.length > 0 ? filteredTimeOrders : rawOrders;
-    if (ordersToUse && ordersToUse.length > 0) {
-      const methodMap = {};
-      ordersToUse.forEach((ord) => {
-        let method = "ABA KHQR";
-        if (ord.payment_intent_id) {
-          method = "ABA KHQR";
-        } else if (ord.payment_method) {
-          const raw = String(ord.payment_method).toLowerCase();
-          if (raw.includes("khqr") || raw.includes("aba")) method = "ABA KHQR";
-          else if (raw.includes("wing")) method = "Wing Bank";
-          else if (raw.includes("acleda")) method = "ACLEDA Mobile";
-          else if (raw.includes("card") || raw.includes("visa") || raw.includes("master")) method = "Credit / Debit Card";
-          else if (raw.includes("cash") || raw.includes("cod")) method = "Cash on Delivery";
-          else method = "Other Digital";
-        }
-        methodMap[method] = (methodMap[method] || 0) + 1;
-      });
+    if (!ordersToUse || ordersToUse.length === 0) return [];
 
-      const totalTxns = ordersToUse.length;
-      const sorted = Object.entries(methodMap)
-        .sort((a, b) => b[1] - a[1])
-        .map(([name, count], idx) => ({
-          name,
-          value: Math.max(Math.round((count / totalTxns) * 100), 1),
-          count,
-          color: PAYMENT_CHART_COLORS[idx % PAYMENT_CHART_COLORS.length]
-        }));
+    const methodMap = {};
+    ordersToUse.forEach((ord) => {
+      let method = "ABA KHQR";
+      const raw = String(ord.payment_method || ord.payment_intent_id || "").toLowerCase();
+      if (raw.includes("khqr") || raw.includes("aba")) method = "ABA KHQR";
+      else if (raw.includes("wing")) method = "Wing Bank";
+      else if (raw.includes("acleda")) method = "ACLEDA Mobile";
+      else if (raw.includes("card") || raw.includes("visa") || raw.includes("master")) method = "Credit / Debit Card";
+      else if (raw.includes("cash") || raw.includes("cod")) method = "Cash on Delivery";
+      else if (raw.trim()) method = ord.payment_method;
+      else method = "Cash on Delivery";
 
-      if (sorted.length > 0) return sorted;
-    }
+      methodMap[method] = (methodMap[method] || 0) + 1;
+    });
 
-    return [
-      { name: "ABA KHQR", value: 62, count: 1760, color: PAYMENT_CHART_COLORS[0] },
-      { name: "Wing Bank", value: 14, count: 398, color: PAYMENT_CHART_COLORS[1] },
-      { name: "ACLEDA Mobile", value: 12, count: 341, color: PAYMENT_CHART_COLORS[2] },
-      { name: "Credit / Debit Card", value: 8, count: 227, color: PAYMENT_CHART_COLORS[3] },
-      { name: "Cash on Delivery", value: 4, count: 114, color: PAYMENT_CHART_COLORS[4] }
-    ];
+    const totalTxns = ordersToUse.length;
+    return Object.entries(methodMap)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, count], idx) => ({
+        name,
+        value: totalTxns > 0 ? Math.round((count / totalTxns) * 100) : 0,
+        count,
+        color: PAYMENT_CHART_COLORS[idx % PAYMENT_CHART_COLORS.length]
+      }));
   }, [filteredTimeOrders, rawOrders]);
 
-  // 6. Dynamic Hourly Activity Bar Chart
+  // 6. Dynamic Hourly Activity Bar Chart (Real order velocity)
   const hourlyActivityData = useMemo(() => {
     const buckets = [
-      { hour: "8 AM", start: 8, end: 9, orders: 0, visitors: 140 },
-      { hour: "10 AM", start: 10, end: 11, orders: 0, visitors: 390 },
-      { hour: "12 PM", start: 12, end: 13, orders: 0, visitors: 580 },
-      { hour: "2 PM", start: 14, end: 15, orders: 0, visitors: 450 },
-      { hour: "4 PM", start: 16, end: 17, orders: 0, visitors: 720 },
-      { hour: "6 PM", start: 18, end: 19, orders: 0, visitors: 890 },
-      { hour: "8 PM", start: 20, end: 21, orders: 0, visitors: 780 },
-      { hour: "10 PM", start: 22, end: 23, orders: 0, visitors: 310 }
+      { hour: "8 AM", start: 8, end: 9, orders: 0 },
+      { hour: "10 AM", start: 10, end: 11, orders: 0 },
+      { hour: "12 PM", start: 12, end: 13, orders: 0 },
+      { hour: "2 PM", start: 14, end: 15, orders: 0 },
+      { hour: "4 PM", start: 16, end: 17, orders: 0 },
+      { hour: "6 PM", start: 18, end: 19, orders: 0 },
+      { hour: "8 PM", start: 20, end: 21, orders: 0 },
+      { hour: "10 PM", start: 22, end: 23, orders: 0 }
     ];
 
-    if (rawOrders && rawOrders.length > 0) {
-      rawOrders.forEach((ord) => {
+    const ordersToUse = filteredTimeOrders.length > 0 ? filteredTimeOrders : rawOrders;
+    if (ordersToUse && ordersToUse.length > 0) {
+      ordersToUse.forEach((ord) => {
         const d = new Date(ord.created_at || ord.createdAt || ord.date);
         if (!isNaN(d.getTime())) {
           const h = d.getHours();
           const bucket = buckets.find((b) => h >= b.start && h <= b.end);
           if (bucket) {
             bucket.orders += 1;
-            bucket.visitors += 5;
           }
         }
       });
-
-      const totalH = buckets.reduce((acc, b) => acc + b.orders, 0);
-      if (totalH > 0) return buckets;
     }
 
-    return [
-      { hour: "8 AM", orders: 24, visitors: 140 },
-      { hour: "10 AM", orders: 68, visitors: 390 },
-      { hour: "12 PM", orders: 95, visitors: 580 },
-      { hour: "2 PM", orders: 74, visitors: 450 },
-      { hour: "4 PM", orders: 112, visitors: 720 },
-      { hour: "6 PM", orders: 145, visitors: 890 },
-      { hour: "8 PM", orders: 128, visitors: 780 },
-      { hour: "10 PM", orders: 52, visitors: 310 }
-    ];
-  }, [rawOrders]);
+    return buckets;
+  }, [filteredTimeOrders, rawOrders]);
 
-  // 7. Dynamic Top Products Leaderboard
+  // 7. Dynamic Top Products Leaderboard (Calculated from real order items & active products)
   const topProducts = useMemo(() => {
-    if (rawProducts && rawProducts.length > 0) {
-      return rawProducts.slice(0, 5).map((p, idx) => {
-        const stock = Number(p.stock_quantity ?? p.stock ?? 15);
-        const price = Number(p.price || 0);
-        const sales = Number(p.sales_count || p.sold_count || Math.floor(40 + (p.id || idx) * 18));
-        return {
-          id: p.id || idx + 1,
-          name: p.name || `Product #${idx + 1}`,
-          category: p.category?.name || p.category || "General",
-          sales,
-          revenue: price * sales,
-          stock,
-          status: stock <= 10 ? "Low Stock" : "In Stock"
-        };
+    if (!rawProducts || rawProducts.length === 0) return [];
+
+    const salesMap = {};
+    rawOrders.forEach((ord) => {
+      const items = ord.items || [];
+      items.forEach((it) => {
+        const pId = String(it.product_id || it.product?.id || "");
+        if (pId) {
+          salesMap[pId] = (salesMap[pId] || 0) + (Number(it.quantity) || 1);
+        }
       });
-    }
+    });
 
-    return [
-      { id: 1, name: "iPhone 15 Pro Max", category: "Smartphones", sales: 342, revenue: 410400, stock: 45, status: "In Stock" },
-      { id: 2, name: "ASUS ROG Gaming Laptop", category: "Computers", sales: 215, revenue: 182750, stock: 6, status: "Low Stock" },
-      { id: 3, name: "AirPods Pro Wireless v2", category: "Audio", sales: 480, revenue: 120000, stock: 82, status: "In Stock" },
-      { id: 4, name: "Waterproof Travel Backpack", category: "Fashion", sales: 512, revenue: 20474, stock: 3, status: "Low Stock" },
-      { id: 5, name: "Garmin Smart Fitness Watch", category: "Wearables", sales: 189, revenue: 56700, stock: 24, status: "In Stock" }
-    ];
-  }, [rawProducts]);
+    const mapped = rawProducts.map((p, idx) => {
+      const stock = Number(p.stock_quantity ?? p.stock ?? 0);
+      const price = Number(p.price || 0);
+      const realSales = salesMap[String(p.id)] || Number(p.sales_count || p.sold_count || 0);
 
-  // 8. Dynamic Recent Orders Feed
+      let catName = p.category?.name || p.category;
+      if (!catName && p.category_id && rawCategories.length > 0) {
+        const found = rawCategories.find((c) => String(c.id) === String(p.category_id));
+        if (found?.name) catName = found.name;
+      }
+
+      return {
+        id: p.id || idx + 1,
+        name: p.name || `Product #${idx + 1}`,
+        category: catName || "General",
+        sales: realSales,
+        revenue: price * realSales,
+        stock,
+        status: stock <= 10 ? "Low Stock" : "In Stock"
+      };
+    });
+
+    mapped.sort((a, b) => (b.sales - a.sales) || (b.stock - a.stock));
+    return mapped.slice(0, 5);
+  }, [rawProducts, rawOrders, rawCategories]);
+
+  // 8. Dynamic Recent Orders Feed (100% real orders, no fake names)
   const recentOrders = useMemo(() => {
     const ordersToUse = filteredTimeOrders.length > 0 ? filteredTimeOrders : rawOrders;
-    if (ordersToUse && ordersToUse.length > 0) {
-      return ordersToUse.slice(0, 15).map((o, idx) => {
-        const total = Number(o.total_amount || o.total || o.price || 0);
-        const st = String(o.status || "").toLowerCase();
-        let normalizedStatus = "Pending";
-        if (st.includes("completed") || st.includes("paid") || st.includes("delivered")) {
-          normalizedStatus = "Completed";
-        } else if (st.includes("processing") || st.includes("transit") || st.includes("shipping")) {
-          normalizedStatus = "Processing";
-        }
+    if (!ordersToUse || ordersToUse.length === 0) return [];
 
-        let payMethod = "ABA KHQR";
-        if (o.payment_intent_id) {
-          payMethod = "ABA KHQR";
-        } else if (o.payment_method) {
-          payMethod = String(o.payment_method).toUpperCase();
-        }
+    return ordersToUse.slice(0, 15).map((o, idx) => {
+      const total = Number(o.total_amount || o.total || o.price || 0);
+      const st = String(o.status || "").toLowerCase();
+      let normalizedStatus = "Pending";
+      if (st.includes("completed") || st.includes("paid") || st.includes("delivered")) {
+        normalizedStatus = "Completed";
+      } else if (st.includes("processing") || st.includes("transit") || st.includes("shipping")) {
+        normalizedStatus = "Processing";
+      }
 
-        const dateStr = o.created_at || o.createdAt || o.date;
-        const formattedDate = dateStr ? new Date(dateStr).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
+      let payMethod = "ABA KHQR";
+      if (o.payment_intent_id) {
+        payMethod = "ABA KHQR";
+      } else if (o.payment_method) {
+        payMethod = String(o.payment_method).toUpperCase();
+      }
 
-        // Format clean sequential order identifier (e.g. #OR-00001 or o.order_number) instead of raw UUID
-        const seqNumber = (o.order_number && String(o.order_number).startsWith("OR-"))
-          ? `#${o.order_number}`
-          : (o.order_number && String(o.order_number).startsWith("#OR-"))
-          ? o.order_number
-          : (o.order_number && !String(o.order_number).includes("-") && !isNaN(Number(o.order_number)))
-          ? `#OR-${String(o.order_number).padStart(5, "0")}`
-          : (typeof o.id === "number" || (o.id && !String(o.id).includes("-") && String(o.id).length <= 5))
-          ? `#OR-${String(o.id).padStart(5, "0")}`
-          : `#OR-${String(idx + 1).padStart(5, "0")}`;
+      const dateStr = o.created_at || o.createdAt || o.date;
+      const formattedDate = dateStr ? new Date(dateStr).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
 
-        // Find clean product name (never show raw product ID)
-        const firstItem = o.items?.[0];
-        let prodName = firstItem?.product?.name;
-        if (!prodName && firstItem?.product_id && rawProducts?.length > 0) {
-          const match = rawProducts.find(p => String(p.id) === String(firstItem.product_id));
-          if (match?.name) prodName = match.name;
-        }
-        if (!prodName && o.product_id && rawProducts?.length > 0) {
-          const match = rawProducts.find(p => String(p.id) === String(o.product_id));
-          if (match?.name) prodName = match.name;
-        }
-        if (!prodName) {
-          prodName = o.items?.length ? `${o.items.length} Item(s)` : `Product #${idx + 1}`;
-        }
+      const seqNumber = (o.order_number && String(o.order_number).startsWith("OR-"))
+        ? `#${o.order_number}`
+        : (o.order_number && String(o.order_number).startsWith("#OR-"))
+        ? o.order_number
+        : (typeof o.id === "number" || (o.id && String(o.id).length <= 6))
+        ? `#OR-${String(o.id).padStart(5, "0")}`
+        : `#OR-${String(idx + 1).padStart(5, "0")}`;
 
-        return {
-          id: seqNumber,
-          rawId: o.id,
-          customer: o.user?.name || o.customer_name || o.contact_phone || "Registered Client",
-          email: o.user?.email || "customer@angkor.com",
-          product: prodName,
-          price: total > 0 ? total : 45.0,
-          paymentMethod: payMethod,
-          status: normalizedStatus,
-          date: formattedDate
-        };
-      });
-    }
+      const firstItem = o.items?.[0];
+      let prodName = firstItem?.product?.name;
+      if (!prodName && firstItem?.product_id && rawProducts?.length > 0) {
+        const match = rawProducts.find((p) => String(p.id) === String(firstItem.product_id));
+        if (match?.name) prodName = match.name;
+      }
+      if (!prodName && o.product_id && rawProducts?.length > 0) {
+        const match = rawProducts.find((p) => String(p.id) === String(o.product_id));
+        if (match?.name) prodName = match.name;
+      }
+      if (!prodName) {
+        prodName = o.items?.length ? `${o.items.length} Item(s)` : (o.order_number || `Order #${idx + 1}`);
+      }
 
-    return [
-      { id: "#OR-00001", customer: "Dara Srun", email: "dara@angkor.com", product: "iPhone 15 Pro Max 256GB", price: 1200.0, paymentMethod: "ABA KHQR", status: "Completed", date: "2026-08-31" },
-      { id: "#OR-00002", customer: "Sokha Chen", email: "sokha@angkor.com", product: "ASUS ROG Gaming Laptop 16GB", price: 850.0, paymentMethod: "VISA Card", status: "Pending", date: "2026-08-31" },
-      { id: "#OR-00003", customer: "John Miller", email: "john.m@angkor.com", product: "AirPods Pro Wireless v2", price: 250.0, paymentMethod: "ABA KHQR", status: "Completed", date: "2026-08-30" },
-      { id: "#OR-00004", customer: "Bopha Heng", email: "bopha@angkor.com", product: "Waterproof Travel Backpack", price: 39.99, paymentMethod: "Cash on Delivery", status: "Processing", date: "2026-08-30" },
-      { id: "#OR-00005", customer: "Vannak Touch", email: "vannak@angkor.com", product: "Active Smart Watch Pro", price: 59.99, paymentMethod: "ABA KHQR", status: "Completed", date: "2026-08-29" }
-    ];
+      return {
+        id: seqNumber,
+        rawId: o.id,
+        customer: o.user?.name || o.customer_name || o.shipping_address?.name || o.contact_phone || "Customer",
+        email: o.user?.email || o.shipping_address?.email || "—",
+        product: prodName,
+        price: total,
+        paymentMethod: payMethod,
+        status: normalizedStatus,
+        date: formattedDate
+      };
+    });
   }, [filteredTimeOrders, rawOrders, rawProducts]);
-
   // KPI Card Click Handler (Dynamic Details)
   const handleKpiCardClick = (kpiKey) => {
     setActiveKpi(kpiKey);
@@ -741,8 +825,8 @@ function Dashboard() {
               >
                 <option value="today">{isKhmer ? "ថ្ងៃនេះ" : "Today"}</option>
                 <option value="this_week">{isKhmer ? "សប្តាហ៍នេះ" : "This Week"}</option>
-                <option value="this_month">{isKhmer ? "ខែនេះ (Aug)" : "This Month"}</option>
-                <option value="this_year">{isKhmer ? "ឆ្នាំនេះ (2026)" : "This Year (2026)"}</option>
+                <option value="this_month">{isKhmer ? `ខែនេះ (${new Date().toLocaleString("en-US", { month: "short" })})` : `This Month (${new Date().toLocaleString("en-US", { month: "short" })})`}</option>
+                <option value="this_year">{isKhmer ? `ឆ្នាំនេះ (${new Date().getFullYear()})` : `This Year (${new Date().getFullYear()})`}</option>\n                <option value="all">{isKhmer ? "គ្រប់ពេលវេលា" : "All Time"}</option>
               </select>
             </div>
 
@@ -798,7 +882,13 @@ function Dashboard() {
               <h4>{isKhmer ? "ចំណូលសរុប" : "Total Revenue"}</h4>
               <h2 className="stat-value">{formatMoney(metrics.totalRevenue)}</h2>
               <div className="stat-footer-row">
-                <small>+$24,150 vs last month</small>
+                <small>
+                  {metrics.prevRevSum > 0
+                    ? `${metrics.revenueGrowth >= 0 ? "+" : ""}${formatMoney(metrics.totalRevenue - metrics.prevRevSum)} vs prev period`
+                    : metrics.totalRevenue > 0
+                    ? `${formatMoney(metrics.totalRevenue)} in this period`
+                    : (isKhmer ? "គ្មានការលក់ក្នុងអំឡុងពេលនេះ" : "No sales in this period")}
+                </small>
                 <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
               </div>
             </div>
@@ -825,7 +915,11 @@ function Dashboard() {
               <h4>{isKhmer ? "ការបញ្ជាទិញសរុប" : "Total Orders"}</h4>
               <h2 className="stat-value">{metrics.totalOrders.toLocaleString()}</h2>
               <div className="stat-footer-row">
-                <small>94% order completion rate</small>
+                <small>
+                  {metrics.totalOrders > 0
+                    ? `${metrics.completionRate}% order completion rate`
+                    : (isKhmer ? "មិនទាន់មានការបញ្ជាទិញ" : "No orders in this period")}
+                </small>
                 <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
               </div>
             </div>
@@ -852,7 +946,11 @@ function Dashboard() {
               <h4>{isKhmer ? "អតិថិជនសកម្ម" : "Active Customers"}</h4>
               <h2 className="stat-value">{metrics.totalCustomers.toLocaleString()}</h2>
               <div className="stat-footer-row">
-                <small>+240 new clients this week</small>
+                <small>
+                  {metrics.totalCustomers > 0
+                    ? `${metrics.totalCustomers} registered customer account${metrics.totalCustomers > 1 ? "s" : ""}`
+                    : (isKhmer ? "មិនទាន់មានអតិថិជនចុះឈ្មោះ" : "0 registered customer accounts")}
+                </small>
                 <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
               </div>
             </div>
@@ -879,7 +977,13 @@ function Dashboard() {
               <h4>{isKhmer ? "ទំនិញក្នុងស្តុក" : "Active Products"}</h4>
               <h2 className="stat-value">{metrics.totalProducts.toLocaleString()}</h2>
               <div className="stat-footer-row">
-                <small>{metrics.lowStockCount} items need reorder</small>
+                <small>
+                  {metrics.lowStockCount > 0
+                    ? `${metrics.lowStockCount} item(s) need restocking (≤10)`
+                    : metrics.totalProducts > 0
+                    ? `${metrics.totalProducts} active items in stock`
+                    : (isKhmer ? "មិនទាន់មានទំនិញក្នុងស្តុក" : "No catalog products yet")}
+                </small>
                 <span className="kpi-click-hint"><FaChevronRight size={11} /></span>
               </div>
             </div>
@@ -1036,52 +1140,68 @@ function Dashboard() {
               </div>
             </div>
 
-            <div className="donut-content-layout">
-              <div className="donut-chart-box">
-                <ResponsiveContainer width="100%" height={230}>
-                  <PieChart>
-                    <Pie
-                      data={categoryData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={65}
-                      outerRadius={95}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(val, name, item) => [
-                        `${val}% (${formatMoney(item.payload.amount)})`,
-                        name
-                      ]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="donut-center-label">
-                  <span className="center-value">{categoryData.length}</span>
-                  <span className="center-text">{isKhmer ? "ប្រភេទ" : "Categories"}</span>
+            {categoryData.length === 0 ? (
+              <div style={{ padding: "40px 20px", textAlign: "center", color: isDark ? "#94a3b8" : "#64748b" }}>
+                <FaLayerGroup size={32} style={{ opacity: 0.35, marginBottom: "10px" }} />
+                <p style={{ margin: 0, fontSize: "0.92rem" }}>
+                  {isKhmer ? "មិនទាន់មានទិន្នន័យប្រភេទផលិតផលទេ" : "No product categories found in catalog"}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/admin/products")}
+                  style={{ marginTop: "12px", background: "rgba(16, 185, 129, 0.12)", border: "1px solid #10b981", color: "#10b981", borderRadius: "8px", padding: "6px 14px", cursor: "pointer", fontSize: "0.85rem", fontWeight: "600" }}
+                >
+                  {isKhmer ? "បន្ថែមផលិតផល" : "+ Add Product"}
+                </button>
+              </div>
+            ) : (
+              <div className="donut-content-layout">
+                <div className="donut-chart-box">
+                  <ResponsiveContainer width="100%" height={230}>
+                    <PieChart>
+                      <Pie
+                        data={categoryData}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={65}
+                        outerRadius={95}
+                        paddingAngle={3}
+                        dataKey="value"
+                      >
+                        {categoryData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(val, name, item) => [
+                          `${val}% (${formatMoney(item.payload.amount)})`,
+                          name
+                        ]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="donut-center-label">
+                    <span className="center-value">{categoryData.length}</span>
+                    <span className="center-text">{isKhmer ? "ប្រភេទ" : "Categories"}</span>
+                  </div>
+                </div>
+
+                <div className="donut-legend-list">
+                  {categoryData.map((cat, idx) => (
+                    <div className="donut-legend-item" key={idx}>
+                      <div className="legend-label-col">
+                        <span className="color-indicator" style={{ backgroundColor: cat.color }} />
+                        <span className="cat-name">{cat.name}</span>
+                      </div>
+                      <div className="legend-value-col">
+                        <strong>{cat.value}%</strong>
+                        <small>{formatMoney(cat.amount)}</small>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              <div className="donut-legend-list">
-                {categoryData.map((cat, idx) => (
-                  <div className="donut-legend-item" key={idx}>
-                    <div className="legend-label-col">
-                      <span className="color-indicator" style={{ backgroundColor: cat.color }} />
-                      <span className="cat-name">{cat.name}</span>
-                    </div>
-                    <div className="legend-value-col">
-                      <strong>{cat.value}%</strong>
-                      <small>{formatMoney(cat.amount)}</small>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Pie Chart: Payment Method Distribution */}
@@ -1096,51 +1216,60 @@ function Dashboard() {
               </div>
             </div>
 
-            <div className="donut-content-layout">
-              <div className="donut-chart-box">
-                <ResponsiveContainer width="100%" height={230}>
-                  <PieChart>
-                    <Pie
-                      data={paymentMethodData}
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={92}
-                      paddingAngle={2}
-                      dataKey="value"
-                    >
-                      {paymentMethodData.map((entry, index) => (
-                        <Cell key={`pay-${index}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(val, name, item) => [
-                        `${val}% (${item.payload.count} orders)`,
-                        name
-                      ]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="donut-center-label">
-                  <span className="center-value">62%</span>
-                  <span className="center-text">KHQR Share</span>
+            {paymentMethodData.length === 0 ? (
+              <div style={{ padding: "40px 20px", textAlign: "center", color: isDark ? "#94a3b8" : "#64748b" }}>
+                <FaCreditCard size={32} style={{ opacity: 0.35, marginBottom: "10px" }} />
+                <p style={{ margin: 0, fontSize: "0.92rem" }}>
+                  {isKhmer ? "មិនទាន់មានប្រតិបត្តិការទូទាត់ប្រាក់ទេ" : "No payment gateway records for this period"}
+                </p>
+              </div>
+            ) : (
+              <div className="donut-content-layout">
+                <div className="donut-chart-box">
+                  <ResponsiveContainer width="100%" height={230}>
+                    <PieChart>
+                      <Pie
+                        data={paymentMethodData}
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={92}
+                        paddingAngle={2}
+                        dataKey="value"
+                      >
+                        {paymentMethodData.map((entry, index) => (
+                          <Cell key={`pay-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        formatter={(val, name, item) => [
+                          `${val}% (${item.payload.count} orders)`,
+                          name
+                        ]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="donut-center-label">
+                    <span className="center-value">{paymentMethodData[0]?.value || 0}%</span>
+                    <span className="center-text">{paymentMethodData[0]?.name || "Payment"}</span>
+                  </div>
+                </div>
+
+                <div className="donut-legend-list">
+                  {paymentMethodData.map((pay, idx) => (
+                    <div className="donut-legend-item" key={idx}>
+                      <div className="legend-label-col">
+                        <span className="color-indicator" style={{ backgroundColor: pay.color }} />
+                        <span className="cat-name">{pay.name}</span>
+                      </div>
+                      <div className="legend-value-col">
+                        <strong>{pay.value}%</strong>
+                        <small>{pay.count} txns</small>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              <div className="donut-legend-list">
-                {paymentMethodData.map((pay, idx) => (
-                  <div className="donut-legend-item" key={idx}>
-                    <div className="legend-label-col">
-                      <span className="color-indicator" style={{ backgroundColor: pay.color }} />
-                      <span className="cat-name">{pay.name}</span>
-                    </div>
-                    <div className="legend-value-col">
-                      <strong>{pay.value}%</strong>
-                      <small>{pay.count} txns</small>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Hourly Traffic Activity Bar Chart */}
@@ -1193,48 +1322,64 @@ function Dashboard() {
           </div>
 
           <div className="top-products-grid">
-            {topProducts.map((product, index) => {
-              const maxSales = 600;
-              const percent = Math.min(Math.round((product.sales / maxSales) * 100), 100);
+            {topProducts.length === 0 ? (
+              <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "40px 20px", color: isDark ? "#94a3b8" : "#64748b" }}>
+                <FaBoxes size={36} style={{ opacity: 0.35, marginBottom: "12px" }} />
+                <p style={{ margin: 0, fontSize: "0.95rem" }}>
+                  {isKhmer ? "មិនទាន់មានផលិតផលក្នុងបញ្ជីទំនិញនៅឡើយទេ" : "No products available in the catalog yet."}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => navigate("/admin/products")}
+                  style={{ marginTop: "14px", background: "rgba(16, 185, 129, 0.15)", border: "1px solid #10b981", color: "#10b981", borderRadius: "8px", padding: "7px 16px", cursor: "pointer", fontSize: "0.85rem", fontWeight: "600" }}
+                >
+                  {isKhmer ? "បន្ថែមផលិតផលដំបូង" : "+ Add First Product"}
+                </button>
+              </div>
+            ) : (
+              topProducts.map((product, index) => {
+                const maxSales = Math.max(...topProducts.map(p => p.sales), 1);
+                const percent = Math.min(Math.round((product.sales / maxSales) * 100), 100);
 
-              return (
-                <div className="top-product-card" key={product.id}>
-                  <div className="product-rank-badge">#{index + 1}</div>
-                  <div className="product-details-content">
-                    <div className="prod-header-row">
-                      <strong className="prod-name">{product.name}</strong>
-                      <span className={`stock-status-pill ${product.status === "Low Stock" ? "low" : "ok"}`}>
-                        {product.stock} {isKhmer ? "ក្នុងស្តុក" : "in stock"}
-                      </span>
-                    </div>
-
-                    <div className="prod-sub-meta">
-                      <span className="prod-category">{product.category}</span>
-                      <span className="prod-revenue">{formatMoney(product.revenue)}</span>
-                    </div>
-
-                    <div className="sales-progress-bar-wrapper">
-                      <div className="progress-info-row">
-                        <span>{product.sales} {isKhmer ? "បានលក់" : "units sold"}</span>
-                        <span>{percent}%</span>
+                return (
+                  <div className="top-product-card" key={product.id}>
+                    <div className="product-rank-badge">#{index + 1}</div>
+                    <div className="product-details-content">
+                      <div className="prod-header-row">
+                        <strong className="prod-name">{product.name}</strong>
+                        <span className={`stock-status-pill ${product.status === "Low Stock" ? "low" : "ok"}`}>
+                          {product.stock} {isKhmer ? "ក្នុងស្តុក" : "in stock"}
+                        </span>
                       </div>
-                      <div className="progress-track">
-                        <div
-                          className="progress-fill"
-                          style={{
-                            width: `${percent}%`,
-                            background:
-                              product.status === "Low Stock"
-                                ? "linear-gradient(90deg, #f59e0b, #ea580c)"
-                                : "linear-gradient(90deg, #10b981, #059669)"
-                          }}
-                        />
+
+                      <div className="prod-sub-meta">
+                        <span className="prod-category">{product.category}</span>
+                        <span className="prod-revenue">{formatMoney(product.revenue)}</span>
+                      </div>
+
+                      <div className="sales-progress-bar-wrapper">
+                        <div className="progress-info-row">
+                          <span>{product.sales} {isKhmer ? "បានលក់" : "units sold"}</span>
+                          <span>{percent}%</span>
+                        </div>
+                        <div className="progress-track">
+                          <div
+                            className="progress-fill"
+                            style={{
+                              width: `${percent}%`,
+                              background:
+                                product.status === "Low Stock"
+                                  ? "linear-gradient(90deg, #f59e0b, #ea580c)"
+                                  : "linear-gradient(90deg, #10b981, #059669)"
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 
@@ -1314,7 +1459,9 @@ function Dashboard() {
                 {filteredOrders.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="empty-table-cell">
-                      {isKhmer ? "មិនមានការបញ្ជាទិញត្រូវនឹងការស្វែងរកទេ" : "No orders matching search criteria"}
+                      {searchTerm
+                        ? (isKhmer ? "មិនមានការបញ្ជាទិញត្រូវនឹងការស្វែងរកទេ" : "No orders matching search criteria")
+                        : (isKhmer ? "មិនទាន់មានការបញ្ជាទិញក្នុងប្រព័ន្ធនៅឡើយទេ" : "No customer orders recorded yet")}
                     </td>
                   </tr>
                 ) : (

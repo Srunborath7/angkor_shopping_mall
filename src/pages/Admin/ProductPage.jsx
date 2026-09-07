@@ -425,20 +425,21 @@ function ProductPage() {
                     timer: 1500,
                     showConfirmButton: false
                 });
-                reloadActiveProductDetails(selectedProduct.id);
+                setIsModalOpen(false);
+                setSelectedProduct(null);
             } else {
-                const res = await createProductApi(formData);
-                const createdProduct = res.data;
-                setSelectedProduct(createdProduct);
+                await createProductApi(formData);
 
                 Swal.fire({
-                    title: "Created!",
-                    text: "Product created. You can now configure specs, variants, and gallery.",
-                    icon: "success"
+                    title: "Success",
+                    text: "Product created successfully",
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false
                 });
 
-                // Automatically move to edit context
-                reloadActiveProductDetails(createdProduct.id);
+                setIsModalOpen(false);
+                setSelectedProduct(null);
             }
             fetchData();
         } catch (error) {
