@@ -523,7 +523,7 @@
 /* Responsive Rules */
 @media (max-width: 1024px) {
   .shop-page-layout {
-    padding-bottom: 75px;
+    padding-bottom: 100px;
   }
 
   .shop-breadcrumbs-section {

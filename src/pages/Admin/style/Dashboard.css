@@ -925,10 +925,11 @@ body:not(.dark-theme) .progress-track {
   gap: 10px !important;
   background: #f8fafc !important;
   border: 1px solid #cbd5e1 !important;
-  border-radius: 10px !important;
+  border-radius: 12px !important;
   padding: 0 14px !important;
-  height: 40px !important;
-  width: 290px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  width: 320px !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
   position: relative !important;
@@ -937,31 +938,37 @@ body:not(.dark-theme) .progress-track {
 
 [data-theme="dark"] .order-search-box,
 body.dark-theme .order-search-box {
-  background: #070a12 !important;
+  background: #0f172a !important;
   border: 1px solid #1e293b !important;
   color: #f8fafc !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
 }
 
 .order-search-box:focus-within {
   background: #ffffff !important;
   border-color: #10b981 !important;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.18) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18) !important;
 }
 
 [data-theme="dark"] .order-search-box:focus-within,
 body.dark-theme .order-search-box:focus-within {
-  background: #070a12 !important;
+  background: #0f172a !important;
   border-color: #10b981 !important;
-  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.25) !important;
 }
 
 .order-search-box .search-icon {
   position: static !important;
   transform: none !important;
-  color: #94a3b8 !important;
-  font-size: 14px !important;
+  color: #64748b !important;
+  font-size: 15px !important;
   flex-shrink: 0 !important;
   margin: 0 !important;
+}
+
+[data-theme="dark"] .order-search-box .search-icon,
+body.dark-theme .order-search-box .search-icon {
+  color: #34d399 !important;
 }
 
 .order-search-box input {
@@ -970,11 +977,14 @@ body.dark-theme .order-search-box:focus-within {
   box-shadow: none !important;
   background: transparent !important;
   color: #0f172a !important;
-  padding: 0 !important;
+  padding: 2px 4px !important;
   margin: 0 !important;
   font-size: 13.5px !important;
+  font-family: inherit !important;
   width: 100% !important;
-  height: 100% !important;
+  height: auto !important;
+  min-height: 28px !important;
+  line-height: normal !important;
   border-radius: 0 !important;
 }
 
@@ -985,6 +995,7 @@ body.dark-theme .order-search-box input {
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
+  font-family: inherit !important;
 }
 
 .order-search-box input::placeholder {
@@ -993,7 +1004,7 @@ body.dark-theme .order-search-box input {
 
 [data-theme="dark"] .order-search-box input::placeholder,
 body.dark-theme .order-search-box input::placeholder {
-  color: #64748b !important;
+  color: #94a3b8 !important;
 }
 
 .order-search-box .clear-search {
@@ -1021,30 +1032,32 @@ body.dark-theme .order-search-box input::placeholder {
   gap: 4px;
   background: #f1f5f9;
   border: 1px solid #cbd5e1;
-  padding: 3px;
-  border-radius: 10px;
-  height: 40px;
+  padding: 4px;
+  border-radius: 12px;
+  height: 42px;
   box-sizing: border-box;
 }
 
 [data-theme="dark"] .order-filter-tabs,
 body.dark-theme .order-filter-tabs {
-  background: #070a12;
+  background: #0f172a;
   border: 1px solid #1e293b;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .tab-btn {
   background: transparent;
   border: none;
   color: #64748b;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 600;
+  font-family: inherit;
   padding: 0 14px;
-  height: 32px;
+  height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 7px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
@@ -1062,13 +1075,16 @@ body.dark-theme .tab-btn {
 
 [data-theme="dark"] .tab-btn:hover:not(.active) {
   color: #f8fafc;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.tab-btn.active {
-  background: #10b981;
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+.tab-btn.active,
+[data-theme="dark"] .tab-btn.active,
+body.dark-theme .tab-btn.active {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4) !important;
 }
 
 /* Desktop Orders Table */

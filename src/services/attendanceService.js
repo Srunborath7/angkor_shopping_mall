@@ -53,84 +53,21 @@ export const getStoredGeofenceConfig = () => {
 };
 
 /**
- * Fetch Geofence & Location configuration from Database via API
+ * Fetch Geofence & Location configuration.
+ * Persisted locally since backend does not maintain dedicated geofence endpoints.
  */
 export const getGeofenceConfigApi = async () => {
-  try {
-    const res = await api("/api/attendance/geofence", "get")
-      .catch(async () => api("/api/settings/geofence", "get"))
-      .catch(async () => api("/api/settings/store-profile", "get"));
-
-    const data = res?.data?.geofence || res?.data || res?.geofence || res?.settings?.geofence;
-    if (data && (data.latitude || data.centerLatitude)) {
-      const formatted = {
-        name: data.name || DEFAULT_MALL_GEOFENCE.name,
-        khmerName: data.khmerName || data.khmer_name || DEFAULT_MALL_GEOFENCE.khmerName,
-        latitude: Number(data.latitude || data.centerLatitude || DEFAULT_MALL_GEOFENCE.latitude),
-        longitude: Number(data.longitude || data.centerLongitude || DEFAULT_MALL_GEOFENCE.longitude),
-        geofenceRadiusMeters: Number(
-          data.geofenceRadiusMeters || data.radius_meters || data.radius || DEFAULT_MALL_GEOFENCE.geofenceRadiusMeters
-        ),
-        address: data.address || DEFAULT_MALL_GEOFENCE.address,
-        mapsUrl: data.mapsUrl || data.maps_url || DEFAULT_MALL_GEOFENCE.mapsUrl,
-        strictGeofenceEnforcement: Boolean(
-          data.strictGeofenceEnforcement ?? data.strict_enforcement ?? false
-        )
-      };
-      localStorage.setItem(STORAGE_KEY_GEOFENCE, JSON.stringify(formatted));
-      return formatted;
-    }
-  } catch (err) {
-    console.warn("Could not fetch geofence from DB API, reading local:", err?.message || err);
-  }
-
   return getStoredGeofenceConfig();
 };
 
 /**
- * Persist Geofence & Location configuration into Database via API
+ * Persist Geofence & Location configuration locally.
  */
 export const saveStoredGeofenceConfig = async (config) => {
   try {
     localStorage.setItem(STORAGE_KEY_GEOFENCE, JSON.stringify(config));
   } catch (e) {}
-
-  const payload = {
-    name: config.name,
-    khmer_name: config.khmerName,
-    latitude: Number(config.latitude),
-    longitude: Number(config.longitude),
-    radius_meters: Number(config.geofenceRadiusMeters),
-    geofenceRadiusMeters: Number(config.geofenceRadiusMeters),
-    address: config.address,
-    maps_url: config.mapsUrl,
-    strict_enforcement: Boolean(config.strictGeofenceEnforcement),
-    strictGeofenceEnforcement: Boolean(config.strictGeofenceEnforcement)
-  };
-
-  // 1. Try /api/attendance/geofence
-  try {
-    const apiRes = await api("/api/attendance/geofence", "post", payload)
-      .catch(async () => api("/api/settings/geofence", "post", payload))
-      .catch(async () =>
-        api("/api/settings/store-profile", "put", {
-          geofence: payload
-        })
-      )
-      .catch(async () =>
-        api("/api/settings", "post", {
-          type: "geofence",
-          key: "geofence_config",
-          value: payload,
-          ...payload
-        })
-      );
-
-    return apiRes?.data || config;
-  } catch (err) {
-    console.warn("DB API sync notice for Geofence (saved locally):", err?.message || err);
-    return config;
-  }
+  return config;
 };
 
 /**

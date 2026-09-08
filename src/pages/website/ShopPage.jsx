@@ -12,7 +12,8 @@ import {
   AlertTriangle,
   ChevronLeft,
   X,
-  Filter
+  Filter,
+  ShoppingBag
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
@@ -608,10 +609,12 @@ function ShopPage() {
 
                         <div className="product-footer-row">
                           <div className="price-box">
-                            <span className="sale-price">${prod.price}</span>
-                            {prod.originalPrice > prod.price && (
-                              <span className="original-price">${prod.originalPrice}</span>
-                            )}
+                            <div className="price-primary">
+                              <span className="sale-price">${prod.price}</span>
+                              {prod.originalPrice > prod.price && (
+                                <span className="original-price">${prod.originalPrice}</span>
+                              )}
+                            </div>
                           </div>
 
                           <button
@@ -623,9 +626,12 @@ function ShopPage() {
                               if (!isOutOfStock) addToCart(prod);
                             }}
                           >
-                            {isOutOfStock
-                              ? (language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable")
-                              : (language === "km" ? "ដាក់ក្នុងកន្ត្រក" : "Add To Cart")}
+                            <ShoppingBag size={15} />
+                            <span>
+                              {isOutOfStock
+                                ? (language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable")
+                                : (language === "km" ? "ដាក់ក្នុងកន្ត្រក" : "Add To Cart")}
+                            </span>
                           </button>
                         </div>
                       </div>

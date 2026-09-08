@@ -866,13 +866,15 @@ function HomePage() {
                       </div>
                     </div>
 
-                    <div className="product-footer-row" style={{ marginTop: "0.75rem" }}>
+                    <div className="product-footer-row">
                       <div className="price-box">
-                        <span className="sale-price">${prod.price}</span>
-                        {prod.originalPrice > prod.price && (
-                          <span className="original-price">${prod.originalPrice}</span>
-                        )}
-                        <span style={{ display: "block", fontSize: "10.5px", fontWeight: "600", color: "#64748b" }}>
+                        <div className="price-primary">
+                          <span className="sale-price">${prod.price}</span>
+                          {prod.originalPrice > prod.price && (
+                            <span className="original-price">${prod.originalPrice}</span>
+                          )}
+                        </div>
+                        <span className="khr-price">
                           {Math.round(Number(prod.price) * KHR_RATE).toLocaleString()} ៛
                         </span>
                       </div>
@@ -887,9 +889,11 @@ function HomePage() {
                         }}
                       >
                         <ShoppingBag size={15} />
-                        {isOutOfStock
-                          ? (language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable")
-                          : (language === "km" ? "ដាក់ក្នុងកន្ត្រក" : "Add To Cart")}
+                        <span>
+                          {isOutOfStock
+                            ? (language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable")
+                            : (language === "km" ? "ដាក់ក្នុងកន្ត្រក" : "Add To Cart")}
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -1038,11 +1042,13 @@ function HomePage() {
 
                     <div className="product-footer-row">
                       <div className="price-box">
-                        <span className="sale-price">${prod.price}</span>
-                        {prod.originalPrice > prod.price && (
-                          <span className="original-price">${prod.originalPrice}</span>
-                        )}
-                        <span style={{ display: "block", fontSize: "10.5px", fontWeight: "600", color: "#64748b" }}>
+                        <div className="price-primary">
+                          <span className="sale-price">${prod.price}</span>
+                          {prod.originalPrice > prod.price && (
+                            <span className="original-price">${prod.originalPrice}</span>
+                          )}
+                        </div>
+                        <span className="khr-price">
                           {Math.round(Number(prod.price) * KHR_RATE).toLocaleString()} ៛
                         </span>
                       </div>
@@ -1057,9 +1063,11 @@ function HomePage() {
                         }}
                       >
                         <ShoppingBag size={15} />
-                        {isOutOfStock
-                          ? (language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable")
-                          : (language === "km" ? "ដាក់ក្នុងកន្ត្រក" : "Add To Cart")}
+                        <span>
+                          {isOutOfStock
+                            ? (language === "km" ? "អស់ពីស្តុក" : "Stock Unavailable")
+                            : (language === "km" ? "ដាក់ក្នុងកន្ត្រក" : "Add To Cart")}
+                        </span>
                       </button>
                     </div>
                   </div>

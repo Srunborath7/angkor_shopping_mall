@@ -289,6 +289,18 @@ function CartDrawer({ isOpen, onClose }) {
     }
   }, [user]);
 
+  // Toggle body class when drawer opens to manage overflow and hide floating widgets
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add("cart-drawer-open");
+    } else {
+      document.body.classList.remove("cart-drawer-open");
+    }
+    return () => {
+      document.body.classList.remove("cart-drawer-open");
+    };
+  }, [isOpen]);
+
   // Load cart items initially and listen for updates
   const loadCart = async () => {
     const savedLocal = localStorage.getItem("cartItems");
@@ -422,14 +434,27 @@ function CartDrawer({ isOpen, onClose }) {
     if (isLoggedIn) {
       try {
         if (targetItem.db_id) {
-          await updateCartItemApi(targetItem.db_id, newQty);
+          await updateCartItemApi(targetItem.db_id, newQty).catch(async (err) => {
+            // If item not found on server cart (404), re-add it to sync properly
+            if (err?.status === 404 || err?.response?.status === 404 || err?.statusCode === 404) {
+              const res = await addToCartApi(
+                targetItem.product_id || targetItem.id,
+                newQty,
+                targetItem.variant_id || null,
+                targetItem.attributes || {}
+              ).catch(() => null);
+              if (res?.data?.id || res?.id) {
+                targetItem.db_id = res.data?.id || res.id;
+              }
+            }
+          });
         } else if (targetItem.product_id || targetItem.id) {
           await addToCartApi(
             targetItem.product_id || targetItem.id,
             1,
             targetItem.variant_id || null,
             targetItem.attributes || {}
-          );
+          ).catch(() => null);
         }
       } catch (err) {
         console.warn("Failed to update cart API:", err);
@@ -456,7 +481,19 @@ function CartDrawer({ isOpen, onClose }) {
     if (isLoggedIn) {
       try {
         if (targetItem.db_id) {
-          await updateCartItemApi(targetItem.db_id, newQty);
+          await updateCartItemApi(targetItem.db_id, newQty).catch(async (err) => {
+            if (err?.status === 404 || err?.response?.status === 404 || err?.statusCode === 404) {
+              const res = await addToCartApi(
+                targetItem.product_id || targetItem.id,
+                newQty,
+                targetItem.variant_id || null,
+                targetItem.attributes || {}
+              ).catch(() => null);
+              if (res?.data?.id || res?.id) {
+                targetItem.db_id = res.data?.id || res.id;
+              }
+            }
+          });
         }
       } catch (err) {
         console.warn("Failed to decrement cart API:", err);
@@ -473,7 +510,9 @@ function CartDrawer({ isOpen, onClose }) {
 
     if (isLoggedIn && itemObj?.db_id) {
       try {
-        await removeFromCartApi(itemObj.db_id);
+        await removeFromCartApi(itemObj.db_id).catch(() => {
+          // If 404, item already absent on server
+        });
       } catch (err) {
         console.warn("Failed to remove item API:", err);
       }

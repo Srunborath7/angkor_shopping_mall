@@ -381,6 +381,7 @@
     margin: 0;
 }
 
+.save-stock-btn,
 .save-adjust-btn {
     width: 32px;
     height: 32px;
@@ -388,21 +389,43 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
-    background-color: var(--primary-color);
-    font-size: 12px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    font-size: 13px;
     cursor: pointer;
-    transition: var(--transition-all);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+    flex-shrink: 0;
 }
 
+.save-stock-btn:hover:not(:disabled),
 .save-adjust-btn:hover:not(:disabled) {
-    background-color: var(--primary-hover);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-1px) scale(1.04);
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.35);
 }
 
+.save-stock-btn:disabled,
 .save-adjust-btn:disabled {
-    background-color: var(--text-light);
-    opacity: 0.4;
+    background: #94a3b8;
+    opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.save-stock-btn .row-spinner {
+    animation: inventorySpin 0.9s linear infinite;
+}
+
+@keyframes inventorySpin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Variant Row and Panel details */
@@ -737,6 +760,37 @@ body.dark-theme .adjust-btn:hover {
 [data-theme="dark"] .adjust-input,
 body.dark-theme .adjust-input {
     color: #f8fafc;
+}
+
+[data-theme="dark"] .save-stock-btn,
+body.dark-theme .save-stock-btn,
+[data-theme="dark"] .save-adjust-btn,
+body.dark-theme .save-adjust-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff !important;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
+}
+
+[data-theme="dark"] .save-stock-btn:hover:not(:disabled),
+body.dark-theme .save-stock-btn:hover:not(:disabled),
+[data-theme="dark"] .save-adjust-btn:hover:not(:disabled),
+body.dark-theme .save-adjust-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+    color: #042f24 !important;
+    border-color: #34d399;
+    box-shadow: 0 4px 14px rgba(52, 211, 153, 0.5);
+    transform: translateY(-1px) scale(1.05);
+}
+
+[data-theme="dark"] .save-stock-btn:disabled,
+body.dark-theme .save-stock-btn:disabled,
+[data-theme="dark"] .save-adjust-btn:disabled,
+body.dark-theme .save-adjust-btn:disabled {
+    background: #1e293b;
+    border-color: #334155;
+    color: #64748b !important;
+    box-shadow: none;
 }
 
 [data-theme="dark"] .variant-sub-row,

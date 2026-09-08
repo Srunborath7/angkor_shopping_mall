@@ -64,6 +64,16 @@
   pointer-events: auto;
 }
 
+/* Hide ChatBot completely when CartDrawer is open so it never covers cart actions or prices */
+body.cart-drawer-open .chatbot-trigger-container,
+body.cart-drawer-open .chatbot-window-root {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  transform: scale(0.9) !important;
+  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease !important;
+}
+
 /* Floating Greeting Callout Bubble */
 .chatbot-greeting-callout {
   display: flex;
@@ -1761,7 +1771,7 @@
   }
 
   .chatbot-trigger-container {
-    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(85px + env(safe-area-inset-bottom, 8px)) !important;
     right: 14px;
   }
 
@@ -2185,7 +2195,7 @@ body.dark-theme .ticket-card-time,
 /* Mobile Screen Floating FAB Adjustments to Avoid Bottom Nav Overlap */
 @media (max-width: 1024px) {
   .chatbot-trigger-container {
-    bottom: 90px !important;
+    bottom: calc(85px + env(safe-area-inset-bottom, 8px)) !important;
     right: 16px !important;
   }
 
