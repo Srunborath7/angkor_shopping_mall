@@ -31,6 +31,7 @@ import MessagesPage from "./pages/Admin/MessagesPage";
 import ReportPage from "./pages/Admin/ReportPage";
 import AttendancePage from "./pages/Admin/AttendancePage";
 import ChatBot from "./components/ChatBot";
+import ScrollToTop from "./components/ScrollToTop";
 import useHeartbeat from "./hooks/useHeartbeat";
 
 function App() {
@@ -40,7 +41,8 @@ function App() {
     <ThemeProvider>
       <LanguageProvider>
         <BrowserRouter>
-        <Routes>
+          <ScrollToTop />
+          <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/shop" element={<ShopPage />} />
           <Route path="/recommendations" element={<RecommendationPage />} />

@@ -397,6 +397,14 @@ function ProductDetailPage() {
 
   // Fetch product attributes & details from backend server API
   useEffect(() => {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    } catch {
+      window.scrollTo(0, 0);
+    }
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+
     let isMounted = true;
     const fetchProductDetails = async () => {
       if (!id) return;
@@ -1445,7 +1453,16 @@ function ProductDetailPage() {
                 <div
                   key={relProd.id}
                   className="related-card-item"
-                  onClick={() => navigate(`/product/${relProd.id}`)}
+                  onClick={() => {
+                    try {
+                      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+                    } catch {
+                      window.scrollTo(0, 0);
+                    }
+                    document.documentElement.scrollTop = 0;
+                    document.body.scrollTop = 0;
+                    navigate(`/product/${relProd.id}`);
+                  }}
                 >
                   <div className="related-img-box">
                     <img

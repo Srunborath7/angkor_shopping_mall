@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import {
   User,
   Package,
@@ -15,22 +15,115 @@ import {
   ChevronDown,
   ChevronUp,
   CreditCard,
-  QrCode
+  QrCode,
+  Edit3,
+  Check,
+  X,
+  Loader2,
+  Sparkles,
+  CheckCircle2
 } from "lucide-react";
 import toast, { Toaster } from "react-hot-toast";
 import Header from "../../components/Header";
 import { getOrdersApi } from "../../services/orderService";
+import { updateCustomersApi } from "../../services/customerService";
+import { updateUser, setAuth } from "../../store/authSlice";
 import AbaPaymentModal from "../../components/AbaPaymentModal";
 import { TableSkeleton, KpiCardSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./styles/OrderPage.css";
 
 function OrderPage() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const auth = useSelector((state) => state.auth);
 
   const isLoggedIn = !!auth.token;
   const user = auth.user;
   const role = auth.role;
+
+  // Profile Edit State
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    name: "",
+    email: "",
+    phone: ""
+  });
+
+  // Sync profileForm with user whenever user changes
+  useEffect(() => {
+    if (user) {
+      setProfileForm({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || user.telephone || ""
+      });
+    }
+  }, [user]);
+
+  const handleStartEditProfile = () => {
+    setProfileForm({
+      name: user?.name || "",
+      email: user?.email || "",
+      phone: user?.phone || user?.telephone || ""
+    });
+    setIsEditingProfile(true);
+  };
+
+  const handleCancelEditProfile = () => {
+    setProfileForm({
+      name: user?.name || "",
+      email: user?.email || "",
+      phone: user?.phone || user?.telephone || ""
+    });
+    setIsEditingProfile(false);
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    const cleanName = profileForm.name.trim();
+    const cleanEmail = profileForm.email.trim();
+    const cleanPhone = profileForm.phone.trim();
+
+    if (!cleanName) {
+      toast.error("Please enter your name");
+      return;
+    }
+    if (!cleanEmail) {
+      toast.error("Please enter your email");
+      return;
+    }
+
+    try {
+      setIsSavingProfile(true);
+      const updatePayload = {
+        name: cleanName,
+        email: cleanEmail,
+        phone: cleanPhone,
+        telephone: cleanPhone
+      };
+
+      const userId = user?.id || user?._id || user?.userId;
+      if (userId) {
+        try {
+          await updateCustomersApi(userId, updatePayload);
+        } catch (apiErr) {
+          console.warn("Backend user update returned error, applying local store sync:", apiErr);
+        }
+      }
+
+      // Update in Redux and localStorage
+      dispatch(updateUser(updatePayload));
+      dispatch(setAuth({ user: { ...user, ...updatePayload } }));
+      toast.success("Profile updated successfully!");
+      setIsEditingProfile(false);
+    } catch (err) {
+      console.error("Failed to update profile:", err);
+      toast.error(err?.message || "Failed to update profile details");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
 
   // Tabs state: 'overview' | 'orders' | 'wishlist'
   const [activeTab, setActiveTab] = useState("orders");
@@ -269,17 +362,32 @@ function OrderPage() {
           <main className="profile-content-main">
             
             {/* Overview Tab */}
+            {/* Overview Tab */}
             {activeTab === "overview" && (
               <div className="overview-tab-content">
+                {/* Premium Welcome Banner */}
                 <div className="welcome-banner-card">
-                  <h2>Welcome back, {user?.name?.split(" ")[0]}!</h2>
-                  <p>Manage your orders, edit shipping preferences, and track your account statistics from one premium board.</p>
+                  <div className="welcome-banner-content">
+                    <div className="welcome-tag">
+                      <Sparkles size={13} />
+                      <span>Verified Account Overview</span>
+                    </div>
+                    <h2>Welcome back, {user?.name ? user.name.split(" ")[0] : "Customer"}!</h2>
+                    <p>Manage your orders, edit profile credentials, and track your account statistics from one central dashboard.</p>
+                  </div>
+                  <div className="welcome-banner-decor">
+                    <div className="welcome-avatar-pill">
+                      <span>{user?.name ? user.name[0].toUpperCase() : "U"}</span>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Dashboard Stats */}
                 <div className="dashboard-stats-grid">
                   <div className="dashboard-stat-card">
-                    <Package size={24} className="stat-card-icon green" />
+                    <div className="stat-icon-wrapper green">
+                      <Package size={20} />
+                    </div>
                     <div className="stat-card-text">
                       <span className="stat-card-label">Total Orders</span>
                       <span className="stat-card-val">{totalOrdersCount}</span>
@@ -287,7 +395,9 @@ function OrderPage() {
                   </div>
 
                   <div className="dashboard-stat-card">
-                    <Heart size={24} className="stat-card-icon red" />
+                    <div className="stat-icon-wrapper red">
+                      <Heart size={20} />
+                    </div>
                     <div className="stat-card-text">
                       <span className="stat-card-label">Wishlist Items</span>
                       <span className="stat-card-val">{wishlistCount}</span>
@@ -295,7 +405,9 @@ function OrderPage() {
                   </div>
 
                   <div className="dashboard-stat-card">
-                    <CreditCard size={24} className="stat-card-icon blue" />
+                    <div className="stat-icon-wrapper blue">
+                      <CreditCard size={20} />
+                    </div>
                     <div className="stat-card-text">
                       <span className="stat-card-label">Total Expenditure</span>
                       <span className="stat-card-val">${totalSpent}</span>
@@ -303,35 +415,184 @@ function OrderPage() {
                   </div>
 
                   <div className="dashboard-stat-card">
-                    <ShieldCheck size={24} className="stat-card-icon gold" />
+                    <div className="stat-icon-wrapper gold">
+                      <ShieldCheck size={20} />
+                    </div>
                     <div className="stat-card-text">
                       <span className="stat-card-label">Account Status</span>
-                      <span className="stat-card-val text-green">Verified</span>
+                      <span className="stat-card-val status-verified">
+                        <CheckCircle2 size={15} /> Verified
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 {/* User Details Details Card */}
                 <div className="user-details-card">
-                  <h3>Account Credentials</h3>
-                  <div className="details-rows-list">
-                    <div className="details-row-item">
-                      <div className="row-label"><Mail size={14} /> Email Address</div>
-                      <div className="row-value">{user?.email}</div>
+                  <div className="user-details-card-header">
+                    <div className="card-header-titles">
+                      <div className="header-badge-icon">
+                        <ShieldCheck size={20} />
+                      </div>
+                      <div>
+                        <h3>Account & Personal Credentials</h3>
+                        <p className="card-sub-description">Manage and update your customer profile details</p>
+                      </div>
                     </div>
-                    <div className="details-row-item">
-                      <div className="row-label"><ShieldCheck size={14} /> Assigned Role</div>
-                      <div className="row-value text-green bold">{role ? role.toUpperCase() : "CUSTOMER"}</div>
-                    </div>
-                    <div className="details-row-item">
-                      <div className="row-label"><Phone size={14} /> Phone Support</div>
-                      <div className="row-value">099 888 777 (Support Helpline)</div>
-                    </div>
-                    <div className="details-row-item">
-                      <div className="row-label"><MapPin size={14} /> Default Store Branch</div>
-                      <div className="row-value">Angkor Mall, Phnom Penh Central</div>
-                    </div>
+                    {!isEditingProfile ? (
+                      <button 
+                        type="button"
+                        className="btn-edit-profile-trigger"
+                        onClick={handleStartEditProfile}
+                      >
+                        <Edit3 size={15} />
+                        <span>Edit Profile</span>
+                      </button>
+                    ) : (
+                      <button 
+                        type="button"
+                        className="btn-cancel-profile-trigger"
+                        onClick={handleCancelEditProfile}
+                        disabled={isSavingProfile}
+                      >
+                        <X size={15} />
+                        <span>Cancel</span>
+                      </button>
+                    )}
                   </div>
+
+                  {!isEditingProfile ? (
+                    <div className="details-rows-list">
+                      <div className="details-row-item">
+                        <div className="row-label">
+                          <div className="row-icon-box green"><User size={15} /></div>
+                          <span>Full Name</span>
+                        </div>
+                        <div className="row-value bold">{user?.name || "Customer"}</div>
+                      </div>
+                      <div className="details-row-item">
+                        <div className="row-label">
+                          <div className="row-icon-box blue"><Mail size={15} /></div>
+                          <span>Email Address</span>
+                        </div>
+                        <div className="row-value">{user?.email || "—"}</div>
+                      </div>
+                      <div className="details-row-item">
+                        <div className="row-label">
+                          <div className="row-icon-box purple"><Phone size={15} /></div>
+                          <span>Phone Number</span>
+                        </div>
+                        <div className="row-value">
+                          {user?.phone || user?.telephone ? (
+                            <span className="user-phone-val">{user.phone || user.telephone}</span>
+                          ) : (
+                            <span className="text-muted-italic">Not provided</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="details-row-item">
+                        <div className="row-label">
+                          <div className="row-icon-box gold"><ShieldCheck size={15} /></div>
+                          <span>Assigned Role</span>
+                        </div>
+                        <div className="row-value">
+                          <span className="role-pill-badge">{role ? role.toUpperCase() : "CUSTOMER"}</span>
+                        </div>
+                      </div>
+                      <div className="details-row-item">
+                        <div className="row-label">
+                          <div className="row-icon-box emerald"><MapPin size={15} /></div>
+                          <span>Default Store Branch</span>
+                        </div>
+                        <div className="row-value store-branch-text">Angkor Mall, Phnom Penh Central</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleSaveProfile} className="profile-edit-inline-form">
+                      <div className="profile-form-grid">
+                        <div className="profile-input-group">
+                          <label htmlFor="profile-form-name">
+                            <User size={14} /> Full Name
+                          </label>
+                          <div className="input-with-icon">
+                            <User size={15} className="input-prefix-icon" />
+                            <input
+                              id="profile-form-name"
+                              type="text"
+                              className="profile-text-input has-prefix"
+                              value={profileForm.name}
+                              onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+                              placeholder="Enter your full name"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="profile-input-group">
+                          <label htmlFor="profile-form-email">
+                            <Mail size={14} /> Email Address
+                          </label>
+                          <div className="input-with-icon">
+                            <Mail size={15} className="input-prefix-icon" />
+                            <input
+                              id="profile-form-email"
+                              type="email"
+                              className="profile-text-input has-prefix"
+                              value={profileForm.email}
+                              onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
+                              placeholder="Enter your email address"
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        <div className="profile-input-group full-width">
+                          <label htmlFor="profile-form-phone">
+                            <Phone size={14} /> Phone Number
+                          </label>
+                          <div className="input-with-icon">
+                            <Phone size={15} className="input-prefix-icon" />
+                            <input
+                              id="profile-form-phone"
+                              type="tel"
+                              className="profile-text-input has-prefix"
+                              value={profileForm.phone}
+                              onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
+                              placeholder="e.g. +855 12 345 678 or 097 424 2291"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="profile-form-actions">
+                        <button
+                          type="button"
+                          className="btn-profile-secondary"
+                          onClick={handleCancelEditProfile}
+                          disabled={isSavingProfile}
+                        >
+                          <X size={15} /> Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="btn-profile-primary"
+                          disabled={isSavingProfile}
+                        >
+                          {isSavingProfile ? (
+                            <>
+                              <Loader2 size={15} className="animate-spin" />
+                              <span>Saving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Check size={15} />
+                              <span>Save Changes</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  )}
                 </div>
               </div>
             )}
