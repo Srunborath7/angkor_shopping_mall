@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { setAuth } from "../../store/authSlice";
@@ -983,8 +983,8 @@ function SettingsPage() {
       Swal.fire({
         title: isKhmer ? "បង្កើតតួនាទីជោគជ័យ!" : "Role Created Successfully!",
         text: isKhmer
-          ? `តួនាទី "${roleName}" ត្រូវបានរក្សាទុកក្នុង Database តាមរយៈ API (/api/roles)។`
-          : `Role "${roleName}" was created and saved to database via /api/roles.`,
+          ? `តួនាទីត្រូវបានរក្សាទុកក្នុង Database តាមរយៈ API)។`
+          : `Role was created and saved to database via.`,
         icon: "success",
         timer: 2500,
         showConfirmButton: false
@@ -993,7 +993,7 @@ function SettingsPage() {
       console.error("Failed to create role via API:", error);
       Swal.fire({
         title: isKhmer ? "បរាជ័យក្នុងការបង្កើតតួនាទី" : "Failed to Create Role",
-        text: error?.response?.data?.message || error?.message || "Could not save role to database via /api/roles.",
+        text: error?.response?.data?.message || error?.message || "Could not save role to database",
         icon: "error",
         confirmButtonColor: "#ef4444"
       });
