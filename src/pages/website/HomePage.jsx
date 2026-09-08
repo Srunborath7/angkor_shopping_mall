@@ -296,9 +296,9 @@ function HomePage() {
         console.warn("Failed to fetch best sellers from order tracking API:", err);
       }
 
-      // 2. Fetch General Products Catalog
+      // 2. Fetch General Products Catalog (fetch 60 items to populate all categories)
       try {
-        const prodRes = await productsPagedApi({ page: 1, limit: 12 });
+        const prodRes = await productsPagedApi({ page: 1, limit: 60 });
         const rawProds = prodRes?.data?.data || prodRes?.data || (Array.isArray(prodRes) ? prodRes : []);
         if (Array.isArray(rawProds)) {
           const normalized = rawProds.map((p, i) => normalizeProduct(p, i));
@@ -351,26 +351,69 @@ function HomePage() {
     fetchData();
   }, []);
 
-  // Trending & Best Sellers Tab Filter State ('all' | 'electronics' | 'fashion' | 'top-rated')
+  // Trending & Best Sellers Tab Filter State
   const [activeTrendingTab, setActiveTrendingTab] = useState("all");
 
   const sourceProducts = bestSellers.length > 0 ? bestSellers : products.slice(0, 10);
 
+  // Collect unique categories that actually have products in the catalog
+  const trendingCategories = useMemo(() => {
+    const counts = {};
+    const allAvailable = [...bestSellers, ...products];
+
+    allAvailable.forEach((p) => {
+      const cat = typeof p.category === "string" ? p.category.trim() : "";
+      if (cat && cat !== "General" && cat !== "Default") {
+        counts[cat] = (counts[cat] || 0) + 1;
+      }
+    });
+
+    categories.forEach((c) => {
+      const name = typeof c === "string" ? c.trim() : c?.name?.trim();
+      if (name && !counts[name]) {
+        const hasProd = allAvailable.some((p) => {
+          const pCat = String(p.category || "").toLowerCase();
+          return pCat.includes(name.toLowerCase()) || name.toLowerCase().includes(pCat);
+        });
+        if (hasProd) counts[name] = 1;
+      }
+    });
+
+    return Object.keys(counts).sort((a, b) => counts[b] - counts[a]).slice(0, 8);
+  }, [categories, bestSellers, products]);
+
+  // Sort and filter products strictly according to the active category or top-rated
   const filteredTrendingProducts = useMemo(() => {
-    if (activeTrendingTab === "electronics") {
-      const matched = sourceProducts.filter((p) => p.category.toLowerCase().includes("electronics") || p.category.toLowerCase().includes("tech") || p.category.toLowerCase().includes("phone") || p.category.toLowerCase().includes("appliance"));
-      return matched.length > 0 ? matched : sourceProducts;
+    // 1. All Best Sellers
+    if (activeTrendingTab === "all") {
+      return sourceProducts.slice(0, 10);
     }
-    if (activeTrendingTab === "fashion") {
-      const matched = sourceProducts.filter((p) => p.category.toLowerCase().includes("fashion") || p.category.toLowerCase().includes("cloth") || p.category.toLowerCase().includes("shoe"));
-      return matched.length > 0 ? matched : sourceProducts;
-    }
+
+    // 2. Top Rated: sort by rating descending
     if (activeTrendingTab === "top-rated") {
-      const matched = [...sourceProducts].sort((a, b) => b.rating - a.rating);
-      return matched.length > 0 ? matched : sourceProducts;
+      const allAvailable = [...bestSellers, ...products];
+      const unique = Array.from(new Map(allAvailable.map((p) => [p.id, p])).values());
+      return unique.sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 10);
     }
-    return sourceProducts;
-  }, [sourceProducts, activeTrendingTab]);
+
+    // 3. Specific category tab selected: filter strictly by category and sort by sales/popularity
+    const target = activeTrendingTab.toLowerCase().trim();
+    const allAvailable = [...bestSellers, ...products];
+    const unique = Array.from(new Map(allAvailable.map((p) => [p.id, p])).values());
+
+    const matched = unique.filter((p) => {
+      const cat = String(p.category || "").toLowerCase().trim();
+      return cat === target || cat.includes(target) || target.includes(cat);
+    });
+
+    // Sort matching category items by sales volume descending, then rating
+    return matched.sort((a, b) => {
+      const salesA = Number(a.totalSales ?? a.units_sold ?? 0);
+      const salesB = Number(b.totalSales ?? b.units_sold ?? 0);
+      if (salesB !== salesA) return salesB - salesA;
+      return (b.rating || 0) - (a.rating || 0);
+    }).slice(0, 10);
+  }, [sourceProducts, bestSellers, products, activeTrendingTab]);
 
   // Real Countdown timer for Flash Sale (Calculated based on Cambodia ICT GMT+7)
   const [timeLeft, setTimeLeft] = useState({
@@ -881,31 +924,45 @@ function HomePage() {
             className={`trending-tab-btn ${activeTrendingTab === "all" ? "active" : ""}`}
             onClick={() => setActiveTrendingTab("all")}
           >
-            🏆 Top 10 Best Sellers
+            🏆 {language === "km" ? "ទំនិញលក់ដាច់បំផុតទាំង ១០" : "Top 10 Best Sellers"}
           </button>
-          <button
-            className={`trending-tab-btn ${activeTrendingTab === "electronics" ? "active" : ""}`}
-            onClick={() => setActiveTrendingTab("electronics")}
-          >
-            📱 Electronics & Tech
-          </button>
-          <button
-            className={`trending-tab-btn ${activeTrendingTab === "fashion" ? "active" : ""}`}
-            onClick={() => setActiveTrendingTab("fashion")}
-          >
-            👗 Fashion & Shoes
-          </button>
+
+          {trendingCategories.map((catName, idx) => (
+            <button
+              key={catName}
+              className={`trending-tab-btn ${activeTrendingTab === catName ? "active" : ""}`}
+              onClick={() => setActiveTrendingTab(catName)}
+            >
+              {getCategoryIcon(catName, "", idx)} {catName}
+            </button>
+          ))}
+
           <button
             className={`trending-tab-btn ${activeTrendingTab === "top-rated" ? "active" : ""}`}
             onClick={() => setActiveTrendingTab("top-rated")}
           >
-            ⭐ Top Rated (4.5+)
+            ⭐ {language === "km" ? "ការវាយតម្លៃខ្ពស់បំផុត (៤.៥+)" : "Top Rated (4.5+)"}
           </button>
         </div>
 
         {/* Trending Product Grid */}
         {loading ? (
           <ProductCardSkeleton count={8} />
+        ) : filteredTrendingProducts.length === 0 ? (
+          <div style={{ padding: "40px 20px", textAlign: "center", background: "#f8fafc", borderRadius: "14px", border: "1px dashed #cbd5e1", margin: "1rem 0" }}>
+            <p style={{ color: "#64748b", margin: "0 0 12px 0", fontSize: "14.5px", fontWeight: "500" }}>
+              {language === "km"
+                ? `មិនទាន់មានទំនិញក្នុងប្រភេទទំនិញ "${activeTrendingTab}" នេះនៅឡើយទេ`
+                : `No products currently found under "${activeTrendingTab}".`}
+            </p>
+            <button
+              className="view-all-btn"
+              onClick={() => setActiveTrendingTab("all")}
+              style={{ margin: "0 auto", display: "inline-flex" }}
+            >
+              {language === "km" ? "មើលទំនិញលក់ដាច់ទាំងអស់" : "View All Best Sellers"}
+            </button>
+          </div>
         ) : (
           <div className="products-grid">
             {filteredTrendingProducts.map((prod) => {

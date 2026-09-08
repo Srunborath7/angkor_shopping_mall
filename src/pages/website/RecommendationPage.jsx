@@ -27,9 +27,29 @@ import {
   getPopularRecommendationsApi,
   getBestSellersRecommendationsApi
 } from "../../services/recommendationService";
+import { categoriesApi } from "../../services/categoriesService";
 import { addToCartApi } from "../../services/cartService";
 import { ProductCardSkeleton } from "../../components/loading/LoadingSkeleton";
 import "./styles/RecommendationPage.css";
+
+function getCategoryEmoji(name, index = 0) {
+  const n = String(name || "").toLowerCase();
+  if (n.includes("shoe") || n.includes("footwear") || n.includes("sneaker")) return "👟";
+  if (n.includes("phone") || n.includes("mobile") || n.includes("electronics") || n.includes("gadget")) return "📱";
+  if (n.includes("laptop") || n.includes("computer") || n.includes("pc") || n.includes("tech")) return "💻";
+  if (n.includes("cloth") || n.includes("fashion") || n.includes("wear") || n.includes("apparel")) return "👗";
+  if (n.includes("beauty") || n.includes("cosmetic") || n.includes("skin") || n.includes("makeup")) return "💄";
+  if (n.includes("home") || n.includes("furniture") || n.includes("decor") || n.includes("living")) return "🏠";
+  if (n.includes("sport") || n.includes("fitness") || n.includes("outdoor")) return "⚽";
+  if (n.includes("food") || n.includes("drink") || n.includes("grocery") || n.includes("noodle")) return "🍜";
+  if (n.includes("audio") || n.includes("headphone") || n.includes("speaker") || n.includes("sound")) return "🎧";
+  if (n.includes("watch") || n.includes("accessory") || n.includes("jewelry")) return "⌚";
+  if (n.includes("bag") || n.includes("wallet") || n.includes("pack")) return "👜";
+  if (n.includes("game") || n.includes("toy")) return "🎮";
+  if (n.includes("book")) return "📚";
+  const fallbackList = ["🏷️", "📱", "👗", "👟", "💄", "🏠", "⚽", "💻", "🎧", "⌚", "👜"];
+  return fallbackList[index % fallbackList.length];
+}
 
 const NO_IMAGE_PLACEHOLDER =
   "data:image/svg+xml;utf8," +
@@ -132,6 +152,38 @@ function RecommendationPage() {
 
   // Active Category/Filter Tab
   const [activeFilterTab, setActiveFilterTab] = useState("all");
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const res = await categoriesApi();
+        const raw = res?.data?.data || res?.data || (Array.isArray(res) ? res : []);
+        if (Array.isArray(raw) && raw.length > 0) {
+          const names = raw.map((c) => {
+            if (typeof c === "string") return c;
+            if (typeof c.name === "string") return c.name;
+            if (typeof c.name === "object" && c.name?.name) return c.name.name;
+            return String(c.name || "Category");
+          }).filter(Boolean);
+          setCategories(Array.from(new Set(names)));
+        }
+      } catch (err) {
+        console.warn("Failed to load categories for recommendations:", err);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  const availableCategories = useMemo(() => {
+    const set = new Set(categories);
+    [...personalised, ...popular].forEach((p) => {
+      if (p.category && typeof p.category === "string" && p.category !== "General") {
+        set.add(p.category.trim());
+      }
+    });
+    return Array.from(set).filter(Boolean);
+  }, [categories, personalised, popular]);
 
   const [wishlist, setWishlist] = useState(() => {
     const saved = localStorage.getItem("wishlist");
@@ -246,20 +298,23 @@ function RecommendationPage() {
     });
   };
 
-  // Filter products by tab
+  // Filter products by tab (All | Category | Top-rated)
   const filterList = (list) => {
-    if (activeFilterTab === "electronics") {
-      const match = list.filter((p) => (p.category || "").toLowerCase().includes("electronics") || (p.category || "").toLowerCase().includes("tech") || (p.category || "").toLowerCase().includes("phone"));
-      return match.length > 0 ? match : list;
-    }
-    if (activeFilterTab === "fashion") {
-      const match = list.filter((p) => (p.category || "").toLowerCase().includes("fashion") || (p.category || "").toLowerCase().includes("cloth") || (p.category || "").toLowerCase().includes("shoe"));
-      return match.length > 0 ? match : list;
-    }
+    if (!activeFilterTab || activeFilterTab === "all") return list;
     if (activeFilterTab === "top-rated") {
       return [...list].sort((a, b) => b.rating - a.rating);
     }
-    return list;
+    const target = activeFilterTab.toLowerCase();
+    const match = list.filter((p) => {
+      const cat = (p.category || "").toLowerCase();
+      return cat === target || cat.includes(target) || target.includes(cat);
+    });
+    return match.sort((a, b) => {
+      const salesA = Number(a.totalSales ?? a.units_sold ?? 0);
+      const salesB = Number(b.totalSales ?? b.units_sold ?? 0);
+      if (salesB !== salesA) return salesB - salesA;
+      return (b.rating || 0) - (a.rating || 0);
+    });
   };
 
   const filteredPersonalised = useMemo(() => filterList(personalised), [personalised, activeFilterTab]);
@@ -493,18 +548,17 @@ function RecommendationPage() {
             >
               <Sparkles size={14} /> All Curated Picks
             </button>
-            <button
-              className={`rec-tab-btn ${activeFilterTab === "electronics" ? "active" : ""}`}
-              onClick={() => setActiveFilterTab("electronics")}
-            >
-              📱 Electronics & Tech
-            </button>
-            <button
-              className={`rec-tab-btn ${activeFilterTab === "fashion" ? "active" : ""}`}
-              onClick={() => setActiveFilterTab("fashion")}
-            >
-              👗 Fashion & Apparel
-            </button>
+
+            {availableCategories.map((catName, idx) => (
+              <button
+                key={catName}
+                className={`rec-tab-btn ${activeFilterTab === catName ? "active" : ""}`}
+                onClick={() => setActiveFilterTab(catName)}
+              >
+                {getCategoryEmoji(catName, idx)} {catName}
+              </button>
+            ))}
+
             <button
               className={`rec-tab-btn ${activeFilterTab === "top-rated" ? "active" : ""}`}
               onClick={() => setActiveFilterTab("top-rated")}
