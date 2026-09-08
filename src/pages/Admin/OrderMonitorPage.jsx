@@ -2443,7 +2443,7 @@ function OrderPrepCard({
           return (
             <div
               key={itemId}
-              className={`card-check-item ${isPacked ? "is-packed" : ""}`}
+              className={`card-item-row card-check-item ${isPacked ? "is-packed" : ""}`}
               onClick={(e) => onToggleItem(order.id, itemId, e)}
               title={isKhmer ? "ចុចដើម្បីធីកវេចខ្ចប់" : "Click to toggle item packed"}
             >
