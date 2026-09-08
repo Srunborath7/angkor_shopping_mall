@@ -468,6 +468,36 @@
   color: #64748b;
 }
 
+.flash-sale-timer-wrapper {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Countdown Timer Card */
+.countdown-timer-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.countdown-label-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #fbbf24;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.countdown-label-row .timer-icon {
+  color: #fbbf24;
+}
+
 .countdown-timer {
   display: flex;
   align-items: center;
@@ -476,6 +506,8 @@
   padding: 8px 18px;
   border-radius: 14px;
   color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
 .time-segment {

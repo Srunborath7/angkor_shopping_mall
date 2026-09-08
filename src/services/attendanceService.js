@@ -6,14 +6,15 @@ const STORAGE_KEY_STAFF = "angkor_mall_attendance_staff";
 const STORAGE_KEY_SHIFTS = "angkor_mall_shifts";
 const STORAGE_KEY_GEOFENCE = "angkor_mall_geofence_config";
 
-// Default Angkor Shopping Mall Geofence Coordinates
+// Default Geofence Coordinates - University of Puthisastra (UP Campus)
 export const DEFAULT_MALL_GEOFENCE = {
-  name: "Angkor Shopping Mall (Main Branch)",
-  khmerName: "ផ្សារទំនើប អង្គរ ម៉ល (សាខាកណ្តាល)",
-  latitude: 11.5564,
-  longitude: 104.9282,
-  geofenceRadiusMeters: 300,
-  address: "Russian Federation Blvd (110), Phnom Penh, Cambodia",
+  name: "University of Puthisastra",
+  khmerName: "សាកលវិទ្យាល័យ ពុទ្ធិសាស្ត្រ",
+  latitude: 11.562662,
+  longitude: 104.9207247,
+  geofenceRadiusMeters: 500,
+  address: "#180, Street 180, Sangkat Boeung Raing, Khan Daun Penh, Phnom Penh, Cambodia",
+  mapsUrl: "https://www.google.com/maps/place/University+of+Puthisastra/@11.562662,104.9207247,17z",
   strictGeofenceEnforcement: false
 };
 
@@ -24,16 +25,112 @@ export const getStoredGeofenceConfig = () => {
       localStorage.setItem(STORAGE_KEY_GEOFENCE, JSON.stringify(DEFAULT_MALL_GEOFENCE));
       return DEFAULT_MALL_GEOFENCE;
     }
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    // Auto-migrate if previously stored with old coordinates (11.5564) or old Russian Federation address
+    if (
+      !parsed.latitude ||
+      parsed.latitude === 11.5564 ||
+      String(parsed.name || "").includes("Angkor Shopping Mall") ||
+      String(parsed.address || "").includes("Russian Federation")
+    ) {
+      const updated = {
+        ...DEFAULT_MALL_GEOFENCE,
+        ...parsed,
+        name: DEFAULT_MALL_GEOFENCE.name,
+        khmerName: DEFAULT_MALL_GEOFENCE.khmerName,
+        latitude: DEFAULT_MALL_GEOFENCE.latitude,
+        longitude: DEFAULT_MALL_GEOFENCE.longitude,
+        address: DEFAULT_MALL_GEOFENCE.address,
+        mapsUrl: DEFAULT_MALL_GEOFENCE.mapsUrl
+      };
+      localStorage.setItem(STORAGE_KEY_GEOFENCE, JSON.stringify(updated));
+      return updated;
+    }
+    return parsed;
   } catch (e) {
     return DEFAULT_MALL_GEOFENCE;
   }
 };
 
-export const saveStoredGeofenceConfig = (config) => {
+/**
+ * Fetch Geofence & Location configuration from Database via API
+ */
+export const getGeofenceConfigApi = async () => {
+  try {
+    const res = await api("/api/attendance/geofence", "get")
+      .catch(async () => api("/api/settings/geofence", "get"))
+      .catch(async () => api("/api/settings/store-profile", "get"));
+
+    const data = res?.data?.geofence || res?.data || res?.geofence || res?.settings?.geofence;
+    if (data && (data.latitude || data.centerLatitude)) {
+      const formatted = {
+        name: data.name || DEFAULT_MALL_GEOFENCE.name,
+        khmerName: data.khmerName || data.khmer_name || DEFAULT_MALL_GEOFENCE.khmerName,
+        latitude: Number(data.latitude || data.centerLatitude || DEFAULT_MALL_GEOFENCE.latitude),
+        longitude: Number(data.longitude || data.centerLongitude || DEFAULT_MALL_GEOFENCE.longitude),
+        geofenceRadiusMeters: Number(
+          data.geofenceRadiusMeters || data.radius_meters || data.radius || DEFAULT_MALL_GEOFENCE.geofenceRadiusMeters
+        ),
+        address: data.address || DEFAULT_MALL_GEOFENCE.address,
+        mapsUrl: data.mapsUrl || data.maps_url || DEFAULT_MALL_GEOFENCE.mapsUrl,
+        strictGeofenceEnforcement: Boolean(
+          data.strictGeofenceEnforcement ?? data.strict_enforcement ?? false
+        )
+      };
+      localStorage.setItem(STORAGE_KEY_GEOFENCE, JSON.stringify(formatted));
+      return formatted;
+    }
+  } catch (err) {
+    console.warn("Could not fetch geofence from DB API, reading local:", err?.message || err);
+  }
+
+  return getStoredGeofenceConfig();
+};
+
+/**
+ * Persist Geofence & Location configuration into Database via API
+ */
+export const saveStoredGeofenceConfig = async (config) => {
   try {
     localStorage.setItem(STORAGE_KEY_GEOFENCE, JSON.stringify(config));
   } catch (e) {}
+
+  const payload = {
+    name: config.name,
+    khmer_name: config.khmerName,
+    latitude: Number(config.latitude),
+    longitude: Number(config.longitude),
+    radius_meters: Number(config.geofenceRadiusMeters),
+    geofenceRadiusMeters: Number(config.geofenceRadiusMeters),
+    address: config.address,
+    maps_url: config.mapsUrl,
+    strict_enforcement: Boolean(config.strictGeofenceEnforcement),
+    strictGeofenceEnforcement: Boolean(config.strictGeofenceEnforcement)
+  };
+
+  // 1. Try /api/attendance/geofence
+  try {
+    const apiRes = await api("/api/attendance/geofence", "post", payload)
+      .catch(async () => api("/api/settings/geofence", "post", payload))
+      .catch(async () =>
+        api("/api/settings/store-profile", "put", {
+          geofence: payload
+        })
+      )
+      .catch(async () =>
+        api("/api/settings", "post", {
+          type: "geofence",
+          key: "geofence_config",
+          value: payload,
+          ...payload
+        })
+      );
+
+    return apiRes?.data || config;
+  } catch (err) {
+    console.warn("DB API sync notice for Geofence (saved locally):", err?.message || err);
+    return config;
+  }
 };
 
 /**

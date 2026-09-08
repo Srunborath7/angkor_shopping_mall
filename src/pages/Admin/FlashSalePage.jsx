@@ -41,10 +41,16 @@ function formatTimeRemaining(item) {
   if (!item) return "24h Active";
   const now = Date.now();
   let end = null;
-  if (item.endTime || item.end_time) {
-    end = new Date(item.endTime || item.end_time).getTime();
+  const rawEnd = item.endTime || item.end_time;
+  if (rawEnd) {
+    let str = String(rawEnd).trim();
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(str)) {
+      str = str.replace(" ", "T");
+    }
+    end = new Date(str).getTime();
   } else if (item.created_at || item.createdAt) {
-    end = new Date(item.created_at || item.createdAt).getTime() + (item.durationHours || 24) * 3600 * 1000;
+    let str = String(item.created_at || item.createdAt).trim().replace(" ", "T");
+    end = new Date(str).getTime() + (Number(item.durationHours) || 24) * 3600 * 1000;
   }
 
   if (!end || isNaN(end)) return "24h Active";
@@ -101,10 +107,16 @@ function FlashSalePage() {
 
       rawList.forEach((item) => {
         let end = null;
-        if (item.endTime || item.end_time) {
-          end = new Date(item.endTime || item.end_time).getTime();
+        const rawEnd = item.endTime || item.end_time;
+        if (rawEnd) {
+          let str = String(rawEnd).trim();
+          if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(str)) {
+            str = str.replace(" ", "T");
+          }
+          end = new Date(str).getTime();
         } else if (item.created_at || item.createdAt) {
-          end = new Date(item.created_at || item.createdAt).getTime() + (item.durationHours || 24) * 3600 * 1000;
+          let str = String(item.created_at || item.createdAt).trim().replace(" ", "T");
+          end = new Date(str).getTime() + (Number(item.durationHours) || 24) * 3600 * 1000;
         }
 
         // Auto-delete check: if campaign duration (e.g. 24h) has elapsed, remove from database

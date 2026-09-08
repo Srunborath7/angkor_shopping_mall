@@ -63,10 +63,22 @@ export const isFlashSaleActive = (item) => {
   if (item.status && item.status !== "active") return false;
   const now = Date.now();
   let end = null;
-  if (item.endTime || item.end_time) {
-    end = new Date(item.endTime || item.end_time).getTime();
+  const rawEnd = item.endTime || item.end_time;
+  if (rawEnd) {
+    let str = String(rawEnd).trim();
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(str)) {
+      str = str.replace(" ", "T");
+    }
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(str)) {
+      str += "+07:00";
+    }
+    end = new Date(str).getTime();
   } else if (item.created_at || item.createdAt) {
-    end = new Date(item.created_at || item.createdAt).getTime() + (item.durationHours || 24) * 3600 * 1000;
+    let str = String(item.created_at || item.createdAt).trim().replace(" ", "T");
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(str)) {
+      str += "+07:00";
+    }
+    end = new Date(str).getTime() + (Number(item.durationHours) || 24) * 3600 * 1000;
   }
   if (end && !isNaN(end) && end <= now) return false;
   return true;

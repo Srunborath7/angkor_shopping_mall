@@ -56,6 +56,7 @@ import {
   getStoredStaff,
   getStoredShifts,
   getStoredGeofenceConfig,
+  getGeofenceConfigApi,
   saveStoredGeofenceConfig,
   getCurrentDeviceLocation,
   getAttendanceRecordsApi,
@@ -180,6 +181,7 @@ function AttendancePage() {
   const [leaveFilterTab, setLeaveFilterTab] = useState("all"); // all, pending, approved, rejected
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isGeofenceModalOpen, setIsGeofenceModalOpen] = useState(false);
+  const [showKioskMap, setShowKioskMap] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
 
   // Manual Punch Form
@@ -245,7 +247,7 @@ function AttendancePage() {
       setLoading(true);
       const staff = await getStaffListApi(currentUser);
       const shiftData = getStoredShifts();
-      const geo = getStoredGeofenceConfig();
+      const geo = await getGeofenceConfigApi();
       setStaffList(staff);
       setShifts(shiftData);
       setGeofenceConfig(geo);
@@ -728,14 +730,37 @@ function AttendancePage() {
     }
   };
 
-  // Handle Save Geofence Config
-  const handleSaveGeofence = (e) => {
+  // Handle Save Geofence Config into DB with API
+  const handleSaveGeofence = async (e) => {
     e.preventDefault();
-    saveStoredGeofenceConfig(geofenceForm);
-    setGeofenceConfig(geofenceForm);
-    setIsGeofenceModalOpen(false);
-    Swal.fire(isKhmer ? "បានរក្សាទុក" : "Saved", "Geofence & Mall GPS Coordinates updated.", "success");
-    fetchCurrentLocation();
+    try {
+      Swal.fire({
+        title: isKhmer ? "កំពុងរក្សាទុកក្នុង Database..." : "Saving to Database...",
+        didOpen: () => Swal.showLoading(),
+        allowOutsideClick: false
+      });
+
+      const saved = await saveStoredGeofenceConfig(geofenceForm);
+      setGeofenceConfig(saved || geofenceForm);
+      setIsGeofenceModalOpen(false);
+
+      Swal.fire({
+        title: isKhmer ? "បានរក្សាទុកក្នុង Database!" : "Saved to Database!",
+        text: isKhmer
+          ? "ទីតាំង University of Puthisastra ត្រូវបានរក្សាទុកក្នុង Database តាមរយៈ API ជោគជ័យ។"
+          : "University of Puthisastra coordinates saved to Database via API.",
+        icon: "success",
+        timer: 2500,
+        showConfirmButton: false
+      });
+      fetchCurrentLocation();
+    } catch (err) {
+      Swal.fire({
+        title: isKhmer ? "កំហុស" : "Error",
+        text: err?.message || "Failed to save geofence to database",
+        icon: "error"
+      });
+    }
   };
 
   // Handle Edit Record
@@ -910,6 +935,12 @@ function AttendancePage() {
               </button>
             </div>
 
+            {/* Target Attendance Venue Info: University of Puthisastra */}
+            <div className="kiosk-target-venue-pill">
+              <span className="target-venue-label">{isKhmer ? "គោលដៅវត្តមាន:" : "Target Venue:"}</span>
+              <strong className="target-venue-name">{geofenceConfig?.name || "University of Puthisastra"}</strong>
+            </div>
+
             {deviceGps ? (
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
@@ -918,9 +949,9 @@ function AttendancePage() {
                       }`}
                   >
                     {deviceGps.isWithinGeofence ? (
-                      <>🟢 {isKhmer ? "ក្នុងបរិវេណផ្សារ (Inside Mall)" : "Inside Geofence"}</>
+                      <>🟢 {isKhmer ? "ក្នុងបរិវេណ UP (Inside Campus)" : "Inside UP Campus"}</>
                     ) : (
-                      <>🟡 {isKhmer ? "ក្រៅបរិវេណផ្សារ (Remote)" : "Outside Geofence"}</>
+                      <>🟡 {isKhmer ? "ក្រៅបរិវេណ UP (Remote)" : "Outside UP Campus"}</>
                     )}
                   </span>
                   <span style={{ fontSize: "11px", color: "#94a3b8" }}>
@@ -930,19 +961,60 @@ function AttendancePage() {
 
                 <div className="gps-coords-detail">
                   <div><span>Lat/Lng:</span> {deviceGps.latitude}, {deviceGps.longitude}</div>
-                  <div><span>Dist:</span> <b>{deviceGps.distanceMeters} meters</b> from mall center</div>
+                  <div><span>Dist:</span> <b>{deviceGps.distanceMeters} meters</b> from University of Puthisastra</div>
                 </div>
 
-                {deviceGps.latitude && (
+                <div className="kiosk-maps-button-group">
                   <a
-                    href={`https://www.google.com/maps?q=${deviceGps.latitude},${deviceGps.longitude}`}
+                    href="https://www.google.com/maps/place/University+of+Puthisastra/@11.562662,104.9207247,17z"
                     target="_blank"
                     rel="noreferrer"
-                    className="gps-map-mini-link"
+                    className="kiosk-map-btn up-external-btn"
+                    title="Open University of Puthisastra on Google Maps"
                   >
-                    <FaExternalLinkAlt size={10} />
-                    <span>{isKhmer ? "មើលទីតាំងលើ Google Maps" : "View on Google Maps"}</span>
+                    <FaExternalLinkAlt size={11} />
+                    <span>{isKhmer ? "បើក Google Maps (UP)" : "Google Maps (UP)"}</span>
                   </a>
+
+                  <button
+                    type="button"
+                    className={`kiosk-map-btn up-toggle-preview-btn ${showKioskMap ? "active" : ""}`}
+                    onClick={() => setShowKioskMap(!showKioskMap)}
+                  >
+                    <FaMapMarkerAlt size={11} />
+                    <span>{showKioskMap ? (isKhmer ? "លាក់ផែនទី UP" : "Hide UP Map") : (isKhmer ? "បង្ហាញផែនទី UP" : "Show UP Map")}</span>
+                  </button>
+
+                  {deviceGps?.latitude && (
+                    <a
+                      href={`https://www.google.com/maps?q=${deviceGps.latitude},${deviceGps.longitude}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="kiosk-map-btn your-gps-btn"
+                      title="Your current GPS coordinates"
+                    >
+                      <FaCrosshairs size={11} />
+                      <span>{isKhmer ? "ទីតាំងរបស់អ្នក" : "Your GPS"}</span>
+                    </a>
+                  )}
+                </div>
+
+                {showKioskMap && (
+                  <div className="kiosk-live-map-preview">
+                    <div className="map-preview-header-pill">
+                      <span>📍 University of Puthisastra (UP Campus)</span>
+                      <span className="pill-coords">11.562662, 104.9207247</span>
+                    </div>
+                    <iframe
+                      title="University of Puthisastra Google Map"
+                      width="100%"
+                      height="200"
+                      style={{ border: "1px solid rgba(56, 189, 248, 0.3)", borderRadius: "8px" }}
+                      loading="lazy"
+                      allowFullScreen
+                      src={`https://maps.google.com/maps?q=11.562662,104.9207247&hl=en&z=17&output=embed`}
+                    />
+                  </div>
                 )}
               </div>
             ) : (
@@ -1995,6 +2067,37 @@ function AttendancePage() {
         size="md"
       >
         <form onSubmit={handleSaveGeofence}>
+          {/* Quick Preset for University of Puthisastra */}
+          <div className="geofence-preset-box">
+            <div className="preset-details">
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <FaMapMarkerAlt style={{ color: "#ef4444" }} />
+                <strong>University of Puthisastra (UP Campus)</strong>
+              </div>
+              <p className="preset-sub">
+                Lat: <b>11.562662</b>, Lng: <b>104.9207247</b> (Phnom Penh)
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn-apply-up-preset"
+              onClick={() => {
+                setGeofenceForm({
+                  ...geofenceForm,
+                  name: "University of Puthisastra",
+                  khmerName: "សាកលវិទ្យាល័យ ពុទ្ធិសាស្ត្រ",
+                  latitude: 11.562662,
+                  longitude: 104.9207247,
+                  geofenceRadiusMeters: 500,
+                  address: "#180, Street 180, Sangkat Boeung Raing, Khan Daun Penh, Phnom Penh, Cambodia",
+                  mapsUrl: "https://www.google.com/maps/place/University+of+Puthisastra/@11.562662,104.9207247,17z"
+                });
+              }}
+            >
+              {isKhmer ? "កំណត់យកទីតាំង UP" : "Use UP Preset"}
+            </button>
+          </div>
+
           <div className="attendance-form-grid">
             <div className="form-group-field">
               <label>{isKhmer ? "ឈ្មោះសាខា / អគារ" : "Mall Branch Name"}</label>
@@ -2053,6 +2156,34 @@ function AttendancePage() {
               type="text"
               value={geofenceForm.address}
               onChange={(e) => setGeofenceForm({ ...geofenceForm, address: e.target.value })}
+            />
+          </div>
+
+          {/* Live Google Map Interactive Embed */}
+          <div className="geofence-map-embed-box">
+            <div className="geofence-map-header">
+              <label style={{ fontSize: "12px", fontWeight: "700", color: "#334155", display: "flex", alignItems: "center", gap: "6px" }}>
+                <FaMapMarkerAlt style={{ color: "#ef4444" }} />
+                <span>{isKhmer ? "ផែនទី Google Maps ផ្ទាល់ (UP Campus):" : "Live Google Map Preview (UP Campus):"}</span>
+              </label>
+              <a
+                href={geofenceForm.mapsUrl || `https://www.google.com/maps/place/University+of+Puthisastra/@${geofenceForm.latitude || 11.562662},${geofenceForm.longitude || 104.9207247},17z`}
+                target="_blank"
+                rel="noreferrer"
+                className="gps-map-mini-link"
+              >
+                <FaExternalLinkAlt size={11} />
+                <span>{isKhmer ? "បើកមើលក្នុង Google Maps" : "Open in Google Maps"}</span>
+              </a>
+            </div>
+            <iframe
+              title="Geofence Google Map"
+              width="100%"
+              height="200"
+              style={{ border: "1px solid #cbd5e1", borderRadius: "10px", marginTop: "6px" }}
+              loading="lazy"
+              allowFullScreen
+              src={`https://maps.google.com/maps?q=${geofenceForm.latitude || 11.562662},${geofenceForm.longitude || 104.9207247}&hl=en&z=17&output=embed`}
             />
           </div>
 

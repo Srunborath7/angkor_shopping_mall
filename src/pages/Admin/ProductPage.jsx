@@ -174,7 +174,8 @@ function ProductPage() {
     const reloadActiveProductDetails = async (productId) => {
         try {
             const res = await getProductByIdApi(productId);
-            const detailed = res.data;
+            const raw = res?.data?.data || res?.data;
+            const detailed = (raw && raw.id) ? raw : (raw?.data || raw || {});
 
             // Set Specs
             setLongDescription(detailed.detail?.long_description || "");
@@ -262,7 +263,8 @@ function ProductPage() {
         // Try background refresh if API provides additional relational fields
         try {
             const res = await getProductByIdApi(item.id);
-            const detailed = res?.data;
+            const raw = res?.data?.data || res?.data;
+            const detailed = (raw && raw.id) ? raw : (raw?.data || raw);
             if (detailed && typeof detailed === "object" && detailed.id) {
                 if (detailed.name) setName(detailed.name);
                 if (detailed.description) setDescription(detailed.description);
@@ -314,15 +316,20 @@ function ProductPage() {
         // Attempt background enrichment if available
         try {
             const res = await getProductByIdApi(item.id);
-            const detailed = res?.data;
+            const raw = res?.data?.data || res?.data;
+            const detailed = (raw && raw.id) ? raw : (raw?.data || raw);
             if (detailed && typeof detailed === "object" && detailed.id) {
                 const refreshedImg = detailed.images?.find(img => img.is_primary)?.image_url
                     || detailed.images?.[0]?.image_url
+                    || detailed.image_url
+                    || detailed.image
                     || primaryImg;
                 setDetailProduct(prev => ({
                     ...prev,
                     ...detailed,
-                    image_url: refreshedImg
+                    image_url: refreshedImg,
+                    variants: (Array.isArray(detailed.variants) && detailed.variants.length > 0) ? detailed.variants : (prev?.variants || []),
+                    images: (Array.isArray(detailed.images) && detailed.images.length > 0) ? detailed.images : (prev?.images || [])
                 }));
                 if (refreshedImg) {
                     setActiveDetailImage(refreshedImg);
@@ -1898,19 +1905,43 @@ function ProductPage() {
                                         </div>
                                     )}
                                 </div>
-                                {detailProduct.images && detailProduct.images.length > 0 && (
-                                    <div className="detail-gallery-strip">
-                                        {detailProduct.images.map((img) => (
-                                            <div
-                                                key={img.id}
-                                                className={`gallery-strip-thumb ${activeDetailImage === img.image_url ? "active" : ""}`}
-                                                onClick={() => setActiveDetailImage(img.image_url)}
-                                            >
-                                                <img src={img.image_url} alt="Gallery thumbnail" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                {(() => {
+                                    const allImages = [];
+                                    const pushUnique = (url, label) => {
+                                        if (url && typeof url === "string" && !allImages.some(item => item.url === url)) {
+                                            allImages.push({ url, label });
+                                        }
+                                    };
+                                    if (detailProduct.image_url) pushUnique(detailProduct.image_url, "Primary");
+                                    if (detailProduct.image) pushUnique(detailProduct.image, "Main");
+                                    (detailProduct.images || []).forEach((img, idx) => {
+                                        const u = typeof img === "string" ? img : img.image_url;
+                                        pushUnique(u, `Gallery ${idx + 1}`);
+                                    });
+                                    (detailProduct.variants || []).forEach(v => {
+                                        const vImg = v.image_url 
+                                            || v.image 
+                                            || (Array.isArray(v.images) && v.images.length > 0 ? (typeof v.images[0] === "string" ? v.images[0] : v.images[0]?.image_url) : "");
+                                        pushUnique(vImg, v.sku || "Variant");
+                                    });
+
+                                    if (allImages.length <= 1) return null;
+
+                                    return (
+                                        <div className="detail-gallery-strip">
+                                            {allImages.map((item, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    className={`gallery-strip-thumb ${activeDetailImage === item.url ? "active" : ""}`}
+                                                    onClick={() => setActiveDetailImage(item.url)}
+                                                    title={item.label}
+                                                >
+                                                    <img src={item.url} alt={item.label} />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })()}
                             </div>
 
                             {/* Right Panel: Content, Specs & Description */}
@@ -1962,12 +1993,36 @@ function ProductPage() {
                                 <div className="detail-variants-grid">
                                     {detailProduct.variants.map((v) => {
                                         const attrKeys = Object.keys(v.attributes || {});
-                                        const variantImg = v.images && v.images.length > 0 ? v.images[0].image_url : "";
+                                        const variantImg = v.image_url 
+                                            || v.image
+                                            || (detailProduct.images || []).find(img => img.product_variant_id === v.id)?.image_url
+                                            || (Array.isArray(v.images) && v.images.length > 0 ? (typeof v.images[0] === "string" ? v.images[0] : v.images[0]?.image_url) : "")
+                                            || detailProduct.image_url
+                                            || detailProduct.image
+                                            || "";
+                                        const isVariantActive = activeDetailImage && variantImg && activeDetailImage === variantImg;
+
                                         return (
-                                            <div className="detail-variant-card" key={v.id}>
+                                            <div 
+                                                className={`detail-variant-card ${isVariantActive ? "active-variant" : ""}`} 
+                                                key={v.id || v.sku}
+                                                onClick={() => {
+                                                    if (variantImg) setActiveDetailImage(variantImg);
+                                                }}
+                                                title={variantImg ? "Click to preview this variant photo" : ""}
+                                                style={{ cursor: variantImg ? "pointer" : "default" }}
+                                            >
                                                 <div className="detail-variant-img">
                                                     {variantImg ? (
-                                                        <img src={variantImg} alt={v.sku} />
+                                                        <img 
+                                                            src={variantImg} 
+                                                            alt={v.sku || "Variant photo"} 
+                                                            onError={(e) => {
+                                                                if (detailProduct.image_url && e.target.src !== detailProduct.image_url) {
+                                                                    e.target.src = detailProduct.image_url;
+                                                                }
+                                                            }}
+                                                        />
                                                     ) : (
                                                         <FaBox />
                                                     )}

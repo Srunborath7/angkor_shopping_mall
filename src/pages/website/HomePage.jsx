@@ -372,7 +372,7 @@ function HomePage() {
     return sourceProducts;
   }, [sourceProducts, activeTrendingTab]);
 
-  // Real Countdown timer for Flash Sale
+  // Real Countdown timer for Flash Sale (Calculated based on Cambodia ICT GMT+7)
   const [timeLeft, setTimeLeft] = useState({
     hours: 0,
     minutes: 0,
@@ -391,10 +391,22 @@ function HomePage() {
 
       flashSales.forEach((item) => {
         let end = null;
-        if (item.endTime || item.end_time) {
-          end = new Date(item.endTime || item.end_time).getTime();
+        const rawEnd = item.endTime || item.end_time;
+        if (rawEnd) {
+          let str = String(rawEnd).trim();
+          if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(str)) {
+            str = str.replace(" ", "T");
+          }
+          if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(str)) {
+            str += "+07:00";
+          }
+          end = new Date(str).getTime();
         } else if (item.created_at || item.createdAt) {
-          end = new Date(item.created_at || item.createdAt).getTime() + (item.durationHours || 24) * 3600 * 1000;
+          let str = String(item.created_at || item.createdAt).trim().replace(" ", "T");
+          if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(str)) {
+            str += "+07:00";
+          }
+          end = new Date(str).getTime() + (Number(item.durationHours) || 24) * 3600 * 1000;
         }
 
         if (end && !isNaN(end) && end > now) {
@@ -684,20 +696,29 @@ function HomePage() {
               <p>{language === "km" ? "ការបញ្ចុះតម្លៃពិសេសមានកំណត់ ធ្វើបច្ចុប្បន្នភាពផ្ទាល់ពីស្តុក" : "Limited-time discounts updated directly from our inventory"}</p>
             </div>
 
-            <div className="countdown-timer">
-              <div className="time-segment">
-                <span className="time-value">{String(timeLeft.hours).padStart(2, "0")}</span>
-                <span className="time-label">h</span>
-              </div>
-              <span className="time-colon">:</span>
-              <div className="time-segment">
-                <span className="time-value">{String(timeLeft.minutes).padStart(2, "0")}</span>
-                <span className="time-label">m</span>
-              </div>
-              <span className="time-colon">:</span>
-              <div className="time-segment">
-                <span className="time-value">{String(timeLeft.seconds).padStart(2, "0")}</span>
-                <span className="time-label">s</span>
+            <div className="flash-sale-timer-wrapper">
+              {/* Single Unified Flash Sale Countdown */}
+              <div className="countdown-timer-card">
+                <div className="countdown-label-row">
+                  <Clock size={13} className="timer-icon" />
+                  <span>{language === "km" ? "បញ្ចប់ក្នុងរយៈពេល:" : "Ends in:"}</span>
+                </div>
+                <div className="countdown-timer">
+                  <div className="time-segment">
+                    <span className="time-value">{String(timeLeft.hours).padStart(2, "0")}</span>
+                    <span className="time-label">h</span>
+                  </div>
+                  <span className="time-colon">:</span>
+                  <div className="time-segment">
+                    <span className="time-value">{String(timeLeft.minutes).padStart(2, "0")}</span>
+                    <span className="time-label">m</span>
+                  </div>
+                  <span className="time-colon">:</span>
+                  <div className="time-segment">
+                    <span className="time-value">{String(timeLeft.seconds).padStart(2, "0")}</span>
+                    <span className="time-label">s</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -737,16 +758,15 @@ function HomePage() {
 
                     <button
                       type="button"
-                      className={`product-wishlist-toggle ${
-                        wishlist.some(
-                          (item) =>
-                            String(item) === String(prod.product_id || prod.id) ||
-                            String(item) === String(prod.id) ||
-                            (prod.product_id && String(item) === String(prod.product_id))
-                        )
+                      className={`product-wishlist-toggle ${wishlist.some(
+                        (item) =>
+                          String(item) === String(prod.product_id || prod.id) ||
+                          String(item) === String(prod.id) ||
+                          (prod.product_id && String(item) === String(prod.product_id))
+                      )
                           ? "active"
                           : ""
-                      }`}
+                        }`}
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleWishlist(prod.product_id || prod.id);
@@ -1229,7 +1249,7 @@ function HomePage() {
           </div>
           <h2>{language === "km" ? "ទទួលបានការបញ្ចុះតម្លៃ ៥% បន្ថែម" : "Get 5% Off Your Next Order"}</h2>
           <p>{language === "km" ? "ចុះឈ្មោះថ្ងៃនេះដើម្បីទទួលបានតម្លៃពិសេសសម្រាប់សមាជិក ការដឹកជញ្ជូនរហ័ស និងពិន្ទុរង្វាន់។" : "Sign up today and unlock member-only prices, priority express delivery, and reward points."}</p>
-          
+
           <div style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap", marginTop: "12px" }}>
             <button
               type="button"
